@@ -1,0 +1,14 @@
+{
+  "claude_lines_total": 190,
+  "core_files": [
+    "CLAUDE.md",
+    "PROGRESS.md",
+    "docs/MASTER_PLAN.md",
+    "docs/DATABASE_SCHEMA.md",
+    "docs/API.md",
+    "docs/SHARED_KEYS.md"
+  ],
+  "version": "2.0",
+  "workspace_navigation_protocol": true,
+  "claude_lines_nonempty": 170
+}
