@@ -410,26 +410,26 @@
 .v103-home-action:nth-child(3) .icon{color:#3d72ca}.v103-home-action:nth-child(4) .icon{color:#b66a31}
 
 .v103-section-title{position:absolute;left:52px;font-size:25px;font-weight:760;letter-spacing:-.4px}
-.v103-reminder-title{top:345px}
-.v103-reminders{position:absolute;left:52px;top:390px;width:837px;border:1px solid #dce7dd;border-radius:24px;background:#f5f9f4;overflow:hidden}
+.v103-reminder-title{top:362px}
+.v103-reminders{position:absolute;left:52px;top:414px;width:837px;border:1px solid #dce7dd;border-radius:24px;background:#f5f9f4;overflow:hidden}
 .v103-reminder-row{width:100%;height:82px;padding:0 18px;display:grid;grid-template-columns:45px 1fr 25px;gap:13px;align-items:center;text-align:left;border-bottom:1px solid #dfe7df}
 .v103-reminder-row:last-child{border-bottom:0}.v103-reminder-icon{width:42px;height:42px;border-radius:13px;background:#fff;display:grid;place-items:center;color:#3d794b}
 .v103-reminder-icon .icon{font-size:26px}.v103-reminder-row b{font-size:19px;display:block}.v103-reminder-row small{display:block;font-size:15px;color:#6e756f;margin-top:4px}
 .v103-reminder-row>.icon{font-size:20px;color:#8a908b}
 
-.v103-cars-title{top:584px}
-.v103-home-cars{position:absolute;top:628px;left:52px;width:837px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.v103-cars-title{top:610px}
+.v103-home-cars{position:absolute;top:666px;left:52px;width:837px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
 .v103-home-car{height:212px;border:1px solid #e0e4e7;border-radius:23px;background:#fff;overflow:hidden;text-align:left;box-shadow:0 7px 21px rgba(20,26,32,.035)}
 .v103-home-car img{width:100%;height:142px;display:block;object-fit:cover;background:#eceff1}
 .v103-home-car b{display:block;margin:10px 13px 2px;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v103-home-car small{display:block;margin:0 13px;font-size:13px;color:#7a8086}
 
-.v103-home-trip{position:absolute;top:880px;left:52px;width:837px;height:165px;border:1px solid #dde5ef;border-radius:25px;background:linear-gradient(135deg,#f8fbff,#edf4ff);overflow:hidden;text-align:left}
+.v103-home-trip{position:absolute;top:932px;left:52px;width:837px;height:165px;border:1px solid #dde5ef;border-radius:25px;background:linear-gradient(135deg,#f8fbff,#edf4ff);overflow:hidden;text-align:left}
 .v103-home-trip-copy{position:absolute;left:24px;top:23px;z-index:2}.v103-home-trip-copy small{font-size:14px;color:#4776bd;font-weight:720}.v103-home-trip-copy b{display:block;font-size:24px;margin-top:5px}.v103-home-trip-copy span{display:block;font-size:15px;color:#69747e;margin-top:7px}
 .v103-home-trip .v103-trip-art{position:absolute;right:0;top:0;width:300px;height:165px;opacity:.95;object-fit:cover}
 .v103-home-trip::after{content:"";position:absolute;right:210px;top:0;width:140px;height:100%;background:linear-gradient(90deg,#f3f8ff,rgba(243,248,255,0));z-index:1}
 
-.v103-home-footnote{position:absolute;top:1080px;left:52px;width:837px;padding:16px 18px;border-radius:19px;background:#fff;border:1px solid #e3e6e8;display:flex;align-items:center;gap:13px}
+.v103-home-footnote{position:absolute;top:1140px;left:52px;width:837px;padding:16px 18px;border-radius:19px;background:#fff;border:1px solid #e3e6e8;display:flex;align-items:center;gap:13px}
 .v103-home-footnote .icon{font-size:26px;color:#3e7e50}.v103-home-footnote b{font-size:17px;display:block}.v103-home-footnote small{font-size:14px;color:#777e84;display:block;margin-top:3px}
 
 /* QINAO ROOT */
@@ -545,6 +545,57 @@
 .v103-featured{top:336px}
 .v103-video-list-title{top:684px}
 .v103-video-list{top:734px}
+
+/* V10.4 — True responsive web layout
+   <=1100px: scaled-fit mobile frame (the original phone simulator look).
+   >1100px: status bar + bottom nav sit inside Home as flow content, the
+            app shell drops the simulator shadow, and Home reflows with
+            viewport width (wider cards, larger gutters, single-column
+            trip banner, etc.). Other screens keep the scaled-frame look. */
+#app{--app-scale:1;transform:scale(var(--app-scale))}
+
+@media (max-width: 1100px){
+ #app{--app-scale:calc((100vw - 24px) / 941)}
+ #stage{transform:scale(var(--app-scale));transform-origin:center center}
+}
+
+@media (min-width: 1101px){
+ html,body{height:auto;min-height:100%;overflow:auto}
+ #viewport{width:100vw;height:auto;min-height:100vh;display:block;overflow:visible;background:#eef1f5;padding:32px 0 64px}
+ #stage{filter:none;width:100%}
+ #app{position:relative;left:auto;top:auto;width:min(1280px,calc(100vw - 64px));height:auto;min-height:1672px;margin:0 auto;background:#fff;border-radius:28px;box-shadow:0 22px 55px rgba(18,23,29,.10);overflow:hidden;transform:none}
+ .status-bar{position:relative;width:100%;height:auto;padding:18px 32px 0;display:flex;justify-content:space-between;align-items:center}
+ .status-time,.status-icons{position:relative;left:auto;top:auto;right:auto}
+ .status-time{font-size:22px}
+ .status-icons{height:24px;gap:14px}
+ .signal{width:30px;height:20px}.wifi{width:30px;height:22px}.battery{width:46px;height:24px}
+ .bottom-nav{position:relative;left:auto;top:auto;width:100%;height:auto;padding:18px 24px 22px;border-radius:0;background:#fff;box-shadow:none;border-top:1px solid #eceff2}
+ .nav-item{height:auto;padding:8px 0 14px}
+ .nav-item .icon{font-size:32px}
+ .nav-label{font-size:14px;margin-top:6px}
+ .nav-item.active::after{width:36px;height:4px;bottom:4px}
+ .screen{position:relative;inset:auto;width:100%;min-height:1672px}
+ .screen-scroll{position:relative;inset:auto;width:100%;overflow:visible}
+ .content-height{width:100%;min-height:auto;padding:0 48px 64px}
+
+ /* HOME — reflow from absolute positioning to flow layout */
+ .v103-home .page-title{position:relative;top:auto;left:auto;font-size:clamp(40px,5vw,56px);padding-top:48px;max-width:1280px;margin:0 auto}
+ .v103-subtitle{position:relative;left:auto;top:auto;font-size:clamp(15px,1.6vw,18px);margin-top:8px;max-width:1280px;margin-left:auto;margin-right:auto}
+ .v103-home-actions{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:48px auto 0;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+ .v103-home-action{height:auto;min-height:124px;padding:18px 12px}
+ .v103-reminder-title{position:relative;top:auto;left:auto;font-size:clamp(20px,2.4vw,28px);margin:64px auto 18px;max-width:1280px}
+ .v103-reminders{position:relative;left:auto;top:auto;width:calc(100% - 96px);max-width:1280px;margin:0 auto;border-radius:24px}
+ .v103-cars-title{position:relative;top:auto;left:auto;font-size:clamp(20px,2.4vw,28px);margin:64px auto 18px;max-width:1280px}
+ .v103-home-cars{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:0 auto;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+ .v103-home-car{height:auto;min-height:240px;padding-bottom:8px}
+ .v103-home-car img{height:160px}
+ .v103-home-trip{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:64px auto 0;height:auto;min-height:200px;padding:32px 36px;border-radius:25px;box-sizing:border-box;display:flex;align-items:center}
+ .v103-home-trip-copy{position:relative;left:auto;top:auto;max-width:55%;padding-right:24px}
+ .v103-home-trip-copy b{font-size:clamp(22px,2.6vw,30px)}
+ .v103-home-trip .v103-trip-art{position:absolute;right:0;top:0;height:100%;width:42%;object-fit:cover;border-radius:0 25px 25px 0}
+ .v103-home-trip::after{right:30%;width:24%}
+ .v103-home-footnote{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:48px auto 0;padding:22px 24px;box-sizing:border-box}
+}
 
 </style>
 </head>
