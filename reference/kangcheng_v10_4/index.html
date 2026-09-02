@@ -560,41 +560,61 @@
 }
 
 @media (min-width: 1101px){
- html,body{height:auto;min-height:100%;overflow:auto}
- #viewport{width:100vw;height:auto;min-height:100vh;display:block;overflow:visible;background:#eef1f5;padding:32px 0 64px}
+ html,body{height:auto;min-height:100%;overflow:auto;background:#eef1f5}
+ #viewport{width:100vw;min-height:100vh;display:block;overflow:visible;background:#eef1f5;padding:0}
  #stage{filter:none;width:100%}
- #app{position:relative;left:auto;top:auto;width:min(1280px,calc(100vw - 64px));height:auto;min-height:1672px;margin:0 auto;background:#fff;border-radius:28px;box-shadow:0 22px 55px rgba(18,23,29,.10);overflow:hidden;transform:none}
- .status-bar{position:relative;width:100%;height:auto;padding:18px 32px 0;display:flex;justify-content:space-between;align-items:center}
+ #app{position:relative;left:auto;top:auto;width:100%;max-width:none;min-height:100vh;margin:0;background:#fff;border-radius:0;box-shadow:none;overflow:visible;transform:none}
+ .status-bar{position:relative;width:100%;height:auto;padding:20px 40px 0;display:flex;justify-content:space-between;align-items:center}
  .status-time,.status-icons{position:relative;left:auto;top:auto;right:auto}
  .status-time{font-size:22px}
  .status-icons{height:24px;gap:14px}
  .signal{width:30px;height:20px}.wifi{width:30px;height:22px}.battery{width:46px;height:24px}
- .bottom-nav{position:relative;left:auto;top:auto;width:100%;height:auto;padding:18px 24px 22px;border-radius:0;background:#fff;box-shadow:none;border-top:1px solid #eceff2}
- .nav-item{height:auto;padding:8px 0 14px}
- .nav-item .icon{font-size:32px}
+ .bottom-nav{position:relative;left:auto;top:auto;width:100%;height:auto;padding:14px 32px 18px;border-radius:0;background:#fff;box-shadow:none;border-top:1px solid #eceff2}
+ .nav-item{height:auto;padding:8px 0 12px}
+ .nav-item .icon{font-size:34px}
  .nav-label{font-size:14px;margin-top:6px}
- .nav-item.active::after{width:36px;height:4px;bottom:4px}
+ .nav-item.active::after{width:36px;height:4px;bottom:2px}
  .screen{position:relative;inset:auto;width:100%;min-height:1672px}
  .screen-scroll{position:relative;inset:auto;width:100%;overflow:visible}
- .content-height{width:100%;min-height:auto;padding:0 48px 64px}
+ .content-height{width:100%;min-height:auto;padding:0 clamp(24px,4vw,72px) 48px}
 
- /* HOME — reflow from absolute positioning to flow layout */
- .v103-home .page-title{position:relative;top:auto;left:auto;font-size:clamp(40px,5vw,56px);padding-top:48px;max-width:1280px;margin:0 auto}
- .v103-subtitle{position:relative;left:auto;top:auto;font-size:clamp(15px,1.6vw,18px);margin-top:8px;max-width:1280px;margin-left:auto;margin-right:auto}
- .v103-home-actions{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:48px auto 0;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
- .v103-home-action{height:auto;min-height:124px;padding:18px 12px}
- .v103-reminder-title{position:relative;top:auto;left:auto;font-size:clamp(20px,2.4vw,28px);margin:64px auto 18px;max-width:1280px}
- .v103-reminders{position:relative;left:auto;top:auto;width:calc(100% - 96px);max-width:1280px;margin:0 auto;border-radius:24px}
- .v103-cars-title{position:relative;top:auto;left:auto;font-size:clamp(20px,2.4vw,28px);margin:64px auto 18px;max-width:1280px}
- .v103-home-cars{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:0 auto;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
- .v103-home-car{height:auto;min-height:240px;padding-bottom:8px}
- .v103-home-car img{height:160px}
- .v103-home-trip{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:64px auto 0;height:auto;min-height:200px;padding:32px 36px;border-radius:25px;box-sizing:border-box;display:flex;align-items:center}
- .v103-home-trip-copy{position:relative;left:auto;top:auto;max-width:55%;padding-right:24px}
- .v103-home-trip-copy b{font-size:clamp(22px,2.6vw,30px)}
- .v103-home-trip .v103-trip-art{position:absolute;right:0;top:0;height:100%;width:42%;object-fit:cover;border-radius:0 25px 25px 0}
+ /* HOME — reflow with viewport width; multi-col at wider breakpoints */
+ .v103-home .page-title{position:relative;top:auto;left:auto;font-size:clamp(36px,4.4vw,72px);padding-top:clamp(32px,4vw,72px);padding-left:0;padding-right:0;letter-spacing:-.02em}
+ .v103-subtitle{position:relative;left:auto;top:auto;font-size:clamp(15px,1.4vw,22px);margin-top:10px}
+ .v103-home-actions{position:relative;top:auto;left:auto;width:auto;margin-top:clamp(32px,4vw,64px);gap:clamp(12px,1.4vw,28px);grid-template-columns:repeat(4,minmax(0,1fr))}
+ .v103-home-action{min-height:clamp(110px,8vw,160px);padding:20px 14px}
+ .v103-home-action .icon{font-size:clamp(28px,2.6vw,42px)}
+ .v103-home-action b{font-size:clamp(15px,1.3vw,20px)}
+ .v103-reminder-title{position:relative;top:auto;left:auto;margin:clamp(40px,5vw,80px) 0 18px;font-size:clamp(20px,2.2vw,32px)}
+ .v103-reminders{position:relative;top:auto;left:auto;border-radius:24px}
+ .v103-reminder-row{height:clamp(72px,6vw,96px);padding:0 clamp(14px,1.4vw,22px);gap:14px}
+ .v103-reminder-icon{width:clamp(38px,3vw,48px);height:clamp(38px,3vw,48px)}
+ .v103-reminder-icon .icon{font-size:clamp(22px,2vw,30px)}
+ .v103-reminder-row b{font-size:clamp(17px,1.5vw,22px)}
+ .v103-reminder-row small{font-size:clamp(13px,1.1vw,17px)}
+ .v103-cars-title{position:relative;top:auto;left:auto;margin:clamp(40px,5vw,80px) 0 18px;font-size:clamp(20px,2.2vw,32px)}
+ .v103-home-cars{position:relative;top:auto;left:auto;width:auto;gap:clamp(14px,1.6vw,32px);grid-template-columns:repeat(3,minmax(0,1fr))}
+ .v103-home-car{min-height:clamp(220px,18vw,300px);border-radius:24px}
+ .v103-home-car img{height:clamp(140px,12vw,200px)}
+ .v103-home-car b{font-size:clamp(15px,1.3vw,20px);margin:14px 16px 4px}
+ .v103-home-car small{font-size:clamp(12px,1vw,15px);margin:0 16px}
+ .v103-home-trip{position:relative;top:auto;left:auto;width:100%;margin:clamp(40px,5vw,80px) 0 0;min-height:clamp(180px,14vw,240px);padding:clamp(24px,3vw,48px);border-radius:clamp(20px,2vw,32px);box-sizing:border-box;display:block}
+ .v103-home-trip-copy{display:block;max-width:55%;padding-right:24px}
+ .v103-home-trip-copy small{font-size:clamp(13px,1.2vw,18px)}
+ .v103-home-trip-copy b{font-size:clamp(22px,2.4vw,36px);margin-top:8px}
+ .v103-home-trip-copy span{font-size:clamp(14px,1.3vw,20px);margin-top:10px}
+ .v103-home-trip .v103-trip-art{width:42%}
  .v103-home-trip::after{right:30%;width:24%}
- .v103-home-footnote{position:relative;top:auto;left:auto;width:calc(100% - 96px);max-width:1280px;margin:48px auto 0;padding:22px 24px;box-sizing:border-box}
+ .v103-home-footnote{position:relative;top:auto;left:auto;width:auto;margin:clamp(32px,4vw,64px) 0 0;padding:clamp(16px,1.8vw,28px) clamp(18px,2vw,28px);border-radius:clamp(16px,1.6vw,24px);box-sizing:border-box}
+ .v103-home-footnote .icon{font-size:clamp(22px,2vw,30px)}
+ .v103-home-footnote b{font-size:clamp(15px,1.3vw,20px)}
+ .v103-home-footnote small{font-size:clamp(13px,1.1vw,16px);margin-top:4px}
+}
+
+/* Extra-wide breakpoint: more columns, wider gutters */
+@media (min-width: 1600px){
+ .v103-home-actions{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .v103-home-cars{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 
 </style>
@@ -1074,6 +1094,12 @@ window.__KANG_ASSETS__={"garage-1.jpg":"data:image/jpeg;base64,/9j/4AAQSkZJRgABA
   };
 
   function fitApp() {
+    if (window.innerWidth > 1100) {
+      stage.style.width = '';
+      stage.style.height = '';
+      app.style.transform = '';
+      return;
+    }
     const pad = window.innerWidth < 1200 ? 0 : 24;
     const scale = Math.min((window.innerWidth - pad * 2) / REF_W, (window.innerHeight - pad * 2) / REF_H);
     const safeScale = Math.max(0.18, scale);
