@@ -1,14 +1,3 @@
-# OS
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-
-# Editors
-.vscode/
-.idea/
-*.iml
-
 # Node / JS
 node_modules/
 .next/
@@ -23,44 +12,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
-.env
-
 # Env / Secrets
 .env
 .env.*
 !.env.example
 
-# Logs
-logs/
-*.log
-
-# Coverage / Test artifacts
-coverage/
-.nyc_output/
-playwright-report/
-test-results/
-*.lcov
-
-# Build outputs
-*.tgz
-*.zip
-!reference/**/*.zip
-
-# Database
-*.sqlite
-*.sqlite3
-*.db
-
-# Generated
-shared/constants/generated/
-shared/schemas/generated/
-shared/types/generated/
+# Local SQLite database (per-developer file; seed data lives in db/seed.js)
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
 
 # Reference assets (keep README + HTML, ignore bulky image binaries)
 reference/kangcheng_v10_4/assets/

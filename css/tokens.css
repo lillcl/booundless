@@ -1,0 +1,72 @@
+/* Design tokens -- single source of truth for colour, type, spacing. */
+:root {
+  /* Brand */
+  --color-brand: #3d794b;
+  --color-brand-soft: #eaf3ea;
+  --color-accent: #3d72ca;
+  --color-warn: #d56e2d;
+
+  /* Ink */
+  --color-ink: #050607;
+  --color-ink-2: #0c1014;
+  --color-secondary: #6f757c;
+  --color-tertiary: #9ca0a6;
+
+  /* Surfaces */
+  --color-bg: #eef1f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f9fb;
+  --color-surface-soft: #f5f9f4;
+  --color-line: #e3e6e8;
+  --color-line-soft: rgba(20, 24, 30, .08);
+
+  /* Semantic */
+  --color-success: #259b42;
+  --color-success-bg: #f5f9f4;
+
+  /* Type */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif;
+  --font-display: "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "PingFang HK", "Microsoft JhengHei", sans-serif;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-card: 0 8px 24px rgba(20, 26, 32, .06);
+  --shadow-pop: 0 14px 40px rgba(20, 26, 32, .10);
+
+  /* Layout */
+  --max-content-width: 1320px;
+  --header-height: 64px;
+  --bottom-nav-height: 76px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0e1012;
+    --color-surface: #181b1e;
+    --color-surface-2: #1f2326;
+    --color-line: #2a2e32;
+    --color-ink: #f4f6f8;
+    --color-ink-2: #e5e8ea;
+    --color-secondary: #a0a6ad;
+  }
+}

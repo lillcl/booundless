@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'no build step required'",
+  "outputDirectory": ".",
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 5
+    }
+  },
+  "routes": [
+    { "src": "/api/health",       "dest": "/api/health.js" },
+    { "src": "/api/vehicles",     "dest": "/api/vehicles.js" },
+    { "src": "/api/vehicles/(.*)","dest": "/api/vehicles.js" },
+    { "src": "/api/reminders",    "dest": "/api/reminders.js" },
+    { "src": "/api/reminders/(.*)","dest": "/api/reminders.js" },
+    { "src": "/(.*)",             "dest": "/$1" }
+  ],
+  "env": {
+    "KC_DB_PATH": "@kc-db-path"
+  }
+}
