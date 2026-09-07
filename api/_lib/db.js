@@ -62,11 +62,11 @@ function seedDefaultData(db) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  insertVehicle.run('v-toyota', 'Toyota Corolla Cross', 'MA-23-88', 42680, '42,680 km',
+  insertVehicle.run('toyota', 'Toyota Corolla Cross', 'MA-23-88', 42680, '42,680 km',
     '/assets/scenic/hengqin-skyline.png', 'Isaac', 'isaac', now, now);
-  insertVehicle.run('v-bmw', 'BMW 320i', 'MP-81-26', 31200, '31,200 km',
+  insertVehicle.run('bmw', 'BMW 320i', 'MP-81-26', 31200, '31,200 km',
     '/assets/scenic/macau-skyline.png', 'Isaac', 'company', now, now);
-  insertVehicle.run('v-tesla', 'Tesla Model Y', 'MZ-18-54', 18540, '18,540 km',
+  insertVehicle.run('tesla', 'Tesla Model Y', 'MZ-18-54', 18540, '18,540 km',
     '/assets/scenic/qinao-bridge-drive.png', 'Isaac', 'family', now, now);
 
   const insertReminder = db.prepare(`
@@ -74,9 +74,9 @@ function seedDefaultData(db) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  insertReminder.run('r-toyota-oil', 'v-toyota', 'oil',
+  insertReminder.run('r-toyota-oil', 'toyota', 'oil',
     'Corolla Cross · 機油及機油隔', '約 1,320 km 後', 'oil', 'upcoming', now, now);
-  insertReminder.run('r-bmw-brake', 'v-bmw', 'brake',
+  insertReminder.run('r-bmw-brake', 'bmw', 'brake',
     'BMW 320i · 煞車油', '約 1 個月內', 'brake', 'upcoming', now, now);
 }
 
