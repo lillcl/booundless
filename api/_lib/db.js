@@ -63,11 +63,11 @@ function seedDefaultData(db) {
   `);
 
   insertVehicle.run('toyota', 'Toyota Corolla Cross', 'MA-23-88', 42680, '42,680 km',
-    '/assets/scenic/hengqin-skyline.png', 'Isaac', 'isaac', now, now);
+    '/assets/vehicle-toyota.jpg', 'Isaac', 'isaac', now, now);
   insertVehicle.run('bmw', 'BMW 320i', 'MP-81-26', 31200, '31,200 km',
-    '/assets/scenic/macau-skyline.png', 'Isaac', 'company', now, now);
+    '/assets/vehicle-bmw.jpg', 'Isaac', 'company', now, now);
   insertVehicle.run('tesla', 'Tesla Model Y', 'MZ-18-54', 18540, '18,540 km',
-    '/assets/scenic/qinao-bridge-drive.png', 'Isaac', 'family', now, now);
+    '/assets/vehicle-tesla.jpg', 'Isaac', 'family', now, now);
 
   const insertReminder = db.prepare(`
     INSERT INTO reminders (id, vehicle_id, kind, title, due_in, icon, status, created_at, updated_at)
