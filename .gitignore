@@ -25,3 +25,7 @@ db/*.db-shm
 
 # Reference assets (keep README + HTML, ignore bulky image binaries)
 reference/kangcheng_v10_4/assets/
+
+# Local secrets directory — never commit real keys
+keys/*
+!keys/README.txt
