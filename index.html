@@ -530,6 +530,9 @@ document.addEventListener('click',e=>{
     /* Static layout: section-title → detail-status-banner → .card.list
        (the maintenance rows). The banner is preserved and updated; the
        .card.list is replaced with live wear-bar rows. */
+    const sectionTitle = [...document.querySelectorAll('#vehicleDetailSimple .section-title')]
+      .find((el) => el.textContent.trim() === '目前狀態');
+    if (!sectionTitle) return;
     const banner = document.getElementById('detailMainStatus');
     const listCard = sectionTitle.nextElementSibling?.nextElementSibling
       || sectionTitle.parentElement?.querySelector('.card.list');

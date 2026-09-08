@@ -1,6 +1,7 @@
-/* 康程 CarAI — SQLite schema.
-   This is applied automatically by api/_lib/db.js on first connection, and
-   can also be run manually with: sqlite3 db/dev.db < db/schema.sql */
+-- 康程 CarAI — Postgres schema.
+-- Applied automatically by api/_lib/db.js on first connection, and
+-- can be run manually with:
+--   psql "$KC_DATABASE_URL" < db/schema.sql
 
 CREATE TABLE IF NOT EXISTS _meta (
   key   TEXT PRIMARY KEY,
@@ -16,8 +17,8 @@ CREATE TABLE IF NOT EXISTS vehicles (
   image         TEXT,
   owner         TEXT NOT NULL DEFAULT 'Isaac',
   team          TEXT,
-  created_at    TEXT NOT NULL,
-  updated_at    TEXT NOT NULL
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_vehicles_team ON vehicles(team);
@@ -25,13 +26,13 @@ CREATE INDEX IF NOT EXISTS idx_vehicles_team ON vehicles(team);
 CREATE TABLE IF NOT EXISTS reminders (
   id          TEXT PRIMARY KEY,
   vehicle_id  TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-  kind        TEXT NOT NULL,                  -- oil | brake | tire | filter | coolant | etc.
+  kind        TEXT NOT NULL,
   title       TEXT NOT NULL,
-  due_in      TEXT NOT NULL,                   -- "約 1,320 km 後" / "約 1 個月內"
+  due_in      TEXT NOT NULL,
   icon        TEXT NOT NULL DEFAULT 'oil',
-  status      TEXT NOT NULL DEFAULT 'upcoming', -- upcoming | overdue | done
-  created_at  TEXT NOT NULL,
-  updated_at  TEXT NOT NULL
+  status      TEXT NOT NULL DEFAULT 'upcoming',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_reminders_vehicle ON reminders(vehicle_id);
@@ -44,26 +45,26 @@ CREATE TABLE IF NOT EXISTS trips (
   destination  TEXT NOT NULL,
   distance_km  REAL NOT NULL,
   duration_min INTEGER NOT NULL,
-  created_at   TEXT NOT NULL
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS service_history (
-  id          TEXT PRIMARY KEY,
-  vehicle_id  TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-  performed_at TEXT NOT NULL,
-  kind        TEXT NOT NULL,
-  notes       TEXT,
-  mileage_km  INTEGER
+  id           TEXT PRIMARY KEY,
+  vehicle_id   TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+  performed_at TIMESTAMPTZ NOT NULL,
+  kind         TEXT NOT NULL,
+  notes        TEXT,
+  mileage_km   INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS vehicle_status (
-  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  id              SERIAL PRIMARY KEY,
   vehicle_id      TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
   item            TEXT NOT NULL,
   interval_km     INTEGER,
   interval_months INTEGER,
   last_done_km    INTEGER,
-  last_done_at    TEXT,
+  last_done_at    TIMESTAMPTZ,
   wear            INTEGER NOT NULL DEFAULT 0,
   display_order   INTEGER NOT NULL DEFAULT 0
 );

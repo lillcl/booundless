@@ -12,26 +12,26 @@ export default async function handler(req, res) {
     const url = req.url || '';
     const m = url.match(/^\/api\/vehicles\/([^/?#]+)\/status/);
     if (!m) return sendError(res, 400, 'bad_request', 'Missing vehicle id');
+    const id = decodeURIComponent(m[1]);
 
-    const db = getDb();
-    const vehicle = db.prepare('SELECT id, model FROM vehicles WHERE id = ?').get(m[1]);
-    if (!vehicle) return sendError(res, 404, 'not_found', `Vehicle ${m[1]} not found`);
+    const db = await getDb();
+    const v = await db.query('SELECT id, model FROM vehicles WHERE id = $1', [id]);
+    if (v.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
 
-    const items = db
-      .prepare(`
-        SELECT id, item, interval_km, interval_months, last_done_km,
-               last_done_at, wear, display_order
-        FROM vehicle_status
-        WHERE vehicle_id = ?
-        ORDER BY display_order ASC, id ASC
-      `)
-      .all(m[1]);
+    const r = await db.query(
+      `SELECT id, item, interval_km, interval_months, last_done_km,
+              last_done_at, wear, display_order
+       FROM vehicle_status
+       WHERE vehicle_id = $1
+       ORDER BY display_order ASC, id ASC`,
+      [id],
+    );
 
-    const attention = items.filter((i) => i.wear >= 80).map((i) => i.item);
+    const attention = r.rows.filter((i) => i.wear >= 80).map((i) => i.item);
 
     sendJSON(res, 200, {
-      vehicle: { id: vehicle.id, model: vehicle.model },
-      items,
+      vehicle: { id: v.rows[0].id, model: v.rows[0].model },
+      items: r.rows,
       attention_count: attention.length,
       attention,
     });
