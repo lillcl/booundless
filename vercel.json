@@ -6,18 +6,21 @@
     "api/*.js": {
       "runtime": "nodejs20.x",
       "memory": 256,
-      "maxDuration": 5
+      "maxDuration": 10
+    },
+    "api/vehicles/[id]/status.js": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 10
     }
   },
   "routes": [
-    { "src": "/api/health",       "dest": "/api/health.js" },
-    { "src": "/api/vehicles",     "dest": "/api/vehicles.js" },
-    { "src": "/api/vehicles/(.*)","dest": "/api/vehicles.js" },
-    { "src": "/api/reminders",    "dest": "/api/reminders.js" },
-    { "src": "/api/reminders/(.*)","dest": "/api/reminders.js" },
-    { "src": "/(.*)",             "dest": "/$1" }
-  ],
-  "env": {
-    "KC_DB_PATH": "@kc-db-path"
-  }
+    { "src": "/api/health",                  "dest": "/api/health.js" },
+    { "src": "/api/vehicles",                "dest": "/api/vehicles.js" },
+    { "src": "/api/vehicles/([^/]+)/status", "dest": "/api/vehicles/[id]/status.js" },
+    { "src": "/api/vehicles/([^/]+)",        "dest": "/api/vehicles.js" },
+    { "src": "/api/reminders",               "dest": "/api/reminders.js" },
+    { "src": "/api/reminders/([^/]+)",       "dest": "/api/reminders.js" },
+    { "src": "/(.*)",                        "dest": "/$1" }
+  ]
 }
