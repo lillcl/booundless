@@ -6,5 +6,10 @@
     "api/**/*.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/vehicles/([^/]+)/status", "destination": "/api/vehicles" },
+    { "source": "/api/vehicles/([^/]+)",         "destination": "/api/vehicles" },
+    { "source": "/api/reminders/([^/]+)",        "destination": "/api/reminders" }
+  ]
 }

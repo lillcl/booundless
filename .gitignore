@@ -31,3 +31,4 @@ keys/*
 !keys/README.txt
 .vercel
 .env*
+production
