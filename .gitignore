@@ -29,3 +29,5 @@ reference/kangcheng_v10_4/assets/
 # Local secrets directory — never commit real keys
 keys/*
 !keys/README.txt
+.vercel
+.env*
