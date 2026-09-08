@@ -55,3 +55,17 @@ CREATE TABLE IF NOT EXISTS service_history (
   notes       TEXT,
   mileage_km  INTEGER
 );
+
+CREATE TABLE IF NOT EXISTS vehicle_status (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  vehicle_id      TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+  item            TEXT NOT NULL,
+  interval_km     INTEGER,
+  interval_months INTEGER,
+  last_done_km    INTEGER,
+  last_done_at    TEXT,
+  wear            INTEGER NOT NULL DEFAULT 0,
+  display_order   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_status_vehicle ON vehicle_status(vehicle_id);

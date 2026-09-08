@@ -104,6 +104,22 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
   background:#fff7e9;border:1px solid #f0dfbd;color:#765216;
   font-size:14px;font-weight:750
 }
+.detail-status-banner.ok{background:#eef6ef;border-color:#d9e8dc;color:#285a37}
+.detail-status-banner.urgent{background:#fbe9e6;border-color:#f3c7c0;color:#9c2a1c}
+
+/* Wear progress bar (no percentage shown) */
+.wear-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;min-height:74px;padding:15px 18px;border-bottom:1px solid var(--line);background:#fff}
+.wear-row:last-child{border-bottom:0}
+.wear-row b{display:block;font-size:16px}
+.wear-row small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.wear-bar{grid-column:1 / -1;width:100%;height:6px;background:#eef1f2;border-radius:99px;overflow:hidden;margin-top:10px}
+.wear-bar__fill{height:100%;border-radius:99px;background:#3d7c4b;transition:width .35s ease}
+.wear-bar__fill.mid{background:#9a6818}
+.wear-bar__fill.high{background:#cf3a2e}
+.wear-row .state{font-size:13px;font-weight:750;white-space:nowrap}
+.wear-row .state.ok{color:#3d7c4b}
+.wear-row .state.warn{color:#9a6818}
+.wear-row .state.urgent{color:#cf3a2e}
 
 </style>
 </head>
@@ -490,17 +506,72 @@ document.addEventListener('click',e=>{
   }
 
   /* 3. Override openCarDetail so the detail screen reads from API data */
-  window.openCarDetail = (id) => {
+  const statusCache = new Map();
+  async function loadStatus(id) {
+    if (statusCache.has(id)) return statusCache.get(id);
+    try {
+      const data = await fetch(`/api/vehicles/${id}/status`).then((r) => r.json());
+      statusCache.set(id, data);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  window.openCarDetail = async (id) => {
     const v = vehicles.find((x) => x.id === id);
     if (!v) return;
-    const r = reminders.find((x) => x.vehicle_id === id);
     document.getElementById('detailCarName').textContent = v.model;
     document.getElementById('detailCarMeta').textContent = v.mileage_label;
     document.getElementById('detailCarPhoto').src = v.image || '';
     document.getElementById('detailCarPhoto').alt = v.model;
-    const statusTitle = document.getElementById('detailMainStatus');
-    if (statusTitle) statusTitle.textContent = r ? r.title : '目前狀態正常';
     showScreen('vehicleDetailSimple');
+
+    /* Static layout: section-title → detail-status-banner → .card.list
+       (the maintenance rows). The banner is preserved and updated; the
+       .card.list is replaced with live wear-bar rows. */
+    const banner = document.getElementById('detailMainStatus');
+    const listCard = sectionTitle.nextElementSibling?.nextElementSibling
+      || sectionTitle.parentElement?.querySelector('.card.list');
+    if (!listCard || !listCard.classList.contains('list')) return;
+
+    listCard.innerHTML = '<div class="wear-row"><span><b>載入中…</b><small>正在取得車況資料</small></span></div>';
+    const data = await loadStatus(id);
+    if (!data || !data.items) {
+      listCard.innerHTML = '<div class="wear-row"><span><b>無法取得車況資料</b></span></div>';
+      return;
+    }
+
+    if (banner) {
+      if (data.attention_count > 0) {
+        banner.classList.remove('ok');
+        banner.classList.add('urgent');
+        banner.textContent = `${data.attention_count} 項需要處理：${data.attention.slice(0, 2).join('、')}${data.attention.length > 2 ? '…' : ''}`;
+      } else {
+        banner.classList.remove('urgent');
+        banner.classList.add('ok');
+        banner.textContent = '所有主要項目都在建議週期內';
+      }
+    }
+
+    listCard.innerHTML = data.items.map((it) => {
+      const wear = Math.max(0, Math.min(100, Number(it.wear) || 0));
+      const tone = wear >= 80 ? 'high' : (wear >= 50 ? 'mid' : '');
+      const state = wear >= 80 ? 'urgent' : (wear >= 50 ? 'warn' : 'ok');
+      const stateText = wear >= 80 ? '需要處理' : (wear >= 50 ? '接近' : '正常');
+      const meta = it.last_done_km
+        ? `上次：${it.last_done_km.toLocaleString()} km${it.interval_km ? ` · 週期：${it.interval_km.toLocaleString()} km` : ''}`
+        : (it.interval_km ? `週期：${it.interval_km.toLocaleString()} km` : '—');
+      return `
+        <div class="wear-row">
+          <span>
+            <b>${esc(it.item)}</b>
+            <small>${esc(meta)}</small>
+          </span>
+          <span class="state ${state}">${stateText}</span>
+          <div class="wear-bar"><div class="wear-bar__fill ${tone}" style="width:${wear}%"></div></div>
+        </div>`;
+    }).join('');
   };
 
   /* 4. Update team filter button to reflect current count */

@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 
 import healthHandler from '../api/health.js';
 import vehiclesHandler from '../api/vehicles.js';
+import vehicleStatusHandler from '../api/vehicles/[id]/status.js';
 import remindersHandler from '../api/reminders.js';
 import { closeDb } from '../api/_lib/db.js';
 
@@ -32,6 +33,7 @@ function adapt(handler) {
 app.get('/api/health', adapt(healthHandler));
 app.get('/api/vehicles', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id', adapt(vehiclesHandler));
+app.get('/api/vehicles/:id/status', adapt(vehicleStatusHandler));
 app.get('/api/reminders', adapt(remindersHandler));
 app.get('/api/reminders/:id', adapt(remindersHandler));
 
