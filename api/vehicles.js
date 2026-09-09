@@ -26,11 +26,29 @@ async function handleStatus(req, res, id) {
   });
 }
 
+async function handleHistory(req, res, id) {
+  const db = await getDb();
+  const v = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
+  if (v.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
+
+  const r = await db.query(
+    `SELECT id, vehicle_id, performed_at, kind, title, notes, cost, mileage_km
+     FROM service_history
+     WHERE vehicle_id = $1
+     ORDER BY performed_at DESC`,
+    [id],
+  );
+  sendJSON(res, 200, { data: r.rows, count: r.rowCount });
+}
+
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET'])) return;
 
   try {
     const url = req.url || '';
+    const historyMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/history\/?$/);
+    if (historyMatch) return await handleHistory(req, res, decodeURIComponent(historyMatch[1]));
+
     const statusMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/status\/?$/);
     if (statusMatch) return await handleStatus(req, res, decodeURIComponent(statusMatch[1]));
 

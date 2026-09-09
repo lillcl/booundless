@@ -53,9 +53,15 @@ CREATE TABLE IF NOT EXISTS service_history (
   vehicle_id   TEXT NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
   performed_at TIMESTAMPTZ NOT NULL,
   kind         TEXT NOT NULL,
+  title        TEXT NOT NULL,
   notes        TEXT,
+  cost         TEXT,
   mileage_km   INTEGER
 );
+
+ALTER TABLE service_history
+  ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS cost  TEXT;
 
 CREATE TABLE IF NOT EXISTS vehicle_status (
   id              SERIAL PRIMARY KEY,

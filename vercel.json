@@ -8,8 +8,9 @@
     }
   },
   "rewrites": [
-    { "source": "/api/vehicles/([^/]+)/status", "destination": "/api/vehicles" },
-    { "source": "/api/vehicles/([^/]+)",         "destination": "/api/vehicles" },
-    { "source": "/api/reminders/([^/]+)",        "destination": "/api/reminders" }
+    { "source": "/api/vehicles/([^/]+)/history", "destination": "/api/vehicles" },
+    { "source": "/api/vehicles/([^/]+)/status",  "destination": "/api/vehicles" },
+    { "source": "/api/vehicles/([^/]+)",          "destination": "/api/vehicles" },
+    { "source": "/api/reminders/([^/]+)",         "destination": "/api/reminders" }
   ]
 }

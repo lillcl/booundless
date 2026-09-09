@@ -151,9 +151,8 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
 
       <div>
         <div class="section-title" style="margin-top:0">最近</div>
-        <div class="card list records">
-          <div class="row visual-row"><img class="record-photo" src="assets/garage-1.jpg" alt="保養紀錄"><span class="record-copy"><b>機油及機油隔</b><small>2026/06/12 · 38,420 km</small></span><span class="state ok">已完成</span></div>
-          <div class="row"><span><b>塵格</b><small>2026/02/03 · 34,200 km</small></span><span class="state ok">已完成</span></div>
+        <div class="card list records" id="recentRecords">
+          <div class="row visual-row"><span class="record-copy"><b>載入中…</b><small>正在取得最近保養紀錄</small></span></div>
         </div>
       </div>
     </div>
@@ -229,9 +228,8 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
     </div>
     <button class="primary" id="detailFixBtn">幫我搞掂需要處理的項目</button>
     <div class="section-title">保養紀錄</div>
-    <div class="card list records">
-      <div class="row"><span><b>2026/06/12 · 機油及機油隔</b><small>MOP 980 · 38,420 km</small></span><span>›</span></div>
-      <div class="row"><span><b>2026/02/03 · 塵格</b><small>MOP 230 · 34,200 km</small></span><span>›</span></div>
+    <div class="card list records" id="detailRecords">
+      <div class="row"><span class="record-copy"><b>載入中…</b><small>正在取得保養紀錄</small></span></div>
     </div>
   </div>
 </section>
@@ -453,12 +451,14 @@ document.addEventListener('click',e=>{
   const unwrap = (p) => Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : []);
   const teamLabel = (t) => ({ isaac: 'Isaac 團隊共同管理', company: '公司車隊共同管理', family: 'Leong 家庭共同管理' }[t] || `${t} 團隊共同管理`);
 
-  const [vehiclesRes, remindersRes] = await Promise.allSettled([
+  const [vehiclesRes, remindersRes, historyRes] = await Promise.allSettled([
     fetch('/api/vehicles').then((r) => r.json()),
     fetch('/api/reminders').then((r) => r.json()),
+    fetch('/api/history/recent?limit=5').then((r) => r.json()),
   ]);
   const vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
   const reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
+  const history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
   if (!vehicles.length) return;
 
   /* 1. Home hero card — show the first vehicle and its most urgent reminder */
@@ -575,6 +575,26 @@ document.addEventListener('click',e=>{
           <div class="wear-bar"><div class="wear-bar__fill ${tone}" style="width:${wear}%"></div></div>
         </div>`;
     }).join('');
+
+    /* Render the "保養紀錄" section from /api/vehicles/:id/history */
+    const historyEl = document.getElementById('detailRecords');
+    if (historyEl) {
+      try {
+        const hRes = await fetch(`/api/vehicles/${encodeURIComponent(id)}/history`).then((r) => r.json());
+        const items = Array.isArray(hRes) ? hRes : (Array.isArray(hRes?.data) ? hRes.data : []);
+        if (items.length) {
+          historyEl.innerHTML = items.map((h) => {
+            const when = h.performed_at ? new Date(h.performed_at).toISOString().slice(0, 10) : '';
+            const parts = [when, h.cost, h.mileage_km ? `${h.mileage_km.toLocaleString()} km` : ''].filter(Boolean);
+            return `<div class="row"><span class="record-copy"><b>${esc(when)} · ${esc(h.title)}</b><small>${esc(parts.join(' · '))}</small></span><span>›</span></div>`;
+          }).join('');
+        } else {
+          historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b></span></div>';
+        }
+      } catch {
+        historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>無法取得保養紀錄</b></span></div>';
+      }
+    }
   };
 
   /* 4. Update team filter button to reflect current count */
@@ -582,6 +602,22 @@ document.addEventListener('click',e=>{
   if (teamBtn) {
     const teams = new Set(vehicles.map((v) => v.team).filter(Boolean));
     teamBtn.innerHTML = `全部團隊 · ${teams.size} 個團隊 <span>⌄</span>`;
+  }
+
+  /* 5. Render home page "最近" (recent service records) from /api/history/recent */
+  const recentEl = document.getElementById('recentRecords');
+  if (recentEl) {
+    if (history.length) {
+      recentEl.innerHTML = history.map((h) => {
+        const when = h.performed_at ? new Date(h.performed_at).toISOString().slice(0, 10) : '';
+        const mileage = h.mileage_km ? `${h.mileage_km.toLocaleString()} km` : '';
+        const meta = [when, mileage].filter(Boolean).join(' · ');
+        const copy = `<b>${esc(h.title)}</b><small>${esc(meta)}</small>`;
+        return `<div class="row visual-row"><span class="record-copy">${copy}</span><span class="state ok">已完成</span></div>`;
+      }).join('');
+    } else {
+      recentEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b></span></div>';
+    }
   }
 })();
 </script>
