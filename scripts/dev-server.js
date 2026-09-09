@@ -2,6 +2,9 @@
    from api/*.js. In production, Vercel/Netlify run these files directly as
    serverless functions; in dev, this shim keeps the code path identical. */
 
+import { config as loadDotenv } from 'dotenv';
+loadDotenv();
+
 import express from 'express';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +14,10 @@ import healthHandler from '../api/health.js';
 import vehiclesHandler from '../api/vehicles.js';
 import historyHandler from '../api/history.js';
 import remindersHandler from '../api/reminders.js';
+import authHandler from '../api/auth.js';
+import usersHandler from '../api/users.js';
+import assetsHandler from '../api/assets.js';
+import auditHandler from '../api/audit.js';
 import { closeDb } from '../api/_lib/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -39,6 +46,15 @@ app.get('/api/history', adapt(historyHandler));
 app.get('/api/history/recent', adapt(historyHandler));
 app.get('/api/reminders', adapt(remindersHandler));
 app.get('/api/reminders/:id', adapt(remindersHandler));
+app.get('/api/auth/me', adapt(authHandler));
+app.post('/api/auth/login', adapt(authHandler));
+app.post('/api/auth/logout', adapt(authHandler));
+app.get('/api/users', adapt(usersHandler));
+app.post('/api/users', adapt(usersHandler));
+app.patch('/api/users/:id', adapt(usersHandler));
+app.delete('/api/users/:id', adapt(usersHandler));
+app.get('/api/assets', adapt(assetsHandler));
+app.get('/api/audit', adapt(auditHandler));
 
 /* Static assets — serve the repo at root. */
 app.use(express.static(root, {

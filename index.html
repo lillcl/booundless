@@ -30,6 +30,41 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
 .records .row{min-height:68px}
 .profile-card{padding:22px}.profile-card h2{margin:0 0 5px}.profile-card p{margin:0;color:var(--muted)}
 .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(520px,calc(100% - 24px));height:66px;padding:6px;background:rgba(255,255,255,.95);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 35px rgba(20,25,30,.12);display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
+.kc-bottom-nav{grid-template-columns:repeat(3,1fr) !important}
+
+/* Auth top bar */
+.kc-topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:18px;padding:14px clamp(16px,3vw,40px);background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.kc-topbar__brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--ink);text-decoration:none}
+.kc-topbar__mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--color-brand);color:#fff;font-size:14px;font-weight:800}
+.kc-topbar__nav{display:flex;gap:18px;flex:1;margin-left:8px}
+.kc-topbar__nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px;padding:6px 0;border-bottom:2px solid transparent}
+.kc-topbar__nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--color-brand)}
+.kc-topbar__user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:14px}
+.kc-topbar__user a{color:var(--ink);text-decoration:none;font-weight:700;padding:8px 14px;border:1px solid var(--line);border-radius:99px;background:#fff}
+.kc-topbar__user a:hover{border-color:var(--ink)}
+.kc-topbar__user .who{color:var(--muted)}
+.kc-topbar__user .role{font-size:11px;background:var(--color-brand-soft);color:var(--color-brand);padding:2px 8px;border-radius:99px;margin-left:4px}
+.kc-topbar__user .signout{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px;padding:6px 12px;border-radius:99px;cursor:pointer}
+.kc-topbar__user .signout:hover{color:var(--ink);border-color:var(--ink)}
+
+/* Tab strip used on admin Assets + Audit pages */
+.kc-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.kc-tab{border:0;background:transparent;padding:8px 14px;border-radius:99px;font-weight:600;color:var(--muted);cursor:pointer;font-size:14px}
+.kc-tab.active{background:#111;color:#fff}
+.kc-tab:hover:not(.active){background:#eef1f2}
+
+/* Audit log rows */
+.audit-row{display:grid;grid-template-columns:1fr auto;gap:6px 14px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:start}
+.audit-row:last-child{border-bottom:0}
+.audit-row__head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.audit-row__id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted);background:#f3f5f7;padding:1px 6px;border-radius:4px}
+.audit-row__action{font-weight:700;font-size:14px}
+.audit-row__when{color:var(--muted);font-size:12px}
+.audit-row__actor{color:var(--ink);font-size:13px}
+.audit-row__target{color:var(--secondary);font-size:13px}
+.audit-row__payload{margin-top:6px}
+.audit-row__payload summary{color:var(--muted);font-size:12px;cursor:pointer;user-select:none}
+.audit-row__payload pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f7f8f8;border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 0;overflow:auto;max-height:200px}
 .nav button{border:0;background:transparent;border-radius:16px;color:#737a80;font-weight:700}.nav button.active{background:#111;color:#fff}
 .overlay{position:fixed;inset:0;background:rgba(17,20,22,.34);display:none;align-items:flex-end;justify-content:center;z-index:50}.overlay.open{display:flex}
 .sheet{width:min(620px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:28px 28px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -20px 60px rgba(15,19,22,.18)}
@@ -126,6 +161,20 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
 <body>
 <div class="app">
 
+<header class="kc-topbar">
+  <a class="kc-topbar__brand" href="#/home"><span class="kc-topbar__mark">康</span><b>CarAI</b></a>
+  <nav class="kc-topbar__nav">
+    <a href="#/home" data-nav="home">首頁</a>
+    <a href="#/garage" data-nav="garage">車庫</a>
+    <a href="#/qinao" data-nav="qinao">琴澳</a>
+    <a href="#/admin/users" data-nav="admin/users" data-admin-only>管理</a>
+  </nav>
+  <div class="kc-topbar__user" id="topbarUser">
+    <a href="#/login" data-nav="login" data-anon-only>登入</a>
+  </div>
+</header>
+
+<div class="kc-content">
 <section class="screen active" id="home">
   <div class="wrap">
     <div class="top">
@@ -246,7 +295,19 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
   </div>
 </section>
 
-<nav class="nav">
+<section class="screen" id="login" style="display:none">
+  <div class="wrap">
+    <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
+    <form class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
+      <div class="field"><label>電郵</label><input type="email" autocomplete="email" placeholder="admin@example.com"></div>
+      <div class="field"><label>密碼</label><input type="password" autocomplete="current-password"></div>
+      <button class="primary">登入</button>
+      <button class="secondary">返回首頁</button>
+    </form>
+  </div>
+</section>
+
+<nav class="nav kc-bottom-nav">
   <button class="active" data-tab="home">首頁</button>
   <button data-tab="car">我的車</button>
   <button data-tab="profile">我的</button>
@@ -258,6 +319,8 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
     <div id="sheetContent"></div>
   </div>
 </div>
+
+<div id="view"></div>
 
 </div>
 
@@ -342,9 +405,9 @@ function openOutcome(type='service'){
   `);
   $('#confirmJob').onclick=()=>{sheet.innerHTML=`<h2>已安排</h2><p>康程會繼續跟進服務、額外項目及完成紀錄。</p><button class="primary" id="doneSheet">完成</button>`;$('#doneSheet').onclick=closeSheet};
 }
-$('#fixBtn').onclick=()=>openOutcome('service');
+$('#fixBtn')?.onclick=()=>openOutcome('service');
 
-$('#editMileage').onclick=()=>openSheet(`
+$('#editMileage')?.onclick=()=>openSheet(`
   <h2>更新里程</h2><p>只需輸入大概里程即可。</p>
   <div class="field"><label>目前里程</label><input value="42680"></div>
   <button class="primary" id="saveMileage">儲存</button>
@@ -619,6 +682,357 @@ document.addEventListener('click',e=>{
       recentEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b></span></div>';
     }
   }
+
+  /* ── 6. Auth + admin console ── */
+  /* The V11.3 demo uses static <section class="screen"> blocks and a
+     showScreen() helper in the original inline script. New auth/admin
+     screens live in <div id="view">. We delegate to showScreen() for
+     the static routes and render into #view for the new ones. */
+  const view = document.getElementById('view');
+  const STATIC_ROUTES = new Set(['home', 'garage', 'service', 'qinao', 'videos', 'profile']);
+  const NEW_ROUTES = {
+    login: renderLogin,
+    'admin/users': renderAdminUsers,
+    'admin/assets': renderAdminAssets,
+    'admin/audit': renderAdminAudit,
+  };
+
+  function getRoute() {
+    const raw = (window.location.hash || '').replace(/^#\/?/, '').split('?')[0];
+    return raw || 'home';
+  }
+
+  async function dispatch() {
+    const name = getRoute();
+    syncTopbarNav();
+    console.log('[dispatch]', name, 'NEW_ROUTES keys:', Object.keys(NEW_ROUTES), 'view?', !!view);
+    /* Hide any previously rendered view content */
+    if (view) view.innerHTML = '';
+    if (STATIC_ROUTES.has(name)) {
+      if (typeof window.showScreen === 'function') {
+        window.showScreen(name);
+      } else {
+        document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+        const target = document.getElementById(name);
+        if (target) target.classList.add('active');
+      }
+      return;
+    }
+    /* Auth/admin: hide all static sections, render into #view */
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+    const handler = NEW_ROUTES[name];
+    if (handler && view) {
+      await handler(view);
+    } else if (view) {
+      view.innerHTML = '<div class="placeholder"><h2>找不到頁面</h2><p>此路由尚未實作。</p></div>';
+    }
+  }
+  window.addEventListener('hashchange', () => { renderTopbar(); dispatch(); });
+  if (!window.location.hash) window.location.hash = '#/home';
+  await dispatch();
+
+  let me = null; // { id, email, role, display_name, is_active }
+
+  async function fetchMe() {
+    try {
+      const r = await fetch('/api/auth/me');
+      if (r.ok) {
+        const d = await r.json();
+        me = d.user;
+      } else {
+        me = null;
+      }
+    } catch { me = null; }
+  }
+
+  function renderTopbar() {
+    const userEl = document.getElementById('topbarUser');
+    const navLinks = document.querySelectorAll('.kc-topbar__nav a[data-admin-only]');
+    const anonLinks = document.querySelectorAll('.kc-topbar__user a[data-anon-only]');
+    if (!me) {
+      userEl.innerHTML = '<a href="#/login" data-nav="login">登入</a>';
+      navLinks.forEach((a) => a.style.display = 'none');
+      anonLinks.forEach((a) => a.style.display = '');
+    } else {
+      navLinks.forEach((a) => a.style.display = me.role === 'admin' ? '' : 'none');
+      anonLinks.forEach((a) => a.style.display = 'none');
+      userEl.innerHTML =
+        '<span class="who">' + esc(me.display_name || me.email) +
+        '<span class="role">' + esc(me.role) + '</span></span>' +
+        '<button class="signout" id="signoutBtn">登出</button>';
+      const btn = document.getElementById('signoutBtn');
+      if (btn) btn.onclick = async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        me = null;
+        renderTopbar();
+        window.location.hash = '#/home';
+      };
+    }
+    syncTopbarNav();
+  }
+
+  function syncTopbarNav() {
+    const name = getRoute();
+    document.querySelectorAll('.kc-topbar__nav a[data-nav]').forEach((a) => {
+      const href = a.getAttribute('href') || '';
+      const target = href.replace(/^#\/?/, '').split('?')[0];
+      if (target === name) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+
+  function renderLogin(root) {
+    /* Render directly into #view, not by copying the hidden <section> (which
+       has display:none and would shadow the inputs). */
+    root.innerHTML = `
+      <div class="wrap">
+        <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
+        <form id="loginForm" class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
+          <div class="field"><label>電郵</label><input id="loginEmail" type="email" autocomplete="email" placeholder="admin@example.com" required></div>
+          <div class="field"><label>密碼</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+          <div id="loginError" style="color:#cf3a2e;font-size:14px;display:none"></div>
+          <button class="primary" type="submit">登入</button>
+          <button class="secondary" type="button" id="loginBack">返回首頁</button>
+        </form>
+      </div>`;
+  }
+
+  /* Login form: re-bind handler after the section is rendered into #view */
+  document.addEventListener('submit', async (e) => {
+    if (e.target && e.target.id === 'loginForm') {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errEl = document.getElementById('loginError');
+      errEl.style.display = 'none';
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (r.ok) {
+        const d = await r.json();
+        me = d.user;
+        renderTopbar();
+        window.location.hash = '#/home';
+      } else {
+        const d = await r.json().catch(() => ({}));
+        errEl.textContent = d?.error?.message || '登入失敗';
+        errEl.style.display = 'block';
+      }
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'loginBack') {
+      e.preventDefault();
+      window.location.hash = '#/home';
+    }
+  });
+
+  /* Admin Users */
+  async function renderAdminUsers(root) {
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>用戶管理</h1><p>建立、編輯、停用帳號。</p></div></div>' +
+      '<form id="userCreateForm" class="card" style="padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;max-width:100%">' +
+        '<div class="field" style="margin:0"><label>電郵</label><input id="userCreateEmail" type="email" required></div>' +
+        '<div class="field" style="margin:0"><label>密碼</label><input id="userCreatePassword" type="password" minlength="6" required></div>' +
+        '<div class="field" style="margin:0"><label>角色</label><select id="userCreateRole"><option value="user">user</option><option value="admin">admin</option></select></div>' +
+        '<button class="primary" type="submit" style="height:54px;width:120px;margin:0">新增</button>' +
+      '</form>' +
+      '<div class="card list" id="usersList" style="margin-top:16px"><div class="row"><b>載入中…</b></div></div></div>';
+    await loadUsersList();
+    const form = document.getElementById('userCreateForm');
+    if (form) form.onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('userCreateEmail').value;
+      const password = document.getElementById('userCreatePassword').value;
+      const role = document.getElementById('userCreateRole').value;
+      const r = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password, role }),
+      });
+      if (r.ok) {
+        form.reset();
+        await loadUsersList();
+      } else {
+        const d = await r.json().catch(() => ({}));
+        alert(d?.error?.message || '建立失敗');
+      }
+    };
+  }
+
+  async function loadUsersList() {
+    const root = document.getElementById('usersList');
+    if (!root) return;
+    const r = await fetch('/api/users');
+    if (!r.ok) { root.innerHTML = '<div class="row"><b>無法讀取</b></div>'; return; }
+    const d = await r.json();
+    if (!d.data.length) { root.innerHTML = '<div class="row"><b>尚無用戶</b></div>'; return; }
+    root.innerHTML = d.data.map((u) => {
+      const id = esc(u.id);
+      const dot = u.is_active ? '' : ' <span style="color:#cf3a2e">（已停用）</span>';
+      return `<div class="row" data-uid="${id}">
+        <div class="record-copy">
+          <b>${esc(u.email)}${dot}</b>
+          <small>${esc(u.display_name || '')} · 建立 ${esc((u.created_at || '').slice(0,10))}</small>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select data-role-select="${id}" style="height:36px;border-radius:8px;border:1px solid var(--line);padding:0 8px">
+            <option value="user" ${u.role === 'user' ? 'selected' : ''}>user</option>
+            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>admin</option>
+          </select>
+          <button data-act="toggle" data-uid="${id}" data-active="${u.is_active}" style="height:36px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer">${u.is_active ? '停用' : '啟用'}</button>
+        </div>
+      </div>`;
+    }).join('');
+    root.querySelectorAll('select[data-role-select]').forEach((sel) => {
+      sel.onchange = async () => {
+        const id = sel.dataset.roleSelect;
+        const role = sel.value;
+        await fetch('/api/users/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ role }),
+        });
+        await loadUsersList();
+      };
+    });
+    root.querySelectorAll('button[data-act="toggle"]').forEach((btn) => {
+      btn.onclick = async () => {
+        const id = btn.dataset.uid;
+        const next = btn.dataset.active === 'true' ? false : true;
+        await fetch('/api/users/' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ is_active: next }),
+        });
+        await loadUsersList();
+      };
+    });
+  }
+
+  /* Admin Assets */
+  let adminAssetsCache = null;
+  let adminAssetsTab = 'vehicles';
+
+  async function renderAdminAssets(root) {
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>所有資產</h1><p>管理員可看見資料庫內全部車輛、保養與維修紀錄。</p></div></div>' +
+      '<div class="kc-tabs">' +
+        '<button class="kc-tab active" data-tab="vehicles">車輛 (<span id="cntVehicles">…</span>)</button>' +
+        '<button class="kc-tab" data-tab="reminders">保養提醒 (<span id="cntReminders">…</span>)</button>' +
+        '<button class="kc-tab" data-tab="history">維修紀錄 (<span id="cntHistory">…</span>)</button>' +
+      '</div>' +
+      '<div id="adminAssetsPane" class="card list" style="margin-top:16px"><div class="row"><b>載入中…</b></div></div></div>';
+    const r = await fetch('/api/assets');
+    if (!r.ok) {
+      document.getElementById('adminAssetsPane').innerHTML = '<div class="row"><b>無法讀取</b></div>';
+      return;
+    }
+    adminAssetsCache = await r.json();
+    document.getElementById('cntVehicles').textContent = adminAssetsCache.counts.vehicles;
+    document.getElementById('cntReminders').textContent = adminAssetsCache.counts.reminders;
+    document.getElementById('cntHistory').textContent = adminAssetsCache.counts.history;
+    root.querySelectorAll('.kc-tab[data-tab]').forEach((b) => {
+      b.onclick = () => {
+        adminAssetsTab = b.dataset.tab;
+        root.querySelectorAll('.kc-tab[data-tab]').forEach((x) => x.classList.toggle('active', x === b));
+        renderAdminAssetsPane();
+      };
+    });
+    renderAdminAssetsPane();
+  }
+
+  function renderAdminAssetsPane() {
+    const pane = document.getElementById('adminAssetsPane');
+    if (!pane || !adminAssetsCache) return;
+    if (adminAssetsTab === 'vehicles') {
+      pane.innerHTML = adminAssetsCache.vehicles.map((v) =>
+        `<div class="row visual-row">
+          <img class="record-photo" src="${esc(v.image || '')}" alt="">
+          <span class="record-copy">
+            <b>${esc(v.model)} · ${esc(v.plate || '')}</b>
+            <small>${esc(v.mileage_label || '')} · ${esc(v.owner || '')}${v.team ? ' · ' + esc(v.team) : ''}</small>
+          </span>
+          <span class="state ok">車輛</span>
+        </div>`).join('') || '<div class="row"><b>尚無車輛</b></div>';
+    } else if (adminAssetsTab === 'reminders') {
+      pane.innerHTML = adminAssetsCache.reminders.map((r) =>
+        `<div class="row">
+          <span class="record-copy"><b>${esc(r.title)}</b><small>${esc(r.due_in)} · ${esc(r.vehicle_model || '')} ${esc(r.vehicle_plate || '')}</small></span>
+          <span class="state ${r.status === 'overdue' ? 'urgent' : 'ok'}">${esc(r.status)}</span>
+        </div>`).join('') || '<div class="row"><b>尚無保養提醒</b></div>';
+    } else {
+      pane.innerHTML = adminAssetsCache.history.map((h) => {
+        const when = (h.performed_at || '').slice(0, 10);
+        const parts = [when, h.cost, h.mileage_km ? h.mileage_km.toLocaleString() + ' km' : ''].filter(Boolean);
+        return `<div class="row">
+          <span class="record-copy">
+            <b>${esc(when)} · ${esc(h.title)}</b>
+            <small>${esc(parts.join(' · '))} · ${esc(h.vehicle_model || '')} ${esc(h.vehicle_plate || '')}</small>
+          </span>
+          <span class="state ok">已完成</span>
+        </div>`;
+      }).join('') || '<div class="row"><b>尚無維修紀錄</b></div>';
+    }
+  }
+
+  /* Admin Audit */
+  let adminAuditFilter = '';
+
+  async function renderAdminAudit(root) {
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>稽核紀錄</h1><p>每個動作都有唯一 ID、執行者、對象、payload 與時間戳。</p></div></div>' +
+      '<div class="kc-tabs">' +
+        '<button class="kc-tab active" data-aafilter="">全部</button>' +
+        '<button class="kc-tab" data-aafilter="auth">auth.*</button>' +
+        '<button class="kc-tab" data-aafilter="user">user.*</button>' +
+      '</div>' +
+      '<div id="adminAuditList" class="card list" style="margin-top:16px"><div class="row"><b>載入中…</b></div></div></div>';
+    root.querySelectorAll('.kc-tab[data-aafilter]').forEach((b) => {
+      b.onclick = () => {
+        adminAuditFilter = b.dataset.aafilter || '';
+        root.querySelectorAll('.kc-tab[data-aafilter]').forEach((x) => x.classList.toggle('active', x === b));
+        loadAdminAudit();
+      };
+    });
+    await loadAdminAudit();
+  }
+
+  async function loadAdminAudit() {
+    const list = document.getElementById('adminAuditList');
+    if (!list) return;
+    let url = '/api/audit?limit=100';
+    if (adminAuditFilter) url += '&action=' + encodeURIComponent(adminAuditFilter) + '%25'; // % to LIKE
+    const r = await fetch(url);
+    if (!r.ok) { list.innerHTML = '<div class="row"><b>無法讀取</b></div>'; return; }
+    const d = await r.json();
+    if (!d.data.length) { list.innerHTML = '<div class="row"><b>尚無稽核紀錄</b></div>'; return; }
+    list.innerHTML = d.data.map((r) => {
+      const idShort = (r.id || '').slice(0, 8);
+      const target = r.target_type
+        ? `${esc(r.target_type)}${r.target_id ? ' ' + esc((r.target_id + '').slice(0, 12)) : ''}`
+        : '—';
+      const payloadStr = JSON.stringify(r.payload || {}, null, 2);
+      return `<div class="audit-row">
+        <div>
+          <div class="audit-row__head">
+            <span class="audit-row__id">${esc(idShort)}</span>
+            <span class="audit-row__action">${esc(r.action)}</span>
+            <span class="audit-row__target">${target}</span>
+          </div>
+          <div class="audit-row__actor">${esc(r.actor_email)}</div>
+        </div>
+        <div class="audit-row__when">${esc((r.created_at || '').slice(0,19).replace('T', ' '))}</div>
+        <div class="audit-row__payload" style="grid-column:1 / -1">
+          <details><summary>payload</summary><pre>${esc(payloadStr)}</pre></details>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* Bootstrap: fetch session and render topbar */
+  await fetchMe();
+  renderTopbar();
 })();
 </script>
 

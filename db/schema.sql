@@ -76,3 +76,40 @@ CREATE TABLE IF NOT EXISTS vehicle_status (
 );
 
 CREATE INDEX IF NOT EXISTS idx_status_vehicle ON vehicle_status(vehicle_id);
+
+-- ── Auth (Phase 1) ──
+
+CREATE TABLE IF NOT EXISTS users (
+  id            TEXT PRIMARY KEY,
+  email         TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role          TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  display_name  TEXT,
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  actor_email   TEXT NOT NULL,
+  action        TEXT NOT NULL,
+  target_type   TEXT,
+  target_id     TEXT,
+  payload       JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip            TEXT,
+  user_agent    TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_actor   ON audit_log(actor_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_action  ON audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_target  ON audit_log(target_type, target_id);
+
+-- Optional: track which user created each row (nullable; legacy data keeps NULL)
+ALTER TABLE vehicles        ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE vehicles        ADD COLUMN IF NOT EXISTS updated_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE reminders       ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE service_history ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;

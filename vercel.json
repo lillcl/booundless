@@ -8,6 +8,10 @@
     }
   },
   "rewrites": [
+    { "source": "/api/auth/(.*)",                "destination": "/api/auth" },
+    { "source": "/api/users/(.*)",               "destination": "/api/users" },
+    { "source": "/api/assets",                   "destination": "/api/assets" },
+    { "source": "/api/audit",                    "destination": "/api/audit" },
     { "source": "/api/vehicles/([^/]+)/history", "destination": "/api/vehicles" },
     { "source": "/api/vehicles/([^/]+)/status",  "destination": "/api/vehicles" },
     { "source": "/api/vehicles/([^/]+)",          "destination": "/api/vehicles" },
