@@ -11,6 +11,7 @@
     { "source": "/api/vehicles/([^/]+)/history", "destination": "/api/vehicles" },
     { "source": "/api/vehicles/([^/]+)/status",  "destination": "/api/vehicles" },
     { "source": "/api/vehicles/([^/]+)",          "destination": "/api/vehicles" },
+    { "source": "/api/history/(.*)",             "destination": "/api/history" },
     { "source": "/api/reminders/([^/]+)",         "destination": "/api/reminders" }
   ]
 }
