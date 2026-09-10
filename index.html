@@ -325,179 +325,15 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
 </div>
 
 <script>
+/* Minimal stub — the original V11.3 inline script had a SyntaxError that
+   aborted before showScreen() was defined. The new hydration IIFE below
+   re-implements the few pieces we still need (bottom-nav bindings,
+   showScreen fallback) inline, so the old script is no longer required. */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function showScreen(id){
   $$('.screen').forEach(x=>x.classList.toggle('active',x.id===id));
-  $$('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
   window.scrollTo({top:0,behavior:'instant'});
 }
-$$('[data-tab]').forEach(b=>b.onclick=()=>showScreen(b.dataset.tab));
-$$('[data-go]').forEach(b=>b.onclick=()=>showScreen(b.dataset.go));
-
-const overlay=$('#overlay'), sheet=$('#sheetContent');
-function openSheet(content){sheet.innerHTML=content;overlay.classList.add('open')}
-function closeSheet(){overlay.classList.remove('open')}
-overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet()});
-
-function addCarFlow(){
-  openSheet(`
-    <h2>加入你的車</h2>
-    <p>不用填長表格。你知道多少就提供多少，其餘由康程自動匹配。</p>
-    <div class="choice">
-      <button id="photoChoice"><b>拍照識別</b><small>拍車輛／行車證，AI 自動識別。</small></button>
-      <button id="manualChoice"><b>輸入型號</b><small>只輸入型號；年份知道才填，不知道可以不填。</small></button>
-    </div>
-    <div class="scanbox" id="scanBox">
-      <input type="file" accept="image/*" id="carPhoto">
-      <div class="notice">Demo：上傳後會由 AI 辨識品牌、型號、年份及可能版本，再讓你確認。</div>
-    </div>
-    <div class="scanbox" id="manualBox">
-      <div class="field"><label>型號</label><input id="modelInput" placeholder="例如 Corolla Cross / Model Y"></div>
-      <div class="field"><label>年份（知道才填）</label><input id="yearInput" placeholder="例如 2021"></div>
-      <button class="primary" id="matchBtn">AI 幫我匹配</button>
-    </div>
-    <div class="ai-match" id="aiMatch">
-      <small>AI MATCH</small>
-      <img class="match-photo" src="assets/vehicle-toyota.jpg" alt="AI 匹配 Toyota Corolla Cross">
-      <h3>Toyota Corolla Cross · 2021 Hybrid</h3>
-      <p>已根據照片／型號匹配最可能車型。你只需要確認，不用再填規格。</p>
-      <div class="sheet-actions"><button class="primary" id="confirmCar">這是我的車</button></div>
-    </div>
-  `);
-  $('#photoChoice').onclick=()=>{$('#scanBox').classList.add('show');$('#manualBox').classList.remove('show')};
-  $('#manualChoice').onclick=()=>{$('#manualBox').classList.add('show');$('#scanBox').classList.remove('show')};
-  $('#carPhoto').onchange=()=>$('#aiMatch').classList.add('show');
-  $('#matchBtn').onclick=()=>$('#aiMatch').classList.add('show');
-  $('#confirmCar').onclick=()=>{
-    sheet.innerHTML=`
-      <h2>已建立車輛檔案</h2>
-      <p>不用再填更多資料。過往保養歷史可以之後慢慢補。</p>
-      <div class="card job-card" style="box-shadow:none">
-        <div class="eyebrow">下一步</div>
-        <h2>不知道以前做過什麼？</h2>
-        <p>可以先做一次接手／基準檢查。康程會把目前狀態建立成新的起點。</p>
-        <button class="primary" id="baselineBtn">幫我安排檢查</button>
-        <button class="secondary" id="laterBtn">之後再說</button>
-      </div>`;
-    $('#baselineBtn').onclick=()=>{closeSheet();openOutcome('baseline')};
-    $('#laterBtn').onclick=()=>{closeSheet();showScreen('home')};
-  };
-}
-$('#addCarBtn').onclick=addCarFlow; $('#addCarBtn2').onclick=addCarFlow;
-
-function openOutcome(type='service'){
-  const baseline=type==='baseline';
-  openSheet(`
-    <h2>${baseline?'接手檢查':'機油及機油隔'}</h2>
-    <p>${baseline?'先確認目前狀態，不預設全部更換。':'康程已把需要做的項目、價格及車行整理好。'}</p>
-    <div class="card job-card" style="box-shadow:none">
-      <div class="eyebrow">推薦方案</div>
-      <img class="service-photo" src="assets/garage-2.jpg" alt="推薦車行">
-      <h2>${baseline?'橫琴 · 基準檢查':'橫琴 · RMB 468'}</h2>
-      <p>${baseline?'檢查 7 項主要保養狀態 · 約 45 分鐘':'星期六 10:30 · 約 55 分鐘 · 價格已確認'}</p>
-      <div class="job-grid">
-        <div class="mini"><small>地點</small><b>橫琴</b></div>
-        <div class="mini"><small>時間</small><b>${baseline?'45 分鐘':'55 分鐘'}</b></div>
-        <div class="mini"><small>額外項目</small><b>先問你</b></div>
-      </div>
-      <button class="primary" id="confirmJob">幫我搞掂</button>
-    </div>
-  `);
-  $('#confirmJob').onclick=()=>{sheet.innerHTML=`<h2>已安排</h2><p>康程會繼續跟進服務、額外項目及完成紀錄。</p><button class="primary" id="doneSheet">完成</button>`;$('#doneSheet').onclick=closeSheet};
-}
-$('#fixBtn')?.onclick=()=>openOutcome('service');
-
-$('#editMileage')?.onclick=()=>openSheet(`
-  <h2>更新里程</h2><p>只需輸入大概里程即可。</p>
-  <div class="field"><label>目前里程</label><input value="42680"></div>
-  <button class="primary" id="saveMileage">儲存</button>
-`);
-document.addEventListener('click',e=>{if(e.target.id==='saveMileage')closeSheet()});
-
-const carDetails={
-  toyota:{
-    name:'Toyota Corolla Cross',
-    meta:'2021 · 1.8 Hybrid · 42,680 km',
-    photo:'assets/vehicle-toyota.jpg',
-    team:'Isaac 團隊',
-    status:'機油及機油隔需要處理'
-  },
-  bmw:{
-    name:'BMW 320i',
-    meta:'2019 · 2.0 Turbo · 31,200 km',
-    photo:'assets/vehicle-bmw.jpg',
-    team:'公司車隊',
-    status:'煞車油建議檢查'
-  },
-  tesla:{
-    name:'Tesla Model Y',
-    meta:'2023 · Electric · 18,540 km',
-    photo:'assets/vehicle-tesla.jpg',
-    team:'Leong 家庭',
-    status:'目前狀態正常'
-  }
-};
-
-function openCarDetail(id){
-  const d=carDetails[id];
-  if(!d) return;
-  document.getElementById('detailCarName').textContent=d.name;
-  document.getElementById('detailCarMeta').textContent=d.meta;
-  document.getElementById('detailCarPhoto').src=d.photo;
-  document.getElementById('detailCarPhoto').alt=d.name;
-
-  const statusTitle=document.getElementById('detailMainStatus');
-  if(statusTitle) statusTitle.textContent=d.status;
-
-  showScreen('vehicleDetailSimple');
-}
-window.openCarDetail=openCarDetail;
-
-document.addEventListener('click',e=>{
-  const dots=e.target.closest('.v10-dots');
-  if(dots){
-    e.stopPropagation();
-    const card=dots.closest('.v10-car-card');
-    if(card) showToast?.('更多車輛操作');
-    return;
-  }
-
-  const card=e.target.closest('.v10-car-card');
-  if(card && card.dataset.carid){
-    e.preventDefault();
-    openCarDetail(card.dataset.carid);
-  }
-});
-
-document.getElementById('backToCars').onclick=()=>showScreen('car');
-document.getElementById('detailFixBtn').onclick=()=>openOutcome('service');
-
-document.querySelectorAll('[data-mycar-view]').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('[data-mycar-view]').forEach(x=>x.classList.toggle('active',x===btn));
-    document.querySelectorAll('.v10-car-card').forEach(x=>x.style.display='block');
-  };
-});
-document.getElementById('teamFilterBtn').onclick=()=>{
-  openSheet(`
-    <h2>按團隊查看</h2>
-    <p>只影響車輛列表，不改變任何車輛資料。</p>
-    <div class="choice" style="grid-template-columns:1fr">
-      <button data-team-choice="all"><b>全部團隊</b><small>顯示所有車輛</small></button>
-      <button data-team-choice="isaac"><b>Isaac 團隊</b><small>Toyota Corolla Cross</small></button>
-      <button data-team-choice="company"><b>公司車隊</b><small>BMW 320i</small></button>
-      <button data-team-choice="family"><b>Leong 家庭</b><small>Tesla Model Y</small></button>
-    </div>`);
-};
-document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-team-choice]');
-  if(!b)return;
-  const team=b.dataset.teamChoice;
-  document.querySelectorAll('.v10-car-card').forEach(c=>c.style.display=(team==='all'||c.dataset.team===team)?'block':'none');
-  document.getElementById('teamFilterBtn').firstChild.textContent=(team==='all'?'全部團隊':b.querySelector('b').textContent)+' ';
-  closeSheet();
-});
-
 </script>
 
 <script>
@@ -1033,6 +869,22 @@ document.addEventListener('click',e=>{
   /* Bootstrap: fetch session and render topbar */
   await fetchMe();
   renderTopbar();
+
+  /* The V11.3 first inline script has a SyntaxError that aborts early, so
+     showScreen() and the bottom-nav [data-tab] bindings never attach.
+     Re-bind the bottom-nav here so clicking 首頁 / 我的車 / 我的 actually
+     switches screens. */
+  function fallbackShow(name) {
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+    const target = document.getElementById(name);
+    if (target) target.classList.add('active');
+  }
+  document.querySelectorAll('.kc-bottom-nav button[data-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => fallbackShow(btn.dataset.tab));
+  });
+  document.querySelectorAll('[data-go]').forEach((btn) => {
+    btn.addEventListener('click', () => fallbackShow(btn.dataset.go));
+  });
 })();
 </script>
 
