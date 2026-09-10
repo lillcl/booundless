@@ -6,9 +6,9 @@
 import {
   verifyPassword, signSession, setSessionCookie, clearSessionCookie,
   readSession, audit,
-} from './_lib/auth.js';
-import { sendError, sendJSON, onlyMethod, readBody } from './_lib/http.js';
-import { getDb } from './_lib/db.js';
+} from '../_lib/auth.js';
+import { sendError, sendJSON, onlyMethod, readBody } from '../_lib/http.js';
+import { getDb } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   const url = req.url || '';

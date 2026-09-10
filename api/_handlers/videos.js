@@ -1,5 +1,5 @@
-import { getDb } from './_lib/db.js';
-import { sendError, sendJSON } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { sendError, sendJSON } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET allowed');

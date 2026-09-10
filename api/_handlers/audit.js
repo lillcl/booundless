@@ -2,9 +2,9 @@
    Query: ?limit=50 (default 50, max 200), ?actor=<email>,
    ?action=<code>, ?target_type=<type>, ?before=<iso8601> */
 
-import { requireAdmin } from './_lib/auth.js';
-import { sendError, sendJSON, onlyMethod, getQueryInt } from './_lib/http.js';
-import { getDb } from './_lib/db.js';
+import { requireAdmin } from '../_lib/auth.js';
+import { sendError, sendJSON, onlyMethod, getQueryInt } from '../_lib/http.js';
+import { getDb } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET'])) return;

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { getDb } from './_lib/db.js';
-import { requireUser } from './_lib/auth.js';
-import { readBody, sendError, sendJSON } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { requireUser } from '../_lib/auth.js';
+import { readBody, sendError, sendJSON } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   try {

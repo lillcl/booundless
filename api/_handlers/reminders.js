@@ -1,7 +1,7 @@
 /* GET /api/reminders — list maintenance reminders (upcoming/overdue).
    GET /api/reminders/:id — fetch a single reminder. */
-import { getDb } from './_lib/db.js';
-import { sendError, sendJSON, onlyMethod } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET'])) return;

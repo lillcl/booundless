@@ -1,9 +1,9 @@
 /* GET /api/vehicles — list vehicles.
    GET /api/vehicles/:id — fetch a single vehicle.
    GET /api/vehicles/:id/status — full maintenance status for one vehicle. */
-import { getDb } from './_lib/db.js';
+import { getDb } from '../_lib/db.js';
 import { randomUUID } from 'node:crypto';
-import { readBody, sendError, sendJSON, onlyMethod } from './_lib/http.js';
+import { readBody, sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 
 async function handleStatus(req, res, id) {
   const db = await getDb();

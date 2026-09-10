@@ -1,7 +1,7 @@
 /* GET /api/health — liveness probe.
    Verifies the database connection. */
-import { getDb } from './_lib/db.js';
-import { sendError, sendJSON, onlyMethod } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET'])) return;

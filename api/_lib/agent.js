@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { getDb } from './db.js';
 import { audit } from './auth.js';
-import { vehicleTools } from '../tools/vehicles.js';
-import { maintenanceTools } from '../tools/maintenance.js';
-import { tripTools } from '../tools/trips.js';
-import { profileTools } from '../tools/profile.js';
-import { getResearchTools } from '../tools/research.js';
+import { vehicleTools } from '../_tools/vehicles.js';
+import { maintenanceTools } from '../_tools/maintenance.js';
+import { tripTools } from '../_tools/trips.js';
+import { profileTools } from '../_tools/profile.js';
+import { getResearchTools } from '../_tools/research.js';
 
 const DEFAULT_MAX_STEPS = 8;
 const MAX_HISTORY = 16;

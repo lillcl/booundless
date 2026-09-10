@@ -1,9 +1,9 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { getDb } from './_lib/db.js';
-import { audit, requireAdmin, requireUser } from './_lib/auth.js';
-import { getOwnedVehicle } from './_lib/tool-utils.js';
-import { calculateDealerMatches } from './_lib/dealer-matcher.js';
-import { readBody, sendError, sendJSON } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { audit, requireAdmin, requireUser } from '../_lib/auth.js';
+import { getOwnedVehicle } from '../_lib/tool-utils.js';
+import { calculateDealerMatches } from '../_lib/dealer-matcher.js';
+import { readBody, sendError, sendJSON } from '../_lib/http.js';
 
 const DEALER_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
 const EDIT_ROLES = new Set(['owner', 'manager']);

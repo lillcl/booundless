@@ -4,9 +4,9 @@
    DELETE /api/users/:id    — soft-delete (admin)
    Every mutation writes to audit_log. */
 
-import { hashPassword, requireAdmin, audit } from './_lib/auth.js';
-import { sendError, sendJSON, onlyMethod, readBody } from './_lib/http.js';
-import { getDb } from './_lib/db.js';
+import { hashPassword, requireAdmin, audit } from '../_lib/auth.js';
+import { sendError, sendJSON, onlyMethod, readBody } from '../_lib/http.js';
+import { getDb } from '../_lib/db.js';
 
 function sanitize(u) {
   return {

@@ -1,7 +1,7 @@
 /* GET /api/history/recent — most recent service history across all vehicles.
    Used by the Home page "最近" list. */
-import { getDb } from './_lib/db.js';
-import { sendError, sendJSON, onlyMethod } from './_lib/http.js';
+import { getDb } from '../_lib/db.js';
+import { sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET'])) return;
