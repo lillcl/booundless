@@ -113,3 +113,69 @@ ALTER TABLE vehicles        ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REF
 ALTER TABLE vehicles        ADD COLUMN IF NOT EXISTS updated_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE reminders       ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE service_history ADD COLUMN IF NOT EXISTS created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL;
+
+-- ── Product capabilities ──
+
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS make TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS year INTEGER;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS fuel_type TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS vin TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS vehicle_id TEXT REFERENCES vehicles(id) ON DELETE SET NULL;
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS stops JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'planned';
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS start_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS user_notification_preferences (
+  user_id               TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  maintenance_reminders BOOLEAN NOT NULL DEFAULT TRUE,
+  trip_updates           BOOLEAN NOT NULL DEFAULT TRUE,
+  ai_suggestions         BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS teams (
+  id                 TEXT PRIMARY KEY,
+  name               TEXT NOT NULL,
+  created_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS team_members (
+  team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role    TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'member', 'viewer')),
+  PRIMARY KEY (team_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
+  subject    TEXT NOT NULL,
+  message    TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS videos (
+  id               TEXT PRIMARY KEY,
+  title            TEXT NOT NULL,
+  description      TEXT,
+  url              TEXT NOT NULL,
+  thumbnail_url    TEXT,
+  category         TEXT,
+  related_kind     TEXT,
+  duration_seconds INTEGER,
+  published_at     TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO videos (id, title, description, url, category, related_kind, duration_seconds)
+VALUES
+  ('v-oil', '機油保養：何時需要更換？', '用三分鐘看懂里程、時間與機油狀態。', '#/service', '保養知識', 'oil', 180),
+  ('v-brake', '煞車系統檢查重點', '煞車油、煞車皮與異常聲音的基本判斷。', '#/service', '安全檢查', 'brake', 240),
+  ('v-trip', '長途出發前五項檢查', '輪胎、冷卻液、電瓶、燈號與隨車用品。', '#/qinao', '出發準備', 'trip', 210)
+ON CONFLICT (id) DO NOTHING;

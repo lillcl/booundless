@@ -18,6 +18,10 @@ import authHandler from '../api/auth.js';
 import usersHandler from '../api/users.js';
 import assetsHandler from '../api/assets.js';
 import auditHandler from '../api/audit.js';
+import tripsHandler from '../api/trips.js';
+import videosHandler from '../api/videos.js';
+import profileHandler from '../api/profile.js';
+import aiHandler from '../api/ai.js';
 import { closeDb } from '../api/_lib/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -42,6 +46,7 @@ app.get('/api/vehicles', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id/status', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id/history', adapt(vehiclesHandler));
+app.post('/api/vehicles', adapt(vehiclesHandler));
 app.get('/api/history', adapt(historyHandler));
 app.get('/api/history/recent', adapt(historyHandler));
 app.get('/api/reminders', adapt(remindersHandler));
@@ -55,6 +60,15 @@ app.patch('/api/users/:id', adapt(usersHandler));
 app.delete('/api/users/:id', adapt(usersHandler));
 app.get('/api/assets', adapt(assetsHandler));
 app.get('/api/audit', adapt(auditHandler));
+app.get('/api/trips', adapt(tripsHandler));
+app.post('/api/trips', adapt(tripsHandler));
+app.delete('/api/trips/:id', adapt(tripsHandler));
+app.get('/api/videos', adapt(videosHandler));
+app.get('/api/profile/notifications', adapt(profileHandler));
+app.patch('/api/profile/notifications', adapt(profileHandler));
+app.get('/api/profile/teams', adapt(profileHandler));
+app.post('/api/profile/support', adapt(profileHandler));
+app.post('/api/ai', adapt(aiHandler));
 
 /* Static assets — serve the repo at root. */
 app.use(express.static(root, {

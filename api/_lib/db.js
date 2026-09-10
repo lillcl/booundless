@@ -11,6 +11,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 let _pool = null;
 
 function resolveDatabaseUrl() {
+  /* Supabase is the configured cloud database for this deployment. Keep
+     KC_DATABASE_URL as an explicit fallback for local Postgres. */
+  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
   if (process.env.KC_DATABASE_URL) return process.env.KC_DATABASE_URL;
   /* Local Postgres defaults — matches the database created in the README. */
   return 'postgresql://kc_app:kc_dev_password@127.0.0.1:5432/kc_carai';
@@ -96,24 +99,21 @@ async function seedDefaultData(pool) {
 
   /* Service history (recent completed jobs). Used by the home page "最近" list
      and the detail page "保養紀錄" section. */
-  const insertHistory = db.prepare(`
-    INSERT INTO service_history (id, vehicle_id, performed_at, kind, title, notes, cost, mileage_km)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  /* Toyota Corolla Cross */
-  insertHistory.run('h-toyota-1', 'toyota', '2026-06-12T10:00:00Z', 'oil',     '機油及機油隔', '5W-30 全合成',  'MOP 980',  38420);
-  insertHistory.run('h-toyota-2', 'toyota', '2026-02-03T14:30:00Z', 'filter',  '塵格',        '原廠件',        'MOP 230',  34200);
-  insertHistory.run('h-toyota-3', 'toyota', '2025-08-19T09:00:00Z', 'tire',    '輪胎調位',    '前後對調',      'MOP 280',  28800);
-
-  /* BMW 320i */
-  insertHistory.run('h-bmw-1',    'bmw',    '2026-05-21T11:00:00Z', 'oil',     '機油及機油隔', '5W-40 LL-04',   'MOP 1,180', 28200);
-  insertHistory.run('h-bmw-2',    'bmw',    '2025-11-04T15:00:00Z', 'filter',  '空氣濾芯',     '原廠件',        'MOP 420',  22100);
-  insertHistory.run('h-bmw-3',    'bmw',    '2025-04-22T10:30:00Z', 'brake',   '煞車油',       'DOT 5.1',       'MOP 680',  17600);
-
-  /* Tesla Model Y */
-  insertHistory.run('h-tesla-1',  'tesla',  '2025-11-12T13:00:00Z', 'tire',    '輪胎調位',     '前後對調+四輪平衡', 'MOP 380',  12000);
-  insertHistory.run('h-tesla-2',  'tesla',  '2025-06-08T16:00:00Z', 'inspect', '底盤檢查',     '底盤+煞車+冷卻液', 'MOP 1,500', 9600);
+  const historyRows = [
+    ['h-toyota-1', 'toyota', '2026-06-12T10:00:00Z', 'oil', '機油及機油隔', '5W-30 全合成', 'MOP 980', 38420],
+    ['h-toyota-2', 'toyota', '2026-02-03T14:30:00Z', 'filter', '塵格', '原廠件', 'MOP 230', 34200],
+    ['h-toyota-3', 'toyota', '2025-08-19T09:00:00Z', 'tire', '輪胎調位', '前後對調', 'MOP 280', 28800],
+    ['h-bmw-1', 'bmw', '2026-05-21T11:00:00Z', 'oil', '機油及機油隔', '5W-40 LL-04', 'MOP 1,180', 28200],
+    ['h-bmw-2', 'bmw', '2025-11-04T15:00:00Z', 'filter', '空氣濾芯', '原廠件', 'MOP 420', 22100],
+    ['h-bmw-3', 'bmw', '2025-04-22T10:30:00Z', 'brake', '煞車油', 'DOT 5.1', 'MOP 680', 17600],
+    ['h-tesla-1', 'tesla', '2025-11-12T13:00:00Z', 'tire', '輪胎調位', '前後對調+四輪平衡', 'MOP 380', 12000],
+    ['h-tesla-2', 'tesla', '2025-06-08T16:00:00Z', 'inspect', '底盤檢查', '底盤+煞車+冷卻液', 'MOP 1,500', 9600],
+  ];
+  for (const row of historyRows) {
+    await pool.query(`INSERT INTO service_history
+      (id, vehicle_id, performed_at, kind, title, notes, cost, mileage_km)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, row);
+  }
 
   await pool.query(
     "INSERT INTO _meta (key, value) VALUES ('seeded', '1') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
@@ -124,17 +124,25 @@ export async function getDb() {
   if (_pool) return _pool;
 
   const url = resolveDatabaseUrl();
-  _pool = new pg.Pool({ connectionString: url, max: 4 });
+  const isSupabase = /supabase\.(co|com)$/i.test(new URL(url).hostname) || /pooler\.supabase\.com$/i.test(new URL(url).hostname);
+  _pool = new pg.Pool({
+    connectionString: url,
+    max: 4,
+    ...(isSupabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  });
 
-  await applySchema(_pool);
-
-  const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
-  const count = await rowCount(_pool, 'vehicles');
-  if (seeded.rowCount === 0 && count === 0) {
-    await seedDefaultData(_pool);
+  try {
+    await applySchema(_pool);
+    const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
+    const count = await rowCount(_pool, 'vehicles');
+    if (seeded.rowCount === 0 && count === 0) await seedDefaultData(_pool);
+    return _pool;
+  } catch (error) {
+    const failedPool = _pool;
+    _pool = null;
+    await failedPool.end().catch(() => {});
+    throw error;
   }
-
-  return _pool;
 }
 
 export async function closeDb() {

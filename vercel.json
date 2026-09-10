@@ -16,6 +16,8 @@
     { "source": "/api/vehicles/([^/]+)/status",  "destination": "/api/vehicles" },
     { "source": "/api/vehicles/([^/]+)",          "destination": "/api/vehicles" },
     { "source": "/api/history/(.*)",             "destination": "/api/history" },
-    { "source": "/api/reminders/([^/]+)",         "destination": "/api/reminders" }
+    { "source": "/api/reminders/([^/]+)",         "destination": "/api/reminders" },
+    { "source": "/api/trips/([^/]+)",             "destination": "/api/trips" },
+    { "source": "/api/profile/(.*)",              "destination": "/api/profile" }
   ]
 }

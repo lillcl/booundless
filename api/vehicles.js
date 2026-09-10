@@ -2,7 +2,8 @@
    GET /api/vehicles/:id — fetch a single vehicle.
    GET /api/vehicles/:id/status — full maintenance status for one vehicle. */
 import { getDb } from './_lib/db.js';
-import { sendError, sendJSON, onlyMethod } from './_lib/http.js';
+import { randomUUID } from 'node:crypto';
+import { readBody, sendError, sendJSON, onlyMethod } from './_lib/http.js';
 
 async function handleStatus(req, res, id) {
   const db = await getDb();
@@ -42,7 +43,7 @@ async function handleHistory(req, res, id) {
 }
 
 export default async function handler(req, res) {
-  if (!onlyMethod(req, res, ['GET'])) return;
+  if (!onlyMethod(req, res, ['GET', 'POST'])) return;
 
   try {
     const url = req.url || '';
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
       const id = decodeURIComponent(idMatch[1]);
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1`,
         [id],
       );
@@ -65,10 +66,23 @@ export default async function handler(req, res) {
       return sendJSON(res, 200, r.rows[0]);
     }
 
+    if (url.startsWith('/api/vehicles') && req.method === 'POST') {
+      const db = await getDb();
+      const body = await readBody(req);
+      if (!body?.model) return sendError(res, 422, 'unprocessable', 'model is required');
+      const id = randomUUID();
+      const mileage = Math.max(0, Number(body.mileage_km) || 0);
+      const r = await db.query(`INSERT INTO vehicles
+        (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,image,owner,team)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-toyota.jpg',body.owner||'Isaac',body.team||'isaac']);
+      return sendJSON(res, 201, r.rows[0]);
+    }
+
     if (url.startsWith('/api/vehicles')) {
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles ORDER BY created_at ASC`,
       );
       return sendJSON(res, 200, { data: r.rows, count: r.rowCount });

@@ -27,6 +27,8 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .section-title{font-size:19px;font-weight:760;margin:28px 4px 12px}.list{overflow:hidden}.row{min-height:74px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);background:#fff}.row:last-child{border-bottom:0}
 .row b{display:block;font-size:16px}.row small{display:block;color:var(--muted);font-size:12px;margin-top:4px}.state{font-size:13px;font-weight:750;white-space:nowrap}.state.ok{color:var(--green)}.state.warn{color:var(--amber)}.state.unknown{color:#777}
 .profile-action{width:100%;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}.profile-action:last-child{border-bottom:0}.profile-action:hover{background:#fafbfb}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 28px}.feature-link{min-height:112px;border:1px solid var(--line);border-radius:18px;background:#fff;text-align:left;padding:18px;cursor:pointer}.feature-link b{display:block;font-size:18px}.feature-link small{display:block;color:var(--muted);margin-top:7px;line-height:1.4}.form-card{padding:20px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.form-grid .field{margin:0}.form-grid .wide{grid-column:1/-1}.form-card select,.form-card textarea{width:100%;min-height:54px;border:1px solid #dfe3e5;border-radius:15px;padding:12px 14px;font:inherit;background:#fff}.ai-result{display:none;margin-top:16px;padding:18px;border-radius:16px;background:#eef6ef;border:1px solid #d9e8dc;white-space:pre-wrap;line-height:1.6}.ai-result.show{display:block}.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.video-card{padding:20px;min-height:180px;display:flex;flex-direction:column}.video-card .tag{font-size:12px;color:var(--green);font-weight:750}.video-card h2{font-size:20px;margin:12px 0 8px}.video-card p{color:var(--muted);line-height:1.5;margin:0 0 16px}.video-card a{margin-top:auto;color:var(--ink);font-weight:750}.toggle-row input{width:22px;height:22px}
+@media(max-width:700px){.feature-grid,.video-grid,.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}}
 .passport-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.passport-head h2{margin:0;font-size:25px}.passport-head button{border:0;background:var(--soft);padding:10px 13px;border-radius:12px;font-weight:700}
 .records .row{min-height:68px}
 .profile-card{padding:22px}.profile-card h2{margin:0 0 5px}.profile-card p{margin:0;color:var(--muted)}
@@ -204,6 +206,11 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
         <div class="card list records" id="recentRecords">
           <div class="row visual-row"><span class="record-copy"><b>載入中…</b><small>正在取得最近保養紀錄</small></span></div>
         </div>
+        <div class="feature-grid">
+          <button class="feature-link" type="button" data-route="service"><b>保養與服務</b><small>查看提醒並詢問 CarAI</small></button>
+          <button class="feature-link" type="button" data-route="qinao"><b>琴澳行程</b><small>規劃路線與出發檢查</small></button>
+          <button class="feature-link" type="button" data-route="videos"><b>影片</b><small>快速了解保養重點</small></button>
+        </div>
       </div>
     </div>
   </div>
@@ -283,6 +290,36 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
     </div>
   </div>
 </section>
+
+<section class="screen" id="service">
+  <div class="wrap">
+    <div class="top"><div><h1>保養與服務</h1><p>先處理最重要的車況。</p></div></div>
+    <div class="card list" id="serviceList"><div class="row"><b>載入中…</b></div></div>
+    <div class="section-title">問 CarAI</div>
+    <form class="card form-card" id="serviceAiForm">
+      <div class="form-grid"><div class="field"><label>車輛</label><select id="serviceVehicle"></select></div><div class="field"><label>問題</label><input id="serviceQuestion" value="我應該先處理甚麼？"></div></div>
+      <button class="primary" type="submit">取得保養建議</button><div class="ai-result" id="serviceAiResult"></div>
+    </form>
+  </div>
+</section>
+
+<section class="screen" id="qinao">
+  <div class="wrap">
+    <div class="top"><div><h1>琴澳行程</h1><p>儲存行程，出發前讓 CarAI 幫你檢查。</p></div></div>
+    <form class="card form-card" id="tripForm"><div class="form-grid">
+      <div class="field"><label>行程名稱</label><input id="tripTitle" required placeholder="週末琴澳遊"></div>
+      <div class="field"><label>車輛</label><select id="tripVehicle"></select></div>
+      <div class="field"><label>出發地</label><input id="tripOrigin" required value="澳門"></div>
+      <div class="field"><label>目的地</label><input id="tripDestination" required value="橫琴"></div>
+    </div><button class="primary" type="submit">儲存行程</button><button class="secondary" type="button" id="tripAiBtn">請 CarAI 規劃</button><div class="ai-result" id="tripAiResult"></div></form>
+    <div class="section-title">已儲存行程</div><div class="card list" id="tripList"><div class="row"><b>載入中…</b></div></div>
+  </div>
+</section>
+
+<section class="screen" id="videos">
+  <div class="wrap"><div class="top"><div><h1>影片</h1><p>快速掌握保養與安全檢查。</p></div></div><div class="video-grid" id="videoList"><div class="card video-card"><b>載入中…</b></div></div></div>
+</section>
+
 <section class="screen" id="profile">
   <div class="wrap">
     <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
@@ -346,7 +383,7 @@ function showScreen(id){
   const teamLabel = (t) => ({ isaac: 'Isaac 團隊共同管理', company: '公司車隊共同管理', family: 'Leong 家庭共同管理' }[t] || `${t} 團隊共同管理`);
 
   /* Keep navigation interactive while optional API hydration is loading. */
-  const staticRoute = (route) => ({ home: 'home', garage: 'car', profile: 'profile' }[route] || null);
+  const staticRoute = (route) => ({ home: 'home', garage: 'car', profile: 'profile', service: 'service', qinao: 'qinao', videos: 'videos' }[route] || null);
   const navigateImmediately = () => {
     const route = (window.location.hash || '#/home').replace(/^#\/?/, '').split('?')[0];
     const target = staticRoute(route);
@@ -355,8 +392,10 @@ function showScreen(id){
   document.addEventListener('click', (e) => {
     const link = e.target.closest?.('a[href^="#/"]');
     const action = e.target.closest?.('[data-go]');
+    const routeButton = e.target.closest?.('[data-route]');
+    if (routeButton) window.location.hash = '#/' + routeButton.dataset.route;
     if (link || action) {
-      const route = action?.dataset.go || link.getAttribute('href').replace(/^#\/?/, '').split('?')[0];
+      const route = action?.dataset.go || link?.getAttribute('href').replace(/^#\/?/, '').split('?')[0];
       const target = staticRoute(route === 'car' ? 'garage' : route);
       if (target) window.showScreen(target);
     }
@@ -373,20 +412,53 @@ function showScreen(id){
   };
   const closeSheet = () => overlay?.classList.remove('open');
   overlay?.addEventListener('click', (e) => { if (e.target === overlay) closeSheet(); });
-  document.getElementById('addCarBtn')?.addEventListener('click', () => openSheet('<h2>新增車輛</h2><p>新增車輛功能即將推出。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
-  document.getElementById('addCarBtn2')?.addEventListener('click', () => openSheet('<h2>新增車輛</h2><p>新增車輛功能即將推出。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  let newVehicleImageData = '';
+  const prepareVehicleImage = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('無法讀取照片'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('照片格式無法辨識'));
+      image.onload = () => {
+        const scale = Math.min(1, 1200 / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  const openAddVehicleSheet = () => {
+    newVehicleImageData = '';
+    openSheet(`<h2>新增車輛</h2><form id="addVehicleForm"><div class="field"><label>車輛照片（可選）</label><input id="newVehicleImage" type="file" accept="image/*"><img id="newVehiclePreview" alt="車輛照片預覽" style="display:none;width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-top:10px"><button class="secondary" type="button" id="recognizeVehicleBtn">用 AI 識別照片</button></div><div class="form-grid"><div class="field"><label>車款</label><input id="newVehicleModel" required placeholder="Toyota Corolla Cross"></div><div class="field"><label>品牌</label><input id="newVehicleMake" placeholder="Toyota"></div><div class="field"><label>年份</label><input id="newVehicleYear" type="number" min="1900" max="2100" placeholder="2021"></div><div class="field"><label>燃料</label><input id="newVehicleFuel" placeholder="Hybrid / 電動 / 汽油"></div><div class="field"><label>車牌</label><input id="newVehiclePlate" placeholder="MA-00-00"></div><div class="field"><label>目前里程</label><input id="newVehicleMileage" type="number" min="0" value="0"></div></div><button class="primary" type="submit">儲存車輛</button><button class="secondary" type="button" data-close-sheet>取消</button><div class="ai-result" id="addVehicleResult"></div></form>`);
+    document.getElementById('newVehicleImage')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      const result = document.getElementById('addVehicleResult');
+      try {
+        newVehicleImageData = await prepareVehicleImage(file);
+        const preview = document.getElementById('newVehiclePreview'); preview.src = newVehicleImageData; preview.style.display = 'block';
+        result.classList.add('show'); result.textContent = '照片已準備好，可用 AI 識別或直接手動填寫。';
+      } catch (err) { result.classList.add('show'); result.textContent = err.message; }
+    });
+  };
+  document.getElementById('addCarBtn')?.addEventListener('click', openAddVehicleSheet);
+  document.getElementById('addCarBtn2')?.addEventListener('click', openAddVehicleSheet);
   document.getElementById('fixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   document.getElementById('detailFixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
-  document.getElementById('backToCars')?.addEventListener('click', () => { window.location.hash = '#/garage'; });
+  const goBackToCars = () => { window.showScreen('car'); if (window.location.hash !== '#/garage') window.location.hash = '#/garage'; };
+  document.getElementById('backToCars')?.addEventListener('click', goBackToCars);
   document.addEventListener('click', (e) => {
     if (e.target.closest?.('#backToCars')) {
       e.preventDefault();
-      window.location.hash = '#/garage';
+      goBackToCars();
       return;
     }
     if (e.target.closest?.('[data-close-sheet]')) closeSheet();
     const profileAction = e.target.closest?.('[data-profile-action]');
-    if (profileAction) openSheet(`<h2>${profileAction.dataset.profileAction}</h2><p>此設定頁面正在準備中。</p><button class="secondary" type="button" data-close-sheet>關閉</button>`);
+    if (profileAction) openProfileAction(profileAction.dataset.profileAction);
     const viewButton = e.target.closest?.('[data-mycar-view]');
     if (viewButton) {
       document.querySelectorAll('[data-mycar-view]').forEach((b) => b.classList.toggle('active', b === viewButton));
@@ -396,6 +468,60 @@ function showScreen(id){
     }
   });
   document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  async function openProfileAction(action) {
+    if (action === '通知') {
+      openSheet('<h2>通知</h2><div id="notificationPrefs"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
+      const root = document.getElementById('notificationPrefs');
+      try {
+        const r = await fetch('/api/profile/notifications');
+        if (r.status === 401) throw new Error('請先登入以管理通知。');
+        const p = await r.json();
+        root.innerHTML = `<label class="row toggle-row"><span><b>保養提醒</b></span><input type="checkbox" data-pref="maintenance_reminders" ${p.maintenance_reminders ? 'checked' : ''}></label><label class="row toggle-row"><span><b>行程更新</b></span><input type="checkbox" data-pref="trip_updates" ${p.trip_updates ? 'checked' : ''}></label><label class="row toggle-row"><span><b>CarAI 建議</b></span><input type="checkbox" data-pref="ai_suggestions" ${p.ai_suggestions ? 'checked' : ''}></label><button class="primary" type="button" id="savePrefsBtn">儲存設定</button>`;
+      } catch (e) { root.innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
+    } else if (action === '家庭 / 多車') {
+      openSheet('<h2>家庭 / 多車</h2><div id="teamSheet"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
+      try {
+        const r = await fetch('/api/profile/teams');
+        if (r.status === 401) throw new Error('請先登入以管理家庭與車隊。');
+        const d = await r.json();
+        document.getElementById('teamSheet').innerHTML = d.data?.length ? d.data.map((t) => `<div class="row"><span><b>${esc(t.name)}</b><small>${esc(t.role)}</small></span></div>`).join('') : '<p>目前未加入任何家庭或車隊。</p>';
+      } catch (e) { document.getElementById('teamSheet').innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
+    } else {
+      openSheet('<h2>聯絡康程</h2><form id="supportForm"><div class="field"><label>主題</label><input id="supportSubject" required></div><div class="field"><label>內容</label><textarea id="supportMessage" required rows="4"></textarea></div><button class="primary" type="submit">送出支援請求</button><button class="secondary" type="button" id="supportAiBtn">先問 CarAI</button><div class="ai-result" id="supportResult"></div></form>');
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest?.('#recognizeVehicleBtn')) {
+      const file = document.getElementById('newVehicleImage')?.files?.[0];
+      const result = document.getElementById('addVehicleResult');
+      if (!file) { result.classList.add('show'); result.textContent = '請先選擇車輛照片。'; return; }
+      result.classList.add('show'); result.textContent = 'CarAI 正在識別照片…';
+      const recognize = async () => {
+        try {
+          newVehicleImageData = newVehicleImageData || await prepareVehicleImage(file);
+          const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'vehicle-image',image:newVehicleImageData}) });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error?.message || '識別失敗');
+          const info = d.vehicle || {};
+          ['model','make','year','fuel_type','plate'].forEach((key) => { const el = document.getElementById('newVehicle' + ({fuel_type:'Fuel'}[key] || key[0].toUpperCase()+key.slice(1))); if (el && info[key]) el.value = info[key]; });
+          result.textContent = '已識別，請確認或修改資料後儲存。';
+        } catch (err) { result.textContent = err.message || '識別失敗，請改用手動填寫。'; }
+      };
+      recognize();
+    }
+    if (e.target.closest?.('#savePrefsBtn')) {
+      const body = {};
+      document.querySelectorAll('[data-pref]').forEach((x) => { body[x.dataset.pref] = x.checked; });
+      const r = await fetch('/api/profile/notifications', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      e.target.textContent = r.ok ? '已儲存' : '儲存失敗';
+    }
+    if (e.target.closest?.('#supportAiBtn')) {
+      const result = document.getElementById('supportResult'); result.classList.add('show'); result.textContent = 'CarAI 正在整理…';
+      const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'support',question:document.getElementById('supportMessage').value}) });
+      const d = await r.json(); result.textContent = r.ok ? d.text : (d.error?.message || '暫時無法取得建議');
+    }
+  });
   document.querySelectorAll('#vehicleDetailSimple .card.list .row').forEach((row) => {
     if (row.querySelector('.wear-bar')) return;
     const state = row.querySelector('.state');
@@ -420,10 +546,13 @@ function showScreen(id){
     fetch('/api/reminders').then((r) => r.json()),
     fetch('/api/history/recent?limit=5').then((r) => r.json()),
   ]);
-  const vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
+  let vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
   const reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
   const history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
-  if (!vehicles.length) return;
+  if (!vehicles.length) vehicles = [...document.querySelectorAll('.v10-car-card')].map((card) => ({
+    id: card.dataset.carid, model: card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛',
+    mileage_label: card.querySelector('.v10-mileage')?.textContent || '', image: '', team: card.dataset.team,
+  }));
 
   /* 1. Home hero card — show the first vehicle and its most urgent reminder */
   const hero = vehicles[0];
@@ -584,6 +713,62 @@ function showScreen(id){
     }
   }
 
+  function fillVehicleSelects() {
+    const options = vehicles.map((v) => `<option value="${esc(v.id)}">${esc(v.model)}</option>`).join('');
+    ['serviceVehicle', 'tripVehicle'].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = options; });
+  }
+  fillVehicleSelects();
+
+  async function loadServicePage() {
+    const root = document.getElementById('serviceList'); if (!root) return;
+    try {
+      const r = await fetch('/api/reminders'); const d = await r.json(); const rows = unwrap(d);
+      root.innerHTML = rows.length ? rows.map((x) => `<div class="row"><span><b>${esc(x.title)}</b><small>${esc(x.due_in)}</small></span><span class="state ${x.status === 'overdue' ? 'urgent' : 'warn'}">${x.status === 'overdue' ? '已逾期' : '即將到期'}</span></div>`).join('') : '<div class="row"><b>目前沒有待處理提醒</b></div>';
+    } catch { root.innerHTML = '<div class="row"><b>無法載入保養提醒</b></div>'; }
+  }
+
+  async function loadTripsPage() {
+    const root = document.getElementById('tripList'); if (!root) return;
+    try {
+      const r = await fetch('/api/trips'); const d = await r.json(); const rows = unwrap(d);
+      root.innerHTML = rows.length ? rows.map((x) => `<div class="row"><span><b>${esc(x.title)}</b><small>${esc(x.origin)} → ${esc(x.destination)}</small></span><span class="state ok">${esc(x.status)}</span></div>`).join('') : '<div class="row"><b>尚未儲存行程</b></div>';
+    } catch { root.innerHTML = '<div class="row"><b>無法載入行程</b></div>'; }
+  }
+
+  async function loadVideosPage() {
+    const root = document.getElementById('videoList'); if (!root) return;
+    try {
+      const r = await fetch('/api/videos'); const d = await r.json(); const rows = unwrap(d);
+      root.innerHTML = rows.length ? rows.map((v) => `<article class="card video-card"><span class="tag">${esc(v.category || '汽車知識')}</span><h2>${esc(v.title)}</h2><p>${esc(v.description || '')}</p><a href="${esc(v.url)}">查看內容 →</a></article>`).join('') : '<div class="card video-card"><b>暫時沒有影片</b></div>';
+    } catch { root.innerHTML = '<div class="card video-card"><b>無法載入影片</b></div>'; }
+  }
+
+  document.getElementById('serviceAiForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault(); const result = document.getElementById('serviceAiResult'); result.classList.add('show'); result.textContent = 'CarAI 正在分析車況…';
+    const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'service',vehicle_id:document.getElementById('serviceVehicle').value,question:document.getElementById('serviceQuestion').value}) });
+    const d = await r.json(); result.textContent = r.ok ? d.text : (d.error?.message || '請先登入後再試');
+  });
+  document.getElementById('tripForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault(); const payload={title:document.getElementById('tripTitle').value,vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
+    const r=await fetch('/api/trips',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); if(r.ok){e.target.reset(); await loadTripsPage();}
+  });
+  document.getElementById('tripAiBtn')?.addEventListener('click', async () => {
+    const result=document.getElementById('tripAiResult'); result.classList.add('show'); result.textContent='CarAI 正在規劃…'; const trip={vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
+    const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'trip',trip})}); const d=await r.json(); result.textContent=r.ok?d.text:(d.error?.message||'請先登入後再試');
+  });
+  document.addEventListener('submit', async (e) => {
+    if (e.target?.id === 'addVehicleForm') {
+      e.preventDefault(); const result=document.getElementById('addVehicleResult'); result.classList.add('show'); result.textContent='正在新增…';
+      const imageFile = document.getElementById('newVehicleImage')?.files?.[0];
+      const payload={model:document.getElementById('newVehicleModel').value,make:document.getElementById('newVehicleMake').value,year:document.getElementById('newVehicleYear').value,fuel_type:document.getElementById('newVehicleFuel').value,plate:document.getElementById('newVehiclePlate').value,mileage_km:document.getElementById('newVehicleMileage').value,image:newVehicleImageData||null};
+      const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){result.textContent='已新增車輛，重新整理後會顯示。';}else result.textContent=d.error?.message||'新增失敗';
+    }
+    if (e.target?.id === 'supportForm') {
+      e.preventDefault(); const result=document.getElementById('supportResult'); result.classList.add('show'); result.textContent='正在送出…';
+      const r=await fetch('/api/profile/support',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({subject:document.getElementById('supportSubject').value,message:document.getElementById('supportMessage').value})}); result.textContent=r.ok?'支援請求已送出。':'請先登入後再試。';
+    }
+  });
+
   /* ── 6. Auth + admin console ── */
   /* The V11.3 demo uses static <section class="screen"> blocks and a
      showScreen() helper in the original inline script. New auth/admin
@@ -617,6 +802,9 @@ function showScreen(id){
         const target = document.getElementById(name);
         if (target) target.classList.add('active');
       }
+      if (name === 'service') await loadServicePage();
+      if (name === 'qinao') await loadTripsPage();
+      if (name === 'videos') await loadVideosPage();
       return;
     }
     /* Auth/admin: hide all static sections, render into #view */
