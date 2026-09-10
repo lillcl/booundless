@@ -22,6 +22,8 @@ import tripsHandler from '../api/trips.js';
 import videosHandler from '../api/videos.js';
 import profileHandler from '../api/profile.js';
 import aiHandler from '../api/ai.js';
+import agentHandler from '../api/agent.js';
+import dealersHandler from '../api/dealers.js';
 import { closeDb } from '../api/_lib/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,7 +33,10 @@ const port = Number(process.env.PORT || 3000);
 const app = express();
 app.disable('x-powered-by');
 
-app.use(express.json({ limit: '64kb' }));
+/* Vehicle photos are sent as compressed data URLs for the vision endpoint.
+   Keep this aligned with api/ai.js's 8 MB body limit; 64 KB silently rejects
+   ordinary phone photos before the handler can process them. */
+app.use(express.json({ limit: '8mb' }));
 
 /* Express → Vercel req shim: provide a parsed `query` and `url` path. */
 function adapt(handler) {
@@ -69,6 +74,29 @@ app.patch('/api/profile/notifications', adapt(profileHandler));
 app.get('/api/profile/teams', adapt(profileHandler));
 app.post('/api/profile/support', adapt(profileHandler));
 app.post('/api/ai', adapt(aiHandler));
+app.post('/api/agent', adapt(agentHandler));
+app.get('/api/admin/dealers', adapt(dealersHandler));
+app.post('/api/admin/dealers', adapt(dealersHandler));
+app.get('/api/admin/dealers/:id', adapt(dealersHandler));
+app.patch('/api/admin/dealers/:id', adapt(dealersHandler));
+app.get('/api/admin/dealers/:id/branches', adapt(dealersHandler));
+app.post('/api/admin/dealers/:id/branches', adapt(dealersHandler));
+app.post('/api/admin/dealers/:id/invites', adapt(dealersHandler));
+app.get('/api/dealer/me', adapt(dealersHandler));
+app.post('/api/dealer/invites/accept', adapt(dealersHandler));
+app.get('/api/dealer/services', adapt(dealersHandler));
+app.post('/api/dealer/services', adapt(dealersHandler));
+app.get('/api/dealer/services/:id', adapt(dealersHandler));
+app.patch('/api/dealer/services/:id', adapt(dealersHandler));
+app.get('/api/dealer/fitments', adapt(dealersHandler));
+app.post('/api/dealer/fitments', adapt(dealersHandler));
+app.get('/api/dealer/fitments/:id', adapt(dealersHandler));
+app.patch('/api/dealer/fitments/:id', adapt(dealersHandler));
+app.get('/api/dealer/service-requests', adapt(dealersHandler));
+app.patch('/api/dealer/service-requests', adapt(dealersHandler));
+app.patch('/api/dealer/service-requests/:id', adapt(dealersHandler));
+app.get('/api/vehicles/:id/dealer-matches', adapt(dealersHandler));
+app.post('/api/vehicles/:id/service-requests', adapt(dealersHandler));
 
 /* Static assets — serve the repo at root. */
 app.use(express.static(root, {
@@ -81,6 +109,10 @@ app.use('/api', (_req, res) => {
   res.statusCode = 404;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify({ error: { code: 'not_found', message: 'API endpoint not found' } }));
+});
+
+app.use((_req, res) => {
+  res.status(404).sendFile(join(root, '404.html'));
 });
 
 app.use((err, _req, res, _next) => {

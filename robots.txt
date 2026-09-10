@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /db/
+Disallow: /scripts/
+
+Sitemap: https://booundless.vercel.app/sitemap.xml

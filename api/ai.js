@@ -10,10 +10,10 @@ export default async function handler(req, res) {
     if (!user) return;
     const body = await readBody(req, { limit: '8mb' });
     const mode = body?.mode;
-    const db = await getDb();
     let system = '你是康程 CarAI 助手。使用繁體中文，回答精簡實用；不要虛構車況、法規或即時路況。清楚說明這只是建議。';
     let prompt = '';
     if (mode === 'service') {
+      const db = await getDb();
       const vehicleId = String(body.vehicle_id || '');
       const [v, s, h] = await Promise.all([
         db.query('SELECT id,model,mileage_km FROM vehicles WHERE id=$1', [vehicleId]),
@@ -32,6 +32,7 @@ export default async function handler(req, res) {
       const result = await askAI({
         system: `${system} 你是車輛照片辨識助手。只輸出 JSON，格式為 {"model":"","make":"","year":null,"fuel_type":"","plate":""}。看不清楚的欄位請留空，不要猜車牌。`,
         user: [{ type: 'text', text: '請辨識照片中的車輛，回傳指定 JSON。' }, { type: 'image_url', image_url: { url: image } }],
+        model: process.env.AI_VISION_MODEL || process.env.AI_MODEL,
         maxTokens: 300,
       });
       let vehicle = {};

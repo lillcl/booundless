@@ -42,12 +42,19 @@ async function seedDefaultData(pool) {
   const now = new Date().toISOString();
 
   await pool.query(`
-    INSERT INTO vehicles (id, model, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at)
+    INSERT INTO vehicles (id, model, make, year, fuel_type, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at)
     VALUES
-      ('toyota', 'Toyota Corolla Cross', 'MA-23-88', 42680, '42,680 km', '/assets/vehicle-toyota.jpg', 'Isaac', 'isaac', $1, $1),
-      ('bmw',    'BMW 320i',            'MP-81-26', 31200, '31,200 km', '/assets/vehicle-bmw.jpg',    'Isaac', 'company', $1, $1),
-      ('tesla',  'Tesla Model Y',       'MZ-18-54', 18540, '18,540 km', '/assets/vehicle-tesla.jpg',  'Isaac', 'family', $1, $1)
+      ('toyota', 'Toyota Corolla Cross', 'Toyota', 2021, 'Hybrid', 'MA-23-88', 42680, '42,680 km', '/assets/vehicle-toyota.jpg', 'Isaac', 'isaac', $1, $1),
+      ('bmw',    'BMW 320i',            'BMW',    2019, 'Petrol', 'MP-81-26', 31200, '31,200 km', '/assets/vehicle-bmw.jpg',    'Isaac', 'company', $1, $1),
+      ('tesla',  'Tesla Model Y',       'Tesla',  2023, 'Electric', 'MZ-18-54', 18540, '18,540 km', '/assets/vehicle-tesla.jpg',    'Isaac', 'family', $1, $1)
+    ON CONFLICT (id) DO NOTHING
   `, [now]);
+
+  /* Backfill identity fields for legacy seeded rows created before dealer
+     matching was introduced. User-entered values are left untouched. */
+  await pool.query(`UPDATE vehicles SET make='Toyota',year=2021,fuel_type='Hybrid' WHERE id='toyota' AND make IS NULL`);
+  await pool.query(`UPDATE vehicles SET make='BMW',year=2019,fuel_type='Petrol' WHERE id='bmw' AND make IS NULL`);
+  await pool.query(`UPDATE vehicles SET make='Tesla',year=2023,fuel_type='Electric' WHERE id='tesla' AND make IS NULL`);
 
   await pool.query(`
     INSERT INTO reminders (id, vehicle_id, kind, title, due_in, icon, status, created_at, updated_at)
