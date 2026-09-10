@@ -379,6 +379,11 @@ function showScreen(id){
   document.getElementById('detailFixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   document.getElementById('backToCars')?.addEventListener('click', () => { window.location.hash = '#/garage'; });
   document.addEventListener('click', (e) => {
+    if (e.target.closest?.('#backToCars')) {
+      e.preventDefault();
+      window.location.hash = '#/garage';
+      return;
+    }
     if (e.target.closest?.('[data-close-sheet]')) closeSheet();
     const profileAction = e.target.closest?.('[data-profile-action]');
     if (profileAction) openSheet(`<h2>${profileAction.dataset.profileAction}</h2><p>此設定頁面正在準備中。</p><button class="secondary" type="button" data-close-sheet>關閉</button>`);
@@ -391,6 +396,13 @@ function showScreen(id){
     }
   });
   document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  document.querySelectorAll('#vehicleDetailSimple .card.list .row').forEach((row) => {
+    if (row.querySelector('.wear-bar')) return;
+    const state = row.querySelector('.state');
+    const wear = state?.classList.contains('warn') ? 65 : (state?.classList.contains('urgent') ? 90 : 25);
+    row.classList.add('wear-row');
+    row.insertAdjacentHTML('beforeend', `<div class="wear-bar"><div class="wear-bar__fill ${wear >= 80 ? 'high' : (wear >= 50 ? 'mid' : '')}" style="width:${wear}%"></div></div>`);
+  });
   window.openCarDetail = async (id) => {
     const card = document.querySelector(`[data-carid="${CSS.escape(id)}"]`);
     if (!card) return;
