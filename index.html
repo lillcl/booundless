@@ -11,7 +11,7 @@
   --radius:22px;--shadow:0 10px 28px rgba(18,23,28,.05);
 }
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang HK","PingFang TC","Noto Sans TC",Arial,sans-serif}
-button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{display:none}.screen.active{display:block}
+button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.active{display:block}
 .wrap{width:min(980px,calc(100% - 32px));margin:auto;padding:34px 0 80px}
 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:28px}.top h1{font-size:34px;line-height:1;margin:0 0 8px;letter-spacing:-1.2px}.top p{margin:0;color:var(--muted);font-size:15px}
 .iconbtn{width:46px;height:46px;border:0;border-radius:50%;background:#111;color:#fff;font-size:26px;display:grid;place-items:center}
@@ -37,6 +37,7 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
 .kc-topbar__brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--ink);text-decoration:none}
 .kc-topbar__mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--color-brand);color:#fff;font-size:14px;font-weight:800}
 .kc-topbar__nav{display:flex;gap:18px;flex:1;margin-left:8px}
+.kc-topbar__admin{display:none}
 .kc-topbar__nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px;padding:6px 0;border-bottom:2px solid transparent}
 .kc-topbar__nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--color-brand)}
 .kc-topbar__user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:14px}
@@ -165,9 +166,8 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
   <a class="kc-topbar__brand" href="#/home"><span class="kc-topbar__mark">康</span><b>CarAI</b></a>
   <nav class="kc-topbar__nav">
     <a href="#/home" data-nav="home">首頁</a>
-    <a href="#/garage" data-nav="garage">車庫</a>
-    <a href="#/qinao" data-nav="qinao">琴澳</a>
-    <a href="#/admin/users" data-nav="admin/users" data-admin-only>管理</a>
+    <a href="#/garage" data-nav="garage">我的車</a>
+    <a href="#/profile" data-nav="profile">我的</a>
   </nav>
   <div class="kc-topbar__user" id="topbarUser">
     <a href="#/login" data-nav="login" data-anon-only>登入</a>
@@ -307,12 +307,6 @@ button,input{font:inherit}.app{min-height:100vh;padding-bottom:92px}.screen{disp
   </div>
 </section>
 
-<nav class="nav kc-bottom-nav">
-  <button class="active" data-tab="home">首頁</button>
-  <button data-tab="car">我的車</button>
-  <button data-tab="profile">我的</button>
-</nav>
-
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="handle"></div>
@@ -349,6 +343,60 @@ function showScreen(id){
   }[c]));
   const unwrap = (p) => Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : []);
   const teamLabel = (t) => ({ isaac: 'Isaac 團隊共同管理', company: '公司車隊共同管理', family: 'Leong 家庭共同管理' }[t] || `${t} 團隊共同管理`);
+
+  /* Keep navigation interactive while optional API hydration is loading. */
+  const staticRoute = (route) => ({ home: 'home', garage: 'car', profile: 'profile' }[route] || null);
+  const navigateImmediately = () => {
+    const route = (window.location.hash || '#/home').replace(/^#\/?/, '').split('?')[0];
+    const target = staticRoute(route);
+    if (target) window.showScreen(target);
+  };
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest?.('a[href^="#/"]');
+    const action = e.target.closest?.('[data-go]');
+    if (link || action) {
+      const route = action?.dataset.go || link.getAttribute('href').replace(/^#\/?/, '').split('?')[0];
+      const target = staticRoute(route === 'car' ? 'garage' : route);
+      if (target) window.showScreen(target);
+    }
+  });
+  window.addEventListener('hashchange', navigateImmediately);
+  navigateImmediately();
+
+  const overlay = document.getElementById('overlay');
+  const sheetContent = document.getElementById('sheetContent');
+  const openSheet = (html) => {
+    if (!overlay || !sheetContent) return;
+    sheetContent.innerHTML = html;
+    overlay.classList.add('open');
+  };
+  const closeSheet = () => overlay?.classList.remove('open');
+  overlay?.addEventListener('click', (e) => { if (e.target === overlay) closeSheet(); });
+  document.getElementById('addCarBtn')?.addEventListener('click', () => openSheet('<h2>新增車輛</h2><p>新增車輛功能即將推出。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  document.getElementById('addCarBtn2')?.addEventListener('click', () => openSheet('<h2>新增車輛</h2><p>新增車輛功能即將推出。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  document.getElementById('fixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  document.addEventListener('click', (e) => {
+    if (e.target.closest?.('[data-close-sheet]')) closeSheet();
+    const viewButton = e.target.closest?.('[data-mycar-view]');
+    if (viewButton) {
+      document.querySelectorAll('[data-mycar-view]').forEach((b) => b.classList.toggle('active', b === viewButton));
+      document.querySelectorAll('.v10-car-card').forEach((card) => {
+        card.style.display = viewButton.dataset.mycarView === 'team' && card.dataset.team !== 'isaac' ? 'none' : '';
+      });
+    }
+  });
+  document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  window.openCarDetail = async (id) => {
+    const card = document.querySelector(`[data-carid="${CSS.escape(id)}"]`);
+    if (!card) return;
+    const name = card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛';
+    const meta = card.querySelector('.v10-meta')?.textContent || '';
+    const detailName = document.getElementById('detailCarName');
+    const detailMeta = document.getElementById('detailCarMeta');
+    if (detailName) detailName.textContent = name;
+    if (detailMeta) detailMeta.textContent = meta;
+    showScreen('vehicleDetailSimple');
+  };
 
   const [vehiclesRes, remindersRes, historyRes] = await Promise.allSettled([
     fetch('/api/vehicles').then((r) => r.json()),
@@ -546,7 +594,7 @@ function showScreen(id){
     if (view) view.innerHTML = '';
     if (STATIC_ROUTES.has(name)) {
       if (typeof window.showScreen === 'function') {
-        window.showScreen(name);
+        window.showScreen(name === 'garage' ? 'car' : name);
       } else {
         document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
         const target = document.getElementById(name);
@@ -583,14 +631,11 @@ function showScreen(id){
 
   function renderTopbar() {
     const userEl = document.getElementById('topbarUser');
-    const navLinks = document.querySelectorAll('.kc-topbar__nav a[data-admin-only]');
     const anonLinks = document.querySelectorAll('.kc-topbar__user a[data-anon-only]');
     if (!me) {
       userEl.innerHTML = '<a href="#/login" data-nav="login">登入</a>';
-      navLinks.forEach((a) => a.style.display = 'none');
       anonLinks.forEach((a) => a.style.display = '');
     } else {
-      navLinks.forEach((a) => a.style.display = me.role === 'admin' ? '' : 'none');
       anonLinks.forEach((a) => a.style.display = 'none');
       userEl.innerHTML =
         '<span class="who">' + esc(me.display_name || me.email) +
@@ -701,7 +746,9 @@ function showScreen(id){
   async function loadUsersList() {
     const root = document.getElementById('usersList');
     if (!root) return;
-    const r = await fetch('/api/users');
+    let r;
+    try { r = await fetch('/api/users'); }
+    catch { root.innerHTML = '<div class="row"><b>無法連線至管理 API</b></div>'; return; }
     if (!r.ok) { root.innerHTML = '<div class="row"><b>無法讀取</b></div>'; return; }
     const d = await r.json();
     if (!d.data.length) { root.innerHTML = '<div class="row"><b>尚無用戶</b></div>'; return; }
@@ -760,7 +807,12 @@ function showScreen(id){
         '<button class="kc-tab" data-tab="history">維修紀錄 (<span id="cntHistory">…</span>)</button>' +
       '</div>' +
       '<div id="adminAssetsPane" class="card list" style="margin-top:16px"><div class="row"><b>載入中…</b></div></div></div>';
-    const r = await fetch('/api/assets');
+    let r;
+    try { r = await fetch('/api/assets'); }
+    catch {
+      document.getElementById('adminAssetsPane').innerHTML = '<div class="row"><b>無法連線至管理 API</b></div>';
+      return;
+    }
     if (!r.ok) {
       document.getElementById('adminAssetsPane').innerHTML = '<div class="row"><b>無法讀取</b></div>';
       return;
@@ -839,7 +891,9 @@ function showScreen(id){
     if (!list) return;
     let url = '/api/audit?limit=100';
     if (adminAuditFilter) url += '&action=' + encodeURIComponent(adminAuditFilter) + '%25'; // % to LIKE
-    const r = await fetch(url);
+    let r;
+    try { r = await fetch(url); }
+    catch { list.innerHTML = '<div class="row"><b>無法連線至管理 API</b></div>'; return; }
     if (!r.ok) { list.innerHTML = '<div class="row"><b>無法讀取</b></div>'; return; }
     const d = await r.json();
     if (!d.data.length) { list.innerHTML = '<div class="row"><b>尚無稽核紀錄</b></div>'; return; }
@@ -870,21 +924,6 @@ function showScreen(id){
   await fetchMe();
   renderTopbar();
 
-  /* The V11.3 first inline script has a SyntaxError that aborts early, so
-     showScreen() and the bottom-nav [data-tab] bindings never attach.
-     Re-bind the bottom-nav here so clicking 首頁 / 我的車 / 我的 actually
-     switches screens. */
-  function fallbackShow(name) {
-    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-    const target = document.getElementById(name);
-    if (target) target.classList.add('active');
-  }
-  document.querySelectorAll('.kc-bottom-nav button[data-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => fallbackShow(btn.dataset.tab));
-  });
-  document.querySelectorAll('[data-go]').forEach((btn) => {
-    btn.addEventListener('click', () => fallbackShow(btn.dataset.go));
-  });
 })();
 </script>
 
