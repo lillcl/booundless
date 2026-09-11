@@ -11,7 +11,7 @@ export const vehicleTools = {
     async execute({ user }) {
       const db = await getDb();
       const r = await db.query(`SELECT ${vehicleFields} FROM vehicles
-        WHERE created_by_user_id = $1 OR created_by_user_id IS NULL ORDER BY created_at ASC`, [user.id]);
+        WHERE archived_at IS NULL AND (created_by_user_id = $1 OR created_by_user_id IS NULL) ORDER BY created_at ASC`, [user.id]);
       return toolResult(r.rows, { count: r.rowCount });
     },
   },
@@ -46,7 +46,7 @@ export const vehicleTools = {
       const r = await db.query(`INSERT INTO vehicles
         (id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_by_user_id, updated_by_user_id)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13) RETURNING ${vehicleFields}`,
-      [newId(), model, make, year, text(args.fuel_type, 'fuel_type', { max: 60 }), text(args.vin, 'vin', { max: 80 }), text(args.plate, 'plate', { max: 40 }), mileage, `${mileage.toLocaleString()} km`, image || '/assets/vehicle-toyota.jpg', user.display_name || 'User', 'isaac', user.id]);
+      [newId(), model, make, year, text(args.fuel_type, 'fuel_type', { max: 60 }), text(args.vin, 'vin', { max: 80 }), text(args.plate, 'plate', { max: 40 }), mileage, `${mileage.toLocaleString()} km`, image || '/assets/vehicle-placeholder.svg', user.display_name || 'User', 'personal', user.id]);
       return toolResult(r.rows[0]);
     },
   },

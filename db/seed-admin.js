@@ -1,18 +1,22 @@
-/* Idempotent seed for the bootstrap admin user.
-   Usage: node db/seed-admin.js
-   Uses bcryptjs to hash 'admin123' (cost 10) and INSERT ... ON CONFLICT
-   so the script is safe to re-run. */
+/* Idempotent seed for an admin user.
+   Usage: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='…' node db/seed-admin.js
+   The password is supplied at runtime, hashed with bcrypt, and never stored
+   in source control or written to the database in plaintext. */
 
 import { config as loadDotenv } from 'dotenv';
 loadDotenv();
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
-const URL = process.env.KC_DATABASE_URL;
-if (!URL) { console.error('KC_DATABASE_URL not set'); process.exit(1); }
+const URL = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
+if (!URL) { console.error('SUPABASE_DB_URL or KC_DATABASE_URL not set'); process.exit(1); }
 
-const ADMIN_EMAIL = 'admin@example.com';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error('ADMIN_EMAIL and ADMIN_PASSWORD must be set at runtime');
+  process.exit(1);
+}
 
 const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 

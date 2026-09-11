@@ -38,29 +38,33 @@ async function rowCount(pool, table) {
   return rows[0].n;
 }
 
+async function archiveLegacyDemoVehicles(pool) {
+  /* Keep old seed rows for referential integrity, but remove them from every
+     current user/admin/agent view. The public /demo page owns the only demo
+     vehicle now. */
+  await pool.query(`UPDATE vehicles
+    SET archived_at = NOW(), updated_at = NOW()
+    WHERE id IN ('bmw', 'tesla') AND archived_at IS NULL`);
+}
+
 async function seedDefaultData(pool) {
   const now = new Date().toISOString();
 
   await pool.query(`
     INSERT INTO vehicles (id, model, make, year, fuel_type, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at)
     VALUES
-      ('toyota', 'Toyota Corolla Cross', 'Toyota', 2021, 'Hybrid', 'MA-23-88', 42680, '42,680 km', '/assets/vehicle-toyota.jpg', 'Isaac', 'isaac', $1, $1),
-      ('bmw',    'BMW 320i',            'BMW',    2019, 'Petrol', 'MP-81-26', 31200, '31,200 km', '/assets/vehicle-bmw.jpg',    'Isaac', 'company', $1, $1),
-      ('tesla',  'Tesla Model Y',       'Tesla',  2023, 'Electric', 'MZ-18-54', 18540, '18,540 km', '/assets/vehicle-tesla.jpg',    'Isaac', 'family', $1, $1)
+      ('toyota', 'Toyota Corolla Cross', 'Toyota', 2021, 'Hybrid', 'MA-23-88', 42680, '42,680 km', '/assets/vehicle-toyota.jpg', 'Demo', 'demo', $1, $1)
     ON CONFLICT (id) DO NOTHING
   `, [now]);
 
   /* Backfill identity fields for legacy seeded rows created before dealer
      matching was introduced. User-entered values are left untouched. */
   await pool.query(`UPDATE vehicles SET make='Toyota',year=2021,fuel_type='Hybrid' WHERE id='toyota' AND make IS NULL`);
-  await pool.query(`UPDATE vehicles SET make='BMW',year=2019,fuel_type='Petrol' WHERE id='bmw' AND make IS NULL`);
-  await pool.query(`UPDATE vehicles SET make='Tesla',year=2023,fuel_type='Electric' WHERE id='tesla' AND make IS NULL`);
 
   await pool.query(`
     INSERT INTO reminders (id, vehicle_id, kind, title, due_in, icon, status, created_at, updated_at)
     VALUES
-      ('r-toyota-oil', 'toyota', 'oil',   'Corolla Cross · 機油及機油隔', '約 1,320 km 後', 'oil',   'upcoming', $1, $1),
-      ('r-bmw-brake',  'bmw',    'brake', 'BMW 320i · 煞車油',           '約 1 個月內',   'brake', 'upcoming', $1, $1)
+      ('r-toyota-oil', 'toyota', 'oil',   'Corolla Cross · 機油及機油隔', '約 1,320 km 後', 'oil',   'upcoming', $1, $1)
   `, [now]);
 
   /* Maintenance spec per vehicle. wear is 0..100 — at 100 the item is due. */
@@ -75,24 +79,6 @@ async function seedDefaultData(pool) {
     ['toyota', '空氣濾芯',      20000, 12, 34200, '2026-02-03', 42, 7],
     ['toyota', '冷氣濾芯',      20000, 12, 22000, '2024-04-02', 99, 8],
     ['toyota', '12V 電瓶',     null,   48, null,  '2022-09-14', 88, 9],
-    /* BMW 320i — 2019, 2.0 Turbo, 31,200 km */
-    ['bmw',    '機油及機油隔', 10000, 12, 28200, '2026-05-21', 30, 1],
-    ['bmw',    '煞車油',        40000, 24, 12000, '2024-03-15', 95, 2],
-    ['bmw',    '煞車皮',        45000, null, 12000, '2024-03-15', 42, 3],
-    ['bmw',    '波箱油',        60000, 48, null,  null,         52, 4],
-    ['bmw',    '冷卻液',        80000, 48, null,  '2023-04-10', 39, 5],
-    ['bmw',    '火星塞',        40000, 48, null,  '2023-04-10', 78, 6],
-    ['bmw',    '空氣濾芯',      20000, 12, 21000, '2025-11-04', 51, 7],
-    ['bmw',    '冷氣濾芯',      20000, 12, 21000, '2025-11-04', 51, 8],
-    ['bmw',    '12V 電瓶',     null,   48, null,  '2022-08-19', 92, 9],
-    /* Tesla Model Y — 2023, Electric, 18,540 km */
-    ['tesla',  '輪胎',          15000, 6,  12000, '2025-11-12', 44, 1],
-    ['tesla',  '12V 電瓶',     null,   48, null,  '2023-06-10', 71, 2],
-    ['tesla',  '煞車油',        40000, 24, null,  '2023-06-10', 32, 3],
-    ['tesla',  '煞車卡鉗保養',  20000, 12, 12000, '2025-11-12', 28, 4],
-    ['tesla',  'HEPA 濾芯',     20000, 24, null,  null,         93, 5],
-    ['tesla',  '冷卻液（驅動單元）', 80000, 96, null, '2023-06-10', 4, 6],
-    ['tesla',  '車身及底盤檢查', null,   12, null,  '2024-09-22', 65, 7],
   ];
 
   for (const [vid, item, ikm, im, ldkm, ld, wear, ord] of statusRows) {
@@ -110,11 +96,6 @@ async function seedDefaultData(pool) {
     ['h-toyota-1', 'toyota', '2026-06-12T10:00:00Z', 'oil', '機油及機油隔', '5W-30 全合成', 'MOP 980', 38420],
     ['h-toyota-2', 'toyota', '2026-02-03T14:30:00Z', 'filter', '塵格', '原廠件', 'MOP 230', 34200],
     ['h-toyota-3', 'toyota', '2025-08-19T09:00:00Z', 'tire', '輪胎調位', '前後對調', 'MOP 280', 28800],
-    ['h-bmw-1', 'bmw', '2026-05-21T11:00:00Z', 'oil', '機油及機油隔', '5W-40 LL-04', 'MOP 1,180', 28200],
-    ['h-bmw-2', 'bmw', '2025-11-04T15:00:00Z', 'filter', '空氣濾芯', '原廠件', 'MOP 420', 22100],
-    ['h-bmw-3', 'bmw', '2025-04-22T10:30:00Z', 'brake', '煞車油', 'DOT 5.1', 'MOP 680', 17600],
-    ['h-tesla-1', 'tesla', '2025-11-12T13:00:00Z', 'tire', '輪胎調位', '前後對調+四輪平衡', 'MOP 380', 12000],
-    ['h-tesla-2', 'tesla', '2025-06-08T16:00:00Z', 'inspect', '底盤檢查', '底盤+煞車+冷卻液', 'MOP 1,500', 9600],
   ];
   for (const row of historyRows) {
     await pool.query(`INSERT INTO service_history
@@ -143,6 +124,7 @@ export async function getDb() {
     const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
     const count = await rowCount(_pool, 'vehicles');
     if (seeded.rowCount === 0 && count === 0) await seedDefaultData(_pool);
+    await archiveLegacyDemoVehicles(_pool);
     return _pool;
   } catch (error) {
     const failedPool = _pool;

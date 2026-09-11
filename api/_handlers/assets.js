@@ -15,25 +15,27 @@ export default async function handler(req, res) {
 
     const vehicles = await db.query(
       `SELECT id, model, plate, mileage_km, mileage_label, owner, team, image, created_at
-       FROM vehicles ORDER BY created_at ASC`,
+       FROM vehicles WHERE archived_at IS NULL ORDER BY created_at ASC`,
     );
     const reminders = await db.query(
       `SELECT r.id, r.vehicle_id, r.kind, r.title, r.due_in, r.status,
               v.model AS vehicle_model, v.plate AS vehicle_plate
        FROM reminders r
-       LEFT JOIN vehicles v ON v.id = r.vehicle_id
+       JOIN vehicles v ON v.id = r.vehicle_id AND v.archived_at IS NULL
        ORDER BY r.created_at DESC`,
     );
     const history = await db.query(
       `SELECT h.id, h.vehicle_id, h.performed_at, h.kind, h.title, h.cost, h.mileage_km,
               v.model AS vehicle_model, v.plate AS vehicle_plate
        FROM service_history h
-       LEFT JOIN vehicles v ON v.id = h.vehicle_id
+       JOIN vehicles v ON v.id = h.vehicle_id AND v.archived_at IS NULL
        ORDER BY h.performed_at DESC`,
     );
     const status = await db.query(
-      `SELECT id, vehicle_id, item, wear, last_done_km, interval_km
-       FROM vehicle_status ORDER BY vehicle_id, display_order`,
+      `SELECT s.id, s.vehicle_id, s.item, s.wear, s.last_done_km, s.interval_km
+       FROM vehicle_status s
+       JOIN vehicles v ON v.id = s.vehicle_id AND v.archived_at IS NULL
+       ORDER BY s.vehicle_id, s.display_order`,
     );
 
     sendJSON(res, 200, {

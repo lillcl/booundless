@@ -315,13 +315,13 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 <section class="screen active" id="home">
   <div class="wrap">
     <div class="top">
-      <div><h1>你好，Isaac</h1><p>康程只告訴你現在最重要的事。</p></div>
+      <div><h1 id="homeGreeting">你好</h1><p>康程只告訴你現在最重要的事。</p></div>
       <button class="iconbtn" id="addCarBtn">＋</button>
     </div>
 
     <div class="home-grid">
       <div class="card vehicle">
-        <div class="vehicle-photo"><img src="/assets/vehicle-toyota.jpg" alt="你的車輛照片"></div>
+        <div class="vehicle-photo"><img src="/assets/vehicle-placeholder.svg" alt="你的車輛照片"></div>
         <div class="vehicle-body">
           <div class="eyebrow">YOUR CAR PASSPORT</div>
           <h2>尚未建立車輛</h2>
@@ -359,7 +359,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
     </div>
 
     <div class="mycar-toolbar">
-      <button class="team-filter" id="teamFilterBtn">全部團隊 · 3 個團隊 <span>⌄</span></button>
+      <button class="team-filter" id="teamFilterBtn">全部團隊 <span>⌄</span></button>
       <div class="mycar-toggle">
         <button class="active" data-mycar-view="all">全部車輛</button>
         <span>/</span>
@@ -430,7 +430,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 <section class="screen" id="profile">
   <div class="wrap">
     <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
-    <div class="card profile-card"><h2>Isaac</h2><p>1 架車 · Vehicle Passport 已建立</p></div>
+    <div class="card profile-card"><h2 id="profileDisplayName">你的帳戶</h2><p id="profileVehicleSummary">登入後查看你的車輛護照</p></div>
     <div class="section-title">設定</div>
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
@@ -488,13 +488,15 @@ function showScreen(id){
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
   const unwrap = (p) => Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : []);
-  const teamLabel = (t) => ({ isaac: 'Isaac 團隊共同管理', company: '公司車隊共同管理', family: 'Leong 家庭共同管理' }[t] || `${t} 團隊共同管理`);
+  const teamLabel = (t) => ({ personal: '個人車輛', company: '公司車隊', family: '家庭車隊' }[t] || '共享車隊');
   /* Route handlers can run on the first paint, so every shared state value
      they read must exist before routing is initialized. */
   let me = null; // { id, email, role, display_name, is_active }
+  let sessionReady = false;
   let adminAssetsCache = null;
   let adminAssetsTab = 'vehicles';
   let adminAuditFilter = '';
+  const protectedStaticRoutes = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos']);
 
   /* Keep navigation interactive while optional API hydration is loading. */
   const staticRoute = (route) => ({ landing: 'landing', demo: 'vehicleDetailSimple', home: 'home', garage: 'car', profile: 'profile', service: 'service', qinao: 'qinao', videos: 'videos' }[route] || null);
@@ -502,7 +504,11 @@ function showScreen(id){
     const path = window.location.pathname.replace(/\/+$/, '') || '/';
     const route = (window.location.hash || (path === '/demo' ? '#/demo' : '#/landing')).replace(/^#\/?/, '').split('?')[0];
     const target = staticRoute(route);
-    if (target) window.showScreen(target);
+    if (target && (!protectedStaticRoutes.has(route) || (sessionReady && me))) {
+      window.showScreen(target);
+    } else if (protectedStaticRoutes.has(route)) {
+      document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
+    }
   };
   document.addEventListener('click', (e) => {
     const link = e.target.closest?.('a[href^="#/"]');
@@ -512,7 +518,9 @@ function showScreen(id){
     if (link || action) {
       const route = action?.dataset.go || link?.getAttribute('href').replace(/^#\/?/, '').split('?')[0];
       const target = staticRoute(route === 'car' ? 'garage' : route);
-      if (target) window.showScreen(target);
+      const routeName = route === 'car' ? 'garage' : route;
+      if (target && (!protectedStaticRoutes.has(routeName) || (sessionReady && me))) window.showScreen(target);
+      else if (protectedStaticRoutes.has(routeName)) document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
     }
   });
   window.addEventListener('hashchange', navigateImmediately);
@@ -628,7 +636,7 @@ function showScreen(id){
     if (viewButton) {
       document.querySelectorAll('[data-mycar-view]').forEach((b) => b.classList.toggle('active', b === viewButton));
       document.querySelectorAll('.v10-car-card').forEach((card) => {
-        card.style.display = viewButton.dataset.mycarView === 'team' && card.dataset.team !== 'isaac' ? 'none' : '';
+        card.style.display = viewButton.dataset.mycarView === 'team' && !card.dataset.team ? 'none' : '';
       });
     }
   });
@@ -736,9 +744,19 @@ function showScreen(id){
   const reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
   const history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
   if (!vehicles.length) vehicles = [...document.querySelectorAll('.v10-car-card')].map((card) => ({
-    id: card.dataset.carid, model: card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛',
+          id: card.dataset.carid, model: card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛',
     mileage_label: card.querySelector('.v10-mileage')?.textContent || '', image: '', team: card.dataset.team,
   }));
+
+  const displayName = me?.display_name || me?.email?.split('@')[0] || '你的帳戶';
+  const greeting = document.getElementById('homeGreeting');
+  if (greeting) greeting.textContent = me ? `你好，${displayName}` : '你好';
+  const profileName = document.getElementById('profileDisplayName');
+  if (profileName) profileName.textContent = me ? displayName : '你的帳戶';
+  const profileSummary = document.getElementById('profileVehicleSummary');
+  if (profileSummary) profileSummary.textContent = me
+    ? `${vehicles.length} 架車 · Vehicle Passport ${vehicles.length ? '已建立' : '尚未建立'}`
+    : '登入後查看你的車輛護照';
 
   /* 1. Home hero card — show the first vehicle and its most urgent reminder */
   const hero = vehicles[0];
@@ -784,8 +802,8 @@ function showScreen(id){
       const healthTone = r && r.icon === 'brake' ? 'brake' : (r ? '' : 'good');
       const healthText = r ? r.title : '狀態正常';
       return `
-        <button type="button" class="v10-car-card" data-team="${esc(v.team || 'isaac')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image)}')">
-          <span class="v10-shared">👥 ${esc(teamLabel(v.team))}</span>
+        <button type="button" class="v10-car-card" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || '/assets/vehicle-placeholder.svg')}')">
+          <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
           <span class="v10-dots">•••</span>
           <span class="v10-name">${esc(v.model)}</span>
           <span class="v10-meta">${esc(v.mileage_label || '')}</span>
@@ -815,7 +833,7 @@ function showScreen(id){
     selectedVehicleId = id;
     document.getElementById('detailCarName').textContent = v.model;
     document.getElementById('detailCarMeta').textContent = v.mileage_label;
-    document.getElementById('detailCarPhoto').src = v.image || '';
+    document.getElementById('detailCarPhoto').src = v.image || '/assets/vehicle-placeholder.svg';
     document.getElementById('detailCarPhoto').alt = v.model;
     showScreen('vehicleDetailSimple');
 
@@ -893,7 +911,9 @@ function showScreen(id){
   const teamBtn = document.getElementById('teamFilterBtn');
   if (teamBtn) {
     const teams = new Set(vehicles.map((v) => v.team).filter(Boolean));
-    teamBtn.innerHTML = `全部團隊 · ${teams.size} 個團隊 <span>⌄</span>`;
+    teamBtn.innerHTML = teams.size
+      ? `全部團隊 · ${teams.size} 個團隊 <span>⌄</span>`
+      : '全部團隊 <span>⌄</span>';
   }
 
   /* 5. Render home page "最近" (recent service records) from /api/history/recent */
@@ -994,8 +1014,7 @@ function showScreen(id){
     syncTopbarNav();
     /* Hide any previously rendered view content */
     if (view) view.innerHTML = '';
-    const protectedRoute = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos']);
-    if (protectedRoute.has(name) && !me) {
+    if (protectedStaticRoutes.has(name) && !me) {
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
       if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">SIGN IN REQUIRED</span><h1>登入後建立你的車輛護照</h1><p>你的車輛、個人資料與 CarAI 功能只會在登入後顯示。</p><a class="landing__primary" href="#/login">前往登入</a></div></div>';
       return;
@@ -1072,7 +1091,7 @@ function showScreen(id){
     const name = getRoute();
     document.querySelectorAll('.kc-topbar a[data-nav]').forEach((a) => {
       const href = a.getAttribute('href') || '';
-      const target = href.replace(/^#\/?/, '').split('?')[0];
+      const target = href === '/' ? 'landing' : href.replace(/^#\/?/, '').split('?')[0];
       const active = target === name || (target === 'admin/users' && name.startsWith('admin/') && name !== 'admin/dealers');
       a.classList.toggle('active', active);
       if (active) a.setAttribute('aria-current', 'page');
@@ -1416,6 +1435,7 @@ function showScreen(id){
 
   /* Bootstrap: fetch session and render topbar */
   await fetchMe();
+  sessionReady = true;
   renderTopbar();
   await dispatch();
   window.addEventListener('hashchange', () => {

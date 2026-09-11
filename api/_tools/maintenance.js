@@ -23,7 +23,7 @@ export const maintenanceTools = {
       const params = [user.id]; let filter = '(v.created_by_user_id=$1 OR v.created_by_user_id IS NULL)';
       if (vehicleId) { params.push(vehicleId); filter += ` AND r.vehicle_id=$${params.length}`; }
       const r = await db.query(`SELECT r.id, r.vehicle_id, r.kind, r.title, r.due_in, r.icon, r.status, v.model AS vehicle_model, v.plate AS vehicle_plate
-        FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND ${filter} ORDER BY r.created_at DESC`, params);
+        FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND v.archived_at IS NULL AND ${filter} ORDER BY r.created_at DESC`, params);
       return toolResult(r.rows, { count: r.rowCount });
     },
   },

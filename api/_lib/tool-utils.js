@@ -59,7 +59,7 @@ export function userOwned(where = 'created_by_user_id') {
 export async function getOwnedVehicle(db, userId, vehicleId) {
   const r = await db.query(
     `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team
-       FROM vehicles WHERE id = $2 AND (created_by_user_id = $1 OR created_by_user_id IS NULL)`,
+        FROM vehicles WHERE id = $2 AND archived_at IS NULL AND (created_by_user_id = $1 OR created_by_user_id IS NULL)`,
     [userId, vehicleId],
   );
   if (!r.rowCount) throw new Error('Vehicle not found');

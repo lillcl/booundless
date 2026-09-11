@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   mileage_km    INTEGER NOT NULL DEFAULT 0,
   mileage_label TEXT NOT NULL DEFAULT '',
   image         TEXT,
-  owner         TEXT NOT NULL DEFAULT 'Isaac',
+  owner         TEXT NOT NULL DEFAULT 'User',
   team          TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()

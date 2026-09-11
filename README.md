@@ -85,7 +85,7 @@ All responses are JSON. Errors use the envelope `{ "error": { "code", "message" 
 
 SQLite database file lives at `db/dev.db` (per-developer, gitignored).
 Schema is in `db/schema.sql` and is auto-applied by `api/_lib/db.js` on first
-connection. On an empty database, three vehicles and two reminders are seeded
+connection. On an empty database, one demo vehicle and one reminder are seeded
 so the Home view has something to show immediately.
 
 To re-seed from scratch:

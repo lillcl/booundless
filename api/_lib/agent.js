@@ -134,8 +134,8 @@ async function history(db, threadId) {
 async function contextFor(user) {
   const db = await getDb();
   const [vehicles, reminders, trips, preferences] = await Promise.all([
-    db.query(`SELECT id,model,make,year,fuel_type,plate,mileage_km FROM vehicles WHERE created_by_user_id=$1 OR created_by_user_id IS NULL ORDER BY created_at`, [user.id]),
-    db.query(`SELECT r.title,r.due_in,r.status,v.model AS vehicle_model FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND (v.created_by_user_id=$1 OR v.created_by_user_id IS NULL) ORDER BY r.created_at DESC LIMIT 20`, [user.id]),
+    db.query(`SELECT id,model,make,year,fuel_type,plate,mileage_km FROM vehicles WHERE archived_at IS NULL AND (created_by_user_id=$1 OR created_by_user_id IS NULL) ORDER BY created_at`, [user.id]),
+    db.query(`SELECT r.title,r.due_in,r.status,v.model AS vehicle_model FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND v.archived_at IS NULL AND (v.created_by_user_id=$1 OR v.created_by_user_id IS NULL) ORDER BY r.created_at DESC LIMIT 20`, [user.id]),
     db.query(`SELECT title,origin,destination,start_at,status FROM trips WHERE created_by_user_id=$1 OR created_by_user_id IS NULL ORDER BY created_at DESC LIMIT 10`, [user.id]),
     db.query('SELECT maintenance_reminders,trip_updates,ai_suggestions FROM user_notification_preferences WHERE user_id=$1', [user.id]),
   ]);

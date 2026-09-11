@@ -9,7 +9,7 @@
 
 Add an authentication layer and an admin console to the康程 CarAI demo so that:
 
-- A bootstrap **admin** user can sign in (`admin@example.com` / `admin123`).
+- A bootstrap **admin** user can sign in with credentials supplied during provisioning.
 - The admin can **create, read, update, and delete users** (CRUD).
 - The admin can view **every user's assets** (vehicles, reminders, service history) in one place.
 - Every meaningful action — login, logout, user mutation, asset mutation — is recorded in an **audit log** with a **unique action id** (UUID), actor, target, payload, and timestamp.
@@ -51,8 +51,8 @@ The bootstrap admin is seeded idempotently:
 INSERT INTO users (id, email, password_hash, role, display_name)
 VALUES (
   'u-admin-bootstrap',
-  'admin@example.com',
-  -- bcrypt hash of 'admin123', cost factor 10
+  '<admin-email>',
+  -- bcrypt hash generated from the provisioning password, cost factor 10
   '$2b$10$...',
   'admin',
   'Bootstrap Admin'
@@ -269,7 +269,7 @@ Each phase ends with a working demo on the local dev server and a smoke test bef
 ### Phase 1 — DB + auth lib (no UI)
 
 - `db/schema.sql`: add `users` and `audit_log` tables; `ALTER TABLE` adds `created_by_user_id` to existing tables.
-- `db/seed-admin.js`: idempotent script — `INSERT ... ON CONFLICT DO NOTHING` for `admin@example.com` / `admin123` (bcrypt).
+- `db/seed-admin.js`: idempotent script — runtime email/password inputs are bcrypt-hashed before the upsert.
 - `api/_lib/auth.js`: `hashPassword`, `verifyPassword`, `signSession`, `verifySession`, `setSessionCookie`, `clearSessionCookie`, `readSession`, `requireUser`, `requireAdmin`, `audit()`.
 - Migration applied to Supabase.
 
@@ -324,7 +324,7 @@ Exit: every step of Phase 5 also passes against the live URL.
 | --- | --- | --- |
 | Forgetting to seed the admin on a fresh DB | M | `seed-admin.js` is idempotent; the schema migration runs it on first connection. |
 | JWT secret committed to git | L | Never read from a file in the repo. Local dev uses a dev-only secret in `.env`; prod uses Vercel env. |
-| Password stored in plain text anywhere | L | Only the bootstrap plaintext (`admin123`) is referenced at seed time. After seed, only the hash is in the DB. |
+| Password stored in plain text anywhere | L | The provisioning password is supplied at runtime only; after seed, only the bcrypt hash is in the DB. |
 | Existing demo breaks for unauthenticated users | M | Public read endpoints (`/api/vehicles`, `/api/reminders`, etc.) stay public. Only admin endpoints require auth. |
 | bcrypt cold-start adds 200-500 ms to login | L | Acceptable for a demo. Use cost 10 (≈ 80 ms on Vercel). |
 | Audit log grows unbounded | L | Demo scale. Add a TTL job in a future pass. |
@@ -338,7 +338,7 @@ None at this point — defaults are documented above. Will adjust if feedback ar
 A reviewer can, on the live URL:
 
 1. Open `https://booundless.vercel.app/` without logging in — the existing public demo still works.
-2. Click **Sign in**, enter `admin@example.com` / `admin123`, get redirected to home with the top-bar showing `[email · admin]`.
+2. Click **Sign in**, enter the provisioned admin credentials, and get redirected to home with the top-bar showing `[email · admin]`.
 3. Open `管理 → Users`, create a user, edit their role, soft-delete them. Each action produces an audit row.
 4. Open `管理 → Assets`, see every vehicle, reminder, and service-history row.
 5. Open `管理 → Audit log`, see every action with a unique UUID, actor, target, payload, and timestamp.

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+  <title id="title">車輛照片 placeholder</title>
+  <desc id="desc">一個簡潔的車輛圖示</desc>
+  <rect width="800" height="480" rx="32" fill="#edf4f7"/>
+  <path d="M205 286 242 184c8-23 30-38 54-38h208c24 0 46 15 54 38l37 102" fill="none" stroke="#7aa6b5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M180 278h440v76c0 14-11 25-25 25H205c-14 0-25-11-25-25v-76Z" fill="#7aa6b5"/>
+  <path d="M302 163h196l39 60H263l39-60Z" fill="#d9e9ee" stroke="#7aa6b5" stroke-width="14" stroke-linejoin="round"/>
+  <circle cx="266" cy="370" r="42" fill="#355e6e" stroke="#edf4f7" stroke-width="14"/>
+  <circle cx="534" cy="370" r="42" fill="#355e6e" stroke="#edf4f7" stroke-width="14"/>
+</svg>

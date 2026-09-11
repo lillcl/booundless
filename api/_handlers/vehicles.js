@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       const r = await db.query(`INSERT INTO vehicles
         (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12) RETURNING *`,
-      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-toyota.jpg',user.display_name||user.email,body.team||'personal',user.id]);
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
       return sendJSON(res, 201, r.rows[0]);
     }
 

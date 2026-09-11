@@ -9,7 +9,7 @@ export const tripTools = {
     async execute({ args, user }) {
       const db = await getDb(); const limit = integer(args.limit, 'limit', { min: 1, max: 50 }) ?? 20;
       const r = await db.query(`SELECT t.* FROM trips t LEFT JOIN vehicles v ON v.id=t.vehicle_id
-        WHERE t.created_by_user_id=$1 OR t.created_by_user_id IS NULL OR v.created_by_user_id=$1 OR v.created_by_user_id IS NULL
+        WHERE v.archived_at IS NULL AND (t.created_by_user_id=$1 OR t.created_by_user_id IS NULL OR v.created_by_user_id=$1 OR v.created_by_user_id IS NULL)
         ORDER BY t.start_at NULLS LAST,t.created_at DESC LIMIT $2`, [user.id, limit]);
       return toolResult(r.rows, { count: r.rowCount });
     },
