@@ -24,6 +24,9 @@
 <meta name="twitter:title" content="無界啟程 BOOUNDLESS｜CarAI 車輛與保養管理">
 <meta name="twitter:description" content="管理車輛、保養提醒與琴澳行程。">
 <meta name="twitter:image" content="https://www.booundless.com/assets/booundless-social.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"CarAI","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"車輛管理、保養提醒與琴澳行程規劃。"}
 </script>
@@ -134,7 +137,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .mycar-toggle{display:flex;align-items:center;gap:10px;color:#a0a5a9;font-size:14px}
 .mycar-toggle button{border:0;background:transparent;color:#90969b;font-weight:700;padding:7px 4px}
 .mycar-toggle button.active{color:#111315;border-bottom:2px solid #111315}
-.mycar-list{display:grid;gap:16px}
+.mycar-list{display:grid;gap:16px}.empty-state{padding:42px 24px;text-align:center;background:#fff;border:1px dashed #cbdce1;border-radius:24px;color:#29424d}.empty-state b{display:block;font-size:20px}.empty-state small{display:block;margin-top:9px;color:var(--muted);line-height:1.6}
 .v10-car-card{
   position:relative;width:100%;height:320px;border:0;border-radius:24px;overflow:hidden;
   background-size:cover;background-position:center;color:#fff;text-align:left;box-shadow:var(--shadow)
@@ -195,10 +198,10 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .landing{min-height:calc(100vh - 72px);padding:0 0 120px;background:radial-gradient(circle at 78% 8%,rgba(33,141,174,.16),transparent 30%),linear-gradient(145deg,#f7fafb 0%,#edf3f3 100%)}
 .landing__eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--green);font-weight:800;font-size:13px;letter-spacing:.08em}.landing__eyebrow:before{content:"";width:24px;height:2px;background:var(--green)}
 .landing h1{font-size:clamp(42px,6vw,76px);line-height:1.04;letter-spacing:-3px;max-width:700px;margin:22px 0 22px}.landing h1 em{font-style:normal;color:#176b91}.landing__lead{max-width:540px;color:#5e6b70;font-size:clamp(17px,2vw,21px);line-height:1.7;margin:0}.landing__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}.landing__actions a{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 22px;border-radius:16px;text-decoration:none;font-weight:800}.landing__primary{background:#111;color:#fff}.landing__secondary{background:#fff;color:#263237;border:1px solid #dbe3e4}.landing__note{font-size:12px;color:#788488;margin-top:13px}
-.landing__passport{position:relative;display:block;width:100%;font:inherit;text-align:left;color:inherit;background:#fff;border:1px solid #dce5e5;border-radius:28px;padding:22px;box-shadow:0 24px 60px rgba(24,57,65,.12);transform:rotate(1.5deg);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}.landing__passport:hover{transform:rotate(0deg) translateY(-3px);box-shadow:0 28px 68px rgba(24,57,65,.16)}.landing__passport:focus-visible{outline:3px solid #1999be;outline-offset:4px}.landing__passport:after{content:"DEMO";position:absolute;right:22px;top:20px;color:#3d7c4b;font-size:11px;font-weight:900;letter-spacing:.14em;border:1px solid #cfe1d3;border-radius:99px;padding:6px 9px}.landing__passport-head{display:flex;align-items:center;gap:13px;padding-bottom:18px;border-bottom:1px solid var(--line)}.landing__passport-mark{width:48px;height:48px;border-radius:15px;object-fit:cover}.landing__passport-head b{display:block;font-size:17px}.landing__passport-head small{display:block;color:var(--muted);margin-top:3px}.landing__passport-car{width:100%;height:188px;object-fit:cover;border-radius:18px;margin:18px 0 16px}.landing__passport-model{display:flex;justify-content:space-between;gap:12px;align-items:end}.landing__passport-model h2{font-size:25px;margin:0}.landing__passport-model small{color:var(--muted)}.landing__status{display:flex;align-items:center;gap:8px;color:#9a6818;background:#fff7e9;border:1px solid #f1dfbb;border-radius:13px;padding:11px 13px;margin-top:16px;font-size:13px;font-weight:750}.landing__status i{width:8px;height:8px;border-radius:50%;background:#e3a42d}.landing__passport-link{display:flex;justify-content:space-between;align-items:center;margin-top:17px;color:#176b91;font-size:13px;font-weight:850}.landing__passport-link span{font-size:21px;line-height:1}
-.landing__terms{max-width:980px;margin:88px auto 0}.landing__terms-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}.landing__terms h2{font-size:28px;letter-spacing:-.8px;margin:0}.landing__terms p{color:var(--muted);margin:5px 0 0}.landing__terms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.landing__term{padding:17px 15px;background:rgba(255,255,255,.76);border:1px solid rgba(205,218,219,.9);border-radius:17px;color:#405157;font-weight:750}.landing__term span{display:block;color:#9aa6a8;font-size:11px;font-weight:650;margin-bottom:7px}.landing__terms-cta{display:flex;justify-content:center;margin-top:22px}.landing__terms-cta a{color:#176b91;font-weight:850;text-decoration:none}.landing__terms-cta a:after{content:"  →"}
-@media(max-width:760px){.landing h1{letter-spacing:-2px}.landing__passport{max-width:520px;margin:auto}.landing__terms{margin-top:64px}.landing__terms-grid{grid-template-columns:repeat(2,1fr)}.landing__terms-head{display:block}}
-@media(max-width:420px){.landing__terms-grid{grid-template-columns:1fr 1fr;gap:8px}.landing__term{padding:14px 12px;font-size:13px}}
+.landing__passport{position:relative;display:block;width:min(780px,100%);margin:36px auto 0;font:inherit;text-align:left;color:inherit;background:#fff;border:1px solid #d4e2e5;border-radius:30px;padding:24px;box-shadow:0 24px 60px rgba(24,57,65,.12);transform:rotate(1.2deg);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}.landing__passport:hover{transform:rotate(0deg) translateY(-3px);box-shadow:0 28px 68px rgba(24,57,65,.16)}.landing__passport:focus-visible{outline:3px solid #1999be;outline-offset:4px}.landing__passport:after{content:"DEMO";position:absolute;right:24px;top:22px;color:#3d7c4b;font-size:11px;font-weight:900;letter-spacing:.14em;border:1px solid #cfe1d3;border-radius:99px;padding:6px 9px}.landing__passport-head{display:flex;align-items:center;gap:13px;padding-bottom:18px;border-bottom:1px solid var(--line)}.landing__passport-mark{width:48px;height:48px;border-radius:15px;object-fit:cover}.landing__passport-head b{display:block;font-size:18px}.landing__passport-head small{display:block;color:var(--muted);margin-top:3px}.landing__passport-car{width:100%;height:230px;object-fit:cover;border-radius:20px;margin:20px 0 18px}.landing__passport-model{display:flex;justify-content:space-between;gap:12px;align-items:end}.landing__passport-model h2{font-size:27px;letter-spacing:-.05em;margin:0}.landing__passport-model small{color:var(--muted)}.landing__status{display:flex;align-items:center;gap:8px;color:#9a6818;background:#fff7e9;border:1px solid #f1dfbb;border-radius:13px;padding:12px 14px;margin-top:18px;font-size:13px;font-weight:750}.landing__status i{width:8px;height:8px;border-radius:50%;background:#e3a42d}.landing__passport-link{display:flex;justify-content:space-between;align-items:center;margin-top:19px;color:#176b91;font-size:13px;font-weight:850}.landing__passport-link span{font-size:21px;line-height:1}
+.landing__terms{position:relative;max-width:1080px;margin:0 auto;padding:96px 0 26px}.landing__terms:before{content:"";position:absolute;left:50%;top:20px;width:1px;height:46px;background:linear-gradient(#82c9dd,transparent)}.landing__terms-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}.landing__terms h2{font-size:clamp(28px,4vw,42px);letter-spacing:-.07em;margin:0;color:#132d40}.landing__terms p{color:#71828d;margin:9px 0 0;font-size:15px}.landing__terms .sheet__eyebrow{margin:0;color:#438f72}.landing__terms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.landing__term{position:relative;min-height:104px;padding:20px 18px;background:rgba(255,255,255,.82);border:1px solid #d6e4e8;border-radius:20px;color:#244150;font-weight:800;box-shadow:0 10px 24px rgba(29,77,103,.055);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.landing__term:hover{transform:translateY(-4px);border-color:#8dc8db;box-shadow:0 16px 30px rgba(29,77,103,.11)}.landing__term:after{content:"↗";position:absolute;right:17px;bottom:15px;color:#8ab5c4;font-size:18px;font-weight:500}.landing__term span{display:block;color:#91a5ad;font-size:11px;font-weight:700;letter-spacing:.12em;margin-bottom:13px}.landing__terms-cta{display:flex;justify-content:center;margin-top:25px}.landing__terms-cta a{color:#176b91;font-weight:850;text-decoration:none;padding:11px 18px;border:1px solid #b9dce8;border-radius:99px;background:#f7fcfe}.landing__terms-cta a:after{content:"  →"}
+@media(max-width:760px){.landing h1{letter-spacing:-2px}.landing__passport{max-width:520px;margin:26px auto 0}.landing__terms{padding-top:70px}.landing__terms-grid{grid-template-columns:repeat(2,1fr);gap:9px}.landing__term{min-height:94px;padding:15px 13px;font-size:13px}.landing__terms-head{display:block}}
+@media(max-width:420px){.landing__terms-grid{grid-template-columns:1fr 1fr;gap:8px}.landing__term{padding:14px 12px;font-size:13px}.landing__passport{padding:17px}.landing__passport-car{height:185px}.landing__passport-model h2{font-size:22px}}
 
 /* Vehicle-passport landing hero — adapted from the approved 1440×700 concept. */
 .passport-hero{position:relative;display:grid;grid-template-columns:minmax(320px,.78fr) minmax(620px,1.22fr);align-items:center;gap:clamp(18px,3vw,60px);overflow:hidden;min-height:650px;padding:58px clamp(24px,6vw,92px);background:radial-gradient(circle at 76% 45%,rgba(52,142,255,.09),transparent 30%),linear-gradient(135deg,#fff 0%,#f8fbfc 100%);color:#14283e}
@@ -241,9 +244,9 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 <div class="app">
 
 <header class="kc-topbar">
-  <a class="kc-topbar__brand" href="#/landing" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="/assets/icons/booundless-car.png" width="36" height="34" alt=""><b>BOOUNDLESS</b></a>
+  <a class="kc-topbar__brand" href="/" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="/assets/icons/booundless-car.png" width="36" height="34" alt=""><b>BOOUNDLESS</b></a>
   <nav class="kc-topbar__nav">
-    <a href="#/landing" data-nav="landing">首頁</a>
+    <a href="/" data-nav="landing">首頁</a>
     <a href="#/garage" data-nav="garage">我的車</a>
     <a href="#/profile" data-nav="profile">我的</a>
   </nav>
@@ -261,7 +264,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
         <h1>建立你的<br><em>車輛護照</em></h1>
         <p class="landing__lead">把車況、保養紀錄和下一步，放進一張清楚易懂的車輛護照。再幫你匹配合適的車行，讓每次保養都有方向。</p>
         <p class="landing__note">由照片辨識或手動輸入開始，幾分鐘內整理好你的車。</p>
-        <div class="landing__actions"><a class="landing__primary" href="#/garage">查看示範車輛護照</a><a class="landing__secondary" href="#/home">探索 CarAI</a></div>
+        <div class="landing__actions"><a class="landing__primary" href="/demo">查看示範車輛護照</a><a class="landing__secondary" href="#/home">探索 CarAI</a></div>
       </div>
       <div class="passport-hero__fitbox" id="passportHeroFitbox">
         <div class="passport-hero__stage" id="passportHeroStage">
@@ -304,8 +307,8 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
     <div class="wrap">
       <section class="landing__terms" aria-labelledby="landingTermsTitle"><div class="landing__terms-head"><div><h2 id="landingTermsTitle">從 8 個關鍵詞開始</h2><p>每個詞，都會變成護照內的一項重要資料。</p></div><span class="sheet__eyebrow">YOUR CAR, IN CONTEXT</span></div><div class="landing__terms-grid">
         <div class="landing__term"><span>01</span>車款識別</div><div class="landing__term"><span>02</span>保養紀錄</div><div class="landing__term"><span>03</span>目前里程</div><div class="landing__term"><span>04</span>車況提醒</div><div class="landing__term"><span>05</span>AI 辨識</div><div class="landing__term"><span>06</span>手動填寫</div><div class="landing__term"><span>07</span>匹配車行</div><div class="landing__term"><span>08</span>服務請求</div>
-      </div><div class="landing__terms-cta"><a href="#/garage">由關鍵詞進入你的車輛護照</a></div></section>
-      <button class="landing__passport" type="button" onclick="openCarDetail('toyota')" aria-label="開啟 Toyota Corolla Cross 示範車輛護照"><div class="landing__passport-head"><img class="landing__passport-mark" src="assets/icons/booundless-car.png" alt=""><div><b>示範車輛護照</b><small>由現有 Toyota Corolla Cross 展示</small></div></div><img class="landing__passport-car" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>機油及機油隔 · 接近建議保養時間</div><span class="landing__passport-link">查看車輛護照 <span aria-hidden="true">→</span></span></button>
+      </div><div class="landing__terms-cta"><a href="/demo">由關鍵詞進入你的車輛護照</a></div></section>
+      <button class="landing__passport" type="button" onclick="window.location.href='/demo'" aria-label="開啟 Toyota Corolla Cross 示範車輛護照"><div class="landing__passport-head"><img class="landing__passport-mark" src="/assets/icons/booundless-car.png" alt=""><div><b>示範車輛護照</b><small>由現有 Toyota Corolla Cross 展示</small></div></div><img class="landing__passport-car" src="/assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>機油及機油隔 · 接近建議保養時間</div><span class="landing__passport-link">查看車輛護照 <span aria-hidden="true">→</span></span></button>
     </div>
   </main>
 </section>
@@ -318,16 +321,16 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 
     <div class="home-grid">
       <div class="card vehicle">
-        <div class="vehicle-photo"><img src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross"></div>
+        <div class="vehicle-photo"><img src="/assets/vehicle-toyota.jpg" alt="你的車輛照片"></div>
         <div class="vehicle-body">
-          <div class="eyebrow">TOYOTA COROLLA CROSS</div>
-          <h2>42,680 km</h2>
-          <div class="meta">2021 · Hybrid</div>
+          <div class="eyebrow">YOUR CAR PASSPORT</div>
+          <h2>尚未建立車輛</h2>
+          <div class="meta">登入後新增你的第一台車</div>
           <div class="status">
-            <h3>有 1 件事需要處理</h3>
-            <p><b>機油及機油隔</b><br>已接近建議保養時間，其他主要項目暫時正常。</p>
+            <h3>建立你的第一台車</h3>
+            <p>CarAI 會從照片或手動資料開始，幫你整理車況與保養紀錄。</p>
           </div>
-          <button class="primary" id="fixBtn">幫我搞掂</button>
+          <button class="primary" id="homeAddVehicleBtn">新增車輛</button>
           <button class="secondary" data-go="car">查看我的車</button>
         </div>
       </div>
@@ -365,35 +368,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
     </div>
 
     <div class="mycar-list" id="mycarList">
-      <button type="button" class="v10-car-card" data-team="isaac" data-carid="toyota" onclick="openCarDetail('toyota')" style="background-image:url('assets/vehicle-toyota.jpg')">
-        <span class="v10-shared">👥 Isaac 團隊共同管理</span>
-        <span class="v10-dots">•••</span>
-        <span class="v10-name">Toyota<br>Corolla Cross</span>
-        <span class="v10-meta">2021 · 1.8 Hybrid</span>
-        <span class="v10-divider"></span>
-        <span class="v10-mileage">42,680 km</span>
-        <span class="v10-health"><b>●</b> 機油保養尚餘 1,320 km</span>
-      </button>
-
-      <button type="button" class="v10-car-card" data-team="company" data-carid="bmw" onclick="openCarDetail('bmw')" style="background-image:url('assets/vehicle-bmw.jpg')">
-        <span class="v10-shared">👥 公司車隊共同管理</span>
-        <span class="v10-dots">•••</span>
-        <span class="v10-name">BMW<br>320i</span>
-        <span class="v10-meta">2019 · 2.0 Turbo</span>
-        <span class="v10-divider"></span>
-        <span class="v10-mileage">31,200 km</span>
-        <span class="v10-health brake"><b>●</b> 煞車油建議檢查</span>
-      </button>
-
-      <button type="button" class="v10-car-card" data-team="family" data-carid="tesla" onclick="openCarDetail('tesla')" style="background-image:url('assets/vehicle-tesla.jpg')">
-        <span class="v10-shared">👥 Leong 家庭共同管理</span>
-        <span class="v10-dots">•••</span>
-        <span class="v10-name">Tesla<br>Model Y</span>
-        <span class="v10-meta">2023 · Electric</span>
-        <span class="v10-divider"></span>
-        <span class="v10-mileage">18,540 km</span>
-        <span class="v10-health good"><b>●</b> 狀態正常</span>
-      </button>
+      <div class="empty-state"><b>你還未建立車輛護照</b><small>登入後新增你的第一台車，開始整理車況與保養紀錄。</small></div>
     </div>
   </div>
 </section>
@@ -403,7 +378,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
     <div class="top">
       <div><button class="back-simple" id="backToCars">←</button><h1 id="detailCarName">Toyota Corolla Cross</h1><p id="detailCarMeta">2021 · Hybrid · 42,680 km</p></div>
     </div>
-    <div class="card vehicle-detail-photo"><img id="detailCarPhoto" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 車輛照片"></div>
+    <div class="card vehicle-detail-photo"><img id="detailCarPhoto" src="/assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 車輛照片"></div>
     <div class="section-title">目前狀態</div><div class="detail-status-banner" id="detailMainStatus">機油及機油隔需要處理</div>
     <div class="card list">
       <div class="row"><span><b>機油及機油隔</b><small>已接近建議時間</small></span><span class="state warn">需要處理</span></div>
@@ -522,9 +497,10 @@ function showScreen(id){
   let adminAuditFilter = '';
 
   /* Keep navigation interactive while optional API hydration is loading. */
-  const staticRoute = (route) => ({ landing: 'landing', home: 'home', garage: 'car', profile: 'profile', service: 'service', qinao: 'qinao', videos: 'videos' }[route] || null);
+  const staticRoute = (route) => ({ landing: 'landing', demo: 'vehicleDetailSimple', home: 'home', garage: 'car', profile: 'profile', service: 'service', qinao: 'qinao', videos: 'videos' }[route] || null);
   const navigateImmediately = () => {
-    const route = (window.location.hash || '#/home').replace(/^#\/?/, '').split('?')[0];
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const route = (window.location.hash || (path === '/demo' ? '#/demo' : '#/landing')).replace(/^#\/?/, '').split('?')[0];
     const target = staticRoute(route);
     if (target) window.showScreen(target);
   };
@@ -582,6 +558,10 @@ function showScreen(id){
     reader.readAsDataURL(file);
   });
   const openAddVehicleSheet = () => {
+    if (!me) {
+      window.location.hash = '#/login';
+      return;
+    }
     newVehicleImageData = '';
     openSheet(`<div class="sheet--vehicle"><div class="sheet__header"><div><span class="sheet__eyebrow">MY GARAGE</span><h2>新增車輛</h2></div><button class="sheet__close" type="button" data-close-sheet aria-label="關閉">×</button></div><form id="addVehicleForm"><div class="vehicle-upload"><label class="vehicle-upload__label" for="newVehicleImage">車輛照片 <span>（可選）</span></label><label class="vehicle-upload__box"><span class="vehicle-upload__icon">↑</span><span class="vehicle-upload__copy"><b>上載車輛照片</b><small id="vehiclePhotoName">從相簿選擇，或使用相機拍攝</small></span><input class="vehicle-upload__input" id="newVehicleImage" name="vehicle_photo" type="file" accept="image/*" capture="environment" aria-describedby="vehiclePhotoHelp"></label><small class="vehicle-upload__help" id="vehiclePhotoHelp">照片會先壓縮，再送到 CarAI 辨識車款。</small><img class="vehicle-upload__preview" id="newVehiclePreview" alt="車輛照片預覽"><button class="ai-recognize" type="button" id="recognizeVehicleBtn">✦　用 AI 識別照片</button></div><p class="sheet__section-title">車輛資料</p><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleModel">車款</label><input id="newVehicleModel" required placeholder="例如 Toyota Corolla Cross"></div><div class="field"><label for="newVehicleMake">品牌</label><input id="newVehicleMake" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleYear">年份</label><input id="newVehicleYear" type="number" min="1900" max="2100" placeholder="例如 2021"></div><div class="field"><label for="newVehicleFuel">燃料</label><input id="newVehicleFuel" placeholder="Hybrid / 電動 / 汽油"></div><div class="field"><label for="newVehiclePlate">車牌</label><input id="newVehiclePlate" placeholder="MA-00-00"></div><div class="field"><label for="newVehicleMileage">目前里程</label><input id="newVehicleMileage" type="number" min="0" value="0"></div></div><div class="vehicle-form-actions"><button class="primary" type="submit">儲存車輛</button><button class="secondary" type="button" data-close-sheet>取消</button></div><div class="ai-result" id="addVehicleResult"></div></form></div>`);
     document.getElementById('newVehicleImage')?.addEventListener('change', async (e) => {
@@ -597,6 +577,7 @@ function showScreen(id){
   };
   document.getElementById('addCarBtn')?.addEventListener('click', openAddVehicleSheet);
   document.getElementById('addCarBtn2')?.addEventListener('click', openAddVehicleSheet);
+  document.getElementById('homeAddVehicleBtn')?.addEventListener('click', openAddVehicleSheet);
   document.getElementById('fixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   document.getElementById('detailFixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   let selectedVehicleId = 'toyota';
@@ -624,6 +605,11 @@ function showScreen(id){
   document.getElementById('dealerMatchBtn')?.addEventListener('click', openDealerMatches);
   const goBackToCars = () => {
     closeSheet();
+    const onDemo = window.location.pathname.replace(/\/+$/, '') === '/demo' && !window.location.hash;
+    if (onDemo || window.location.hash === '#/demo') {
+      window.location.href = '/';
+      return;
+    }
     showScreen('car');
     if (window.location.hash !== '#/garage') window.location.hash = '#/garage';
     syncTopbarNav();
@@ -756,15 +742,21 @@ function showScreen(id){
 
   /* 1. Home hero card — show the first vehicle and its most urgent reminder */
   const hero = vehicles[0];
-  const heroReminder = reminders.find((r) => r.vehicle_id === hero.id);
+  const heroReminder = hero ? reminders.find((r) => r.vehicle_id === hero.id) : null;
   const heroPhoto = document.querySelector('.home-grid .vehicle-photo img');
-  if (heroPhoto && hero.image) heroPhoto.src = hero.image;
   const heroEyebrow = document.querySelector('.home-grid .vehicle .eyebrow');
-  if (heroEyebrow) heroEyebrow.textContent = hero.model.toUpperCase();
   const heroMileage = document.querySelector('.home-grid .vehicle h2');
-  if (heroMileage) heroMileage.textContent = hero.mileage_label;
   const statusBox = document.querySelector('.home-grid .status');
-  if (statusBox) {
+  if (hero) {
+    if (heroPhoto && hero.image) heroPhoto.src = hero.image;
+    if (heroEyebrow) heroEyebrow.textContent = hero.model.toUpperCase();
+    if (heroMileage) heroMileage.textContent = hero.mileage_label;
+  } else if (heroEyebrow) {
+    heroEyebrow.textContent = 'YOUR CAR PASSPORT';
+    if (heroMileage) heroMileage.textContent = '尚未建立車輛';
+    if (heroPhoto) heroPhoto.removeAttribute('src');
+  }
+  if (statusBox && hero) {
     const h = statusBox.querySelector('h3');
     const p = statusBox.querySelector('p');
     if (heroReminder) {
@@ -776,6 +768,12 @@ function showScreen(id){
       if (h) h.textContent = '目前狀態正常';
       if (p) p.innerHTML = '所有主要項目都在建議週期內。';
     }
+  } else if (statusBox) {
+    statusBox.classList.add('ok');
+    const h = statusBox.querySelector('h3');
+    const p = statusBox.querySelector('p');
+    if (h) h.textContent = '建立你的第一台車';
+    if (p) p.textContent = '登入後新增車輛，CarAI 會幫你整理車況與保養紀錄。';
   }
 
   /* 2. Car list — rebuild the three cards from API data */
@@ -975,7 +973,7 @@ function showScreen(id){
      screens live in <div id="view">. We delegate to showScreen() for
      the static routes and render into #view for the new ones. */
   const view = document.getElementById('view');
-  const STATIC_ROUTES = new Set(['landing', 'home', 'garage', 'service', 'qinao', 'videos', 'profile']);
+  const STATIC_ROUTES = new Set(['landing', 'demo', 'home', 'garage', 'service', 'qinao', 'videos', 'profile']);
   const NEW_ROUTES = {
     login: renderLogin,
     'admin/users': renderAdminUsers,
@@ -987,7 +985,8 @@ function showScreen(id){
 
   function getRoute() {
     const raw = (window.location.hash || '').replace(/^#\/?/, '').split('?')[0];
-    return raw || 'landing';
+    if (raw) return raw;
+    return window.location.pathname.replace(/\/+$/, '') === '/demo' ? 'demo' : 'landing';
   }
 
   async function dispatch() {
@@ -995,6 +994,12 @@ function showScreen(id){
     syncTopbarNav();
     /* Hide any previously rendered view content */
     if (view) view.innerHTML = '';
+    const protectedRoute = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos']);
+    if (protectedRoute.has(name) && !me) {
+      document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">SIGN IN REQUIRED</span><h1>登入後建立你的車輛護照</h1><p>你的車輛、個人資料與 CarAI 功能只會在登入後顯示。</p><a class="landing__primary" href="#/login">前往登入</a></div></div>';
+      return;
+    }
     if (STATIC_ROUTES.has(name)) {
       if (typeof window.showScreen === 'function') {
         window.showScreen(name === 'garage' ? 'car' : name);
@@ -1022,7 +1027,7 @@ function showScreen(id){
     if (handler && view) {
       await handler(view);
     } else if (view) {
-      view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
+      view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="/">返回首頁</a></div></div>';
     }
   }
   async function fetchMe() {
@@ -1410,7 +1415,6 @@ function showScreen(id){
   }
 
   /* Bootstrap: fetch session and render topbar */
-  if (!window.location.hash) history.replaceState(null, '', '#/landing');
   await fetchMe();
   renderTopbar();
   await dispatch();
@@ -1421,7 +1425,7 @@ function showScreen(id){
       console.error('Route rendering failed', error);
       if (getRoute() !== requestedRoute) return;
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
+      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="/">返回首頁</a></div></div>';
     });
   });
 

@@ -3,11 +3,12 @@
    GET /api/vehicles/:id/status — full maintenance status for one vehicle. */
 import { getDb } from '../_lib/db.js';
 import { randomUUID } from 'node:crypto';
+import { requireUser } from '../_lib/auth.js';
 import { readBody, sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 
-async function handleStatus(req, res, id) {
+async function handleStatus(req, res, id, user) {
   const db = await getDb();
-  const v = await db.query('SELECT id, model FROM vehicles WHERE id = $1', [id]);
+  const v = await db.query('SELECT id, model FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL', [id, user.id]);
   if (v.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
 
   const r = await db.query(
@@ -27,9 +28,9 @@ async function handleStatus(req, res, id) {
   });
 }
 
-async function handleHistory(req, res, id) {
+async function handleHistory(req, res, id, user) {
   const db = await getDb();
-  const v = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
+  const v = await db.query('SELECT id FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL', [id, user.id]);
   if (v.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
 
   const r = await db.query(
@@ -44,14 +45,16 @@ async function handleHistory(req, res, id) {
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET', 'POST'])) return;
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   try {
     const url = req.url || '';
     const historyMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/history\/?$/);
-    if (historyMatch) return await handleHistory(req, res, decodeURIComponent(historyMatch[1]));
+    if (historyMatch) return await handleHistory(req, res, decodeURIComponent(historyMatch[1]), user);
 
     const statusMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/status\/?$/);
-    if (statusMatch) return await handleStatus(req, res, decodeURIComponent(statusMatch[1]));
+    if (statusMatch) return await handleStatus(req, res, decodeURIComponent(statusMatch[1]), user);
 
     const idMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/?$/);
     if (idMatch) {
@@ -59,8 +62,8 @@ export default async function handler(req, res) {
       const db = await getDb();
       const r = await db.query(
         `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
-         FROM vehicles WHERE id = $1`,
-        [id],
+         FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
+        [id, user.id],
       );
       if (r.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
       return sendJSON(res, 200, r.rows[0]);
@@ -73,9 +76,9 @@ export default async function handler(req, res) {
       const id = randomUUID();
       const mileage = Math.max(0, Number(body.mileage_km) || 0);
       const r = await db.query(`INSERT INTO vehicles
-        (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,image,owner,team)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-toyota.jpg',body.owner||'Isaac',body.team||'isaac']);
+        (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12) RETURNING *`,
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-toyota.jpg',user.display_name||user.email,body.team||'personal',user.id]);
       return sendJSON(res, 201, r.rows[0]);
     }
 
@@ -83,8 +86,8 @@ export default async function handler(req, res) {
       const db = await getDb();
       const r = await db.query(
         `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
-         FROM vehicles ORDER BY created_at ASC`,
-      );
+         FROM vehicles WHERE created_by_user_id = $1 AND archived_at IS NULL ORDER BY created_at ASC`,
+        [user.id]);
       return sendJSON(res, 200, { data: r.rows, count: r.rowCount });
     }
 

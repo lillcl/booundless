@@ -17,6 +17,7 @@
     { "src": "/api/ai/?", "dest": "/api/ai" },
     { "src": "/api/agent/?", "dest": "/api/agent" },
     { "src": "/api/(.*)", "dest": "/api/index" },
+    { "src": "/demo/?", "dest": "/index.html" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "status": 404, "dest": "/404.html" }
   ]
