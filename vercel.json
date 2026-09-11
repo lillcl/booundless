@@ -13,9 +13,11 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
-    { "source": "/api/ai", "destination": "/api/ai" },
-    { "source": "/api/agent", "destination": "/api/agent" },
-    { "source": "/api/(.*)", "destination": "/api/index" }
+  "routes": [
+    { "src": "/api/ai/?", "dest": "/api/ai" },
+    { "src": "/api/agent/?", "dest": "/api/agent" },
+    { "src": "/api/(.*)", "dest": "/api/index" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "status": 404, "dest": "/404.html" }
   ]
 }

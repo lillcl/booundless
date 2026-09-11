@@ -19,7 +19,11 @@ export default async function handler(req, res) {
     const values = [];
     let i = 1;
     if (actor) { where.push(`actor_email = $${i++}`); values.push(String(actor)); }
-    if (action) { where.push(`action = $${i++}`); values.push(String(action)); }
+    if (action) {
+      const actionFilter = String(action);
+      where.push(`${actionFilter.endsWith('%') ? 'action LIKE' : 'action ='} $${i++}`);
+      values.push(actionFilter);
+    }
     if (target_type) { where.push(`target_type = $${i++}`); values.push(String(target_type)); }
     if (before) { where.push(`created_at < $${i++}`); values.push(String(before)); }
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
