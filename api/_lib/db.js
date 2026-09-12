@@ -47,6 +47,24 @@ async function archiveLegacyDemoVehicles(pool) {
     WHERE id IN ('bmw', 'tesla') AND archived_at IS NULL`);
 }
 
+async function backfillVehicleServiceKeys(pool) {
+  await pool.query(`UPDATE vehicle_status SET service_item_type_key = CASE item
+    WHEN '機油及機油隔' THEN 'oil_filter'
+    WHEN '波箱油' THEN 'transmission_fluid'
+    WHEN '煞車皮' THEN 'brake_pads'
+    WHEN '煞車油' THEN 'brake_fluid'
+    WHEN '冷卻液' THEN 'coolant'
+    WHEN '火花塞' THEN 'spark_plugs'
+    WHEN '空氣濾芯' THEN 'air_filter'
+    WHEN '冷氣濾芯' THEN 'cabin_filter'
+    WHEN '12V 電瓶' THEN 'battery_12v'
+    WHEN '輪胎' THEN 'tire'
+    WHEN '煞車卡鉗保養' THEN 'brake_caliper'
+    WHEN '車身及底盤檢查' THEN 'body_chassis_inspection'
+    ELSE service_item_type_key END
+    WHERE service_item_type_key IS NULL`);
+}
+
 async function seedDefaultData(pool) {
   const now = new Date().toISOString();
 
@@ -68,6 +86,12 @@ async function seedDefaultData(pool) {
   `, [now]);
 
   /* Maintenance spec per vehicle. wear is 0..100 — at 100 the item is due. */
+  const serviceKeyByItem = {
+    '機油及機油隔': 'oil_filter', '波箱油': 'transmission_fluid', '煞車皮': 'brake_pads',
+    '煞車油': 'brake_fluid', '冷卻液': 'coolant', '火花塞': 'spark_plugs',
+    '空氣濾芯': 'air_filter', '冷氣濾芯': 'cabin_filter', '12V 電瓶': 'battery_12v',
+    '輪胎': 'tire', '煞車卡鉗保養': 'brake_caliper', '車身及底盤檢查': 'body_chassis_inspection',
+  };
   const statusRows = [
     /* Toyota Corolla Cross — 2021, 1.8 Hybrid, 42,680 km */
     ['toyota', '機油及機油隔', 10000, 12, 38680, '2026-06-12', 60, 1],
@@ -84,9 +108,9 @@ async function seedDefaultData(pool) {
   for (const [vid, item, ikm, im, ldkm, ld, wear, ord] of statusRows) {
     await pool.query(
       `INSERT INTO vehicle_status
-        (vehicle_id, item, interval_km, interval_months, last_done_km, last_done_at, wear, display_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [vid, item, ikm, im, ldkm, ld, wear, ord],
+        (vehicle_id, item, interval_km, interval_months, last_done_km, last_done_at, wear, display_order, service_item_type_key)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [vid, item, ikm, im, ldkm, ld, wear, ord, serviceKeyByItem[item] || null],
     );
   }
 
@@ -124,6 +148,7 @@ export async function getDb() {
     const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
     const count = await rowCount(_pool, 'vehicles');
     if (seeded.rowCount === 0 && count === 0) await seedDefaultData(_pool);
+    await backfillVehicleServiceKeys(_pool);
     await archiveLegacyDemoVehicles(_pool);
     return _pool;
   } catch (error) {

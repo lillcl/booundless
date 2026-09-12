@@ -110,8 +110,31 @@ async function adminDealerRoute(req, res, admin, rest) {
       text(body.phone, null, 60), text(body.email, null, 240), text(body.website, null, 500),
       body.status === 'active' ? 'active' : 'draft', admin.id,
     ]);
-    await audit({ actor: admin, action: 'dealer.create', targetType: 'dealer', targetId: dealerId, payload: { dealer: r.rows[0] }, req });
-    return sendJSON(res, 201, { dealer: r.rows[0] });
+    const requestedKeys = Array.isArray(body.service_item_type_keys)
+      ? [...new Set(body.service_item_type_keys.map((value) => text(value, null, 100)).filter(Boolean))].slice(0, 30)
+      : [];
+    let selectedServices = [];
+    if (requestedKeys.length) {
+      const types = await db.query(
+        `SELECT key, display_names FROM service_item_types WHERE is_active AND key = ANY($1::text[])`,
+        [requestedKeys],
+      );
+      for (const type of types.rows) {
+        const name = type.display_names?.['zh-Hant'] || type.display_names?.en || type.key;
+        const service = await db.query(`INSERT INTO dealer_service_items
+          (id,dealer_id,service_item_type_key,name)
+          VALUES ($1,$2,$3,$4) RETURNING *`,
+        [`service-${randomUUID()}`, dealerId, type.key, name]);
+        selectedServices.push(service.rows[0]);
+      }
+    }
+    await audit({ actor: admin, action: 'dealer.create', targetType: 'dealer', targetId: dealerId, payload: { dealer: r.rows[0], services: selectedServices.map((service) => service.service_item_type_key) }, req });
+    return sendJSON(res, 201, { dealer: r.rows[0], services: selectedServices });
+  }
+
+  if (rest.length === 1 && rest[0] === 'service-item-types' && req.method === 'GET') {
+    const r = await db.query(`SELECT key, category, display_names FROM service_item_types WHERE is_active ORDER BY category, key`);
+    return sendJSON(res, 200, { data: r.rows });
   }
 
   const dealerId = id(rest[0], 'dealer_id');
