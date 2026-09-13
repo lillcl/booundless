@@ -10,6 +10,7 @@
       "maxDuration": 60
     },
     "api/index.js": {
+      "includeFiles": "{index.html,db/*.sql}",
       "maxDuration": 10
     }
   },
@@ -17,7 +18,8 @@
     { "src": "/api/ai/?", "dest": "/api/ai" },
     { "src": "/api/agent/?", "dest": "/api/agent" },
     { "src": "/api/(.*)", "dest": "/api/index" },
-    { "src": "/demo/?", "dest": "/index.html" },
+    { "src": "/", "dest": "/api/index" },
+    { "src": "/demo/?", "dest": "/api/index" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "status": 404, "dest": "/404.html" }
   ]

@@ -44,8 +44,21 @@ function sameOrEmpty(ruleValue, vehicleValue) {
 }
 
 export function scoreFitment(vehicle, fitment) {
-  if (!fitment) return { score: 55, reasons: ['generic dealer service rule'] };
+  if (!fitment) return { score: 0, reasons: ['Compatibility rules not supplied'], state: 'needs_confirmation' };
   const reasons = [];
+  const missing = [];
+  for (const [rule, field] of [['make_norm','make'],['model_norm','model'],['variant_norm','variant'],['fuel_type_norm','fuel_type'],['engine_code','engine_code'],['market','market'],['vin_prefix','vin']]) {
+    if (fitment[rule] && !vehicle[field]) missing.push(field);
+  }
+  if ((fitment.year_from != null || fitment.year_to != null) && !vehicle.year) missing.push('year');
+  if (missing.length) {
+    // Still reject known contradictions before returning an unknown match.
+    const completed = { ...vehicle };
+    for (const [rule, field] of [['make_norm','make'],['model_norm','model'],['variant_norm','variant'],['fuel_type_norm','fuel_type'],['engine_code','engine_code'],['market','market'],['vin_prefix','vin']]) if (!completed[field]) completed[field] = fitment[rule];
+    if (!completed.year) completed.year = fitment.year_from ?? fitment.year_to;
+    if (!scoreFitment(completed, fitment)) return null;
+    return { score: 0, reasons: missing.map(field => `Missing vehicle ${field}`), state: 'needs_confirmation' };
+  }
   if (fitment.vin_prefix) {
     if (!vehicle.vin || !normalize(vehicle.vin).startsWith(normalize(fitment.vin_prefix))) return null;
     reasons.push('VIN prefix matched');
@@ -77,8 +90,9 @@ export function scoreFitment(vehicle, fitment) {
   if (fitment.fuel_type_norm) score += 4;
   if (fitment.engine_code) score += 2;
   if (fitment.market) score += 1;
-  if (fitment.vin_prefix) score = 100;
-  return { score: Math.min(100, score), reasons };
+  if (fitment.vin_prefix) score += 2;
+  if (!reasons.length) return { score: 0, reasons: ['Empty compatibility rule'], state: 'needs_confirmation' };
+  return { score: Math.min(99, score), reasons, state: 'confirmed' };
 }
 
 export function matchLevel(score) {
@@ -101,11 +115,12 @@ export function calculateDealerMatches(vehicle, statuses, catalogRows) {
     const fitment = scoreFitment(vehicle, row.fitment);
     if (!fitment) continue;
     const score = fitment.score;
-    if (status) matchedKeys.add(itemKey);
+    if (status && fitment.state === 'confirmed') matchedKeys.add(itemKey);
     matches.push({
       dealer_id: row.dealer_id,
       dealer_name: row.dealer_name,
       branch_id: row.branch_id || null,
+      branch_name: row.branch_name || null,
       service_item_id: row.service_item_id,
       service_item_type_key: itemKey,
       service_name: row.service_name,
@@ -121,6 +136,7 @@ export function calculateDealerMatches(vehicle, statuses, catalogRows) {
         last_done_at: status.last_done_at,
       } : null,
       match_score: score,
+      compatibility_state: fitment.state,
       match_level: matchLevel(score),
       match_reason: { fitment: fitment.reasons, service_item: status ? 'canonical key matched' : 'available service for compatible vehicle' },
     });
@@ -132,4 +148,34 @@ export function calculateDealerMatches(vehicle, statuses, catalogRows) {
 
   matches.sort((a, b) => Number(b.current_status?.needs_attention) - Number(a.current_status?.needs_attention) || b.match_score - a.match_score);
   return { matches, unmatched_needs: unmatchedNeeds };
+}
+
+// V2 ranking uses only available dimensions: coverage and specificity.
+// Distance and appointment availability are not guessed from opening hours.
+export function rankBranches(matches, statuses) {
+  const needs = new Map();
+  for (const status of statuses) {
+    if (Number(status.wear) < 80 || status.wear == null) continue;
+    for (const key of canonicalServiceKeys(status.service_item_type_key || status.item))
+      needs.set(key,Math.max(needs.get(key)||0,Number(status.wear)>=100?3:2));
+  }
+  const total=[...needs.values()].reduce((a,b)=>a+b,0);
+  const groups=new Map();
+  for (const match of matches) {
+    if (!match.branch_id) continue;
+    if (!groups.has(match.branch_id)) groups.set(match.branch_id,{branch_id:match.branch_id,branch_name:match.branch_name,dealer_id:match.dealer_id,dealer_name:match.dealer_name,covered:new Map()});
+    const group=groups.get(match.branch_id);
+    if (match.compatibility_state==='confirmed' && needs.has(match.service_item_type_key)) {
+      const previous=group.covered.get(match.service_item_type_key);
+      if (!previous || previous.match_score<match.match_score) group.covered.set(match.service_item_type_key,match);
+    }
+  }
+  return [...groups.values()].map(({covered,...branch})=>{
+    const weight=[...covered.keys()].reduce((sum,key)=>sum+needs.get(key),0);
+    const coverage=total?weight/total:0;
+    const specificity=weight?[...covered.values()].reduce((sum,m)=>sum+m.match_score/100*needs.get(m.service_item_type_key),0)/weight:0;
+    return {...branch,mode:total?'needs':'browse',score:total?Math.round(100*(.55*coverage+.25*specificity)/.8):null,
+      covered_needs:[...covered.keys()],uncovered_needs:[...needs.keys()].filter(key=>!covered.has(key)),coverage,
+      algorithm_version:'dealer-match-v2-coverage'};
+  }).sort((a,b)=>(b.score||0)-(a.score||0)||a.branch_id.localeCompare(b.branch_id));
 }

@@ -622,11 +622,12 @@ function showScreen(id){
         pane.innerHTML = '<p>目前沒有已設定的適用車商服務。請由管理員新增車商，或由車商設定服務配對。</p>';
         return;
       }
-      pane.innerHTML = d.matches.map((m) => {
+      const branchSummary = (d.branches || []).filter(branch=>branch.mode==='needs').map(branch=>`<div class="notice"><b>${esc(branch.dealer_name)} · ${esc(branch.branch_name)}</b><p>涵蓋 ${branch.covered_needs.length} / ${branch.covered_needs.length+branch.uncovered_needs.length} 個待處理項目 · 配對分數 ${branch.score}</p>${branch.uncovered_needs.length?'<small>尚有未涵蓋項目，請比較其他分店。</small>':''}</div>`).join('');
+      pane.innerHTML = branchSummary + d.matches.map((m) => {
         const urgent = m.current_status?.needs_attention;
-        const status = m.current_status ? (urgent ? '目前需要處理' : '目前正常，可提供') : '適用服務';
+        const status = m.compatibility_state !== 'confirmed' ? '車款資料不足，需要車商確認' : m.current_status ? (urgent ? '目前需要處理' : '目前正常，可提供') : '適用服務';
         const price = m.price_min != null ? `${m.price_min}–${m.price_max ?? m.price_min} ${esc(m.currency || 'MOP')}` : '請向車商查詢';
-        return `<div class="card" style="padding:16px;margin-top:12px"><b>${esc(m.service_name)}</b><small style="display:block;color:var(--muted);margin-top:5px">${esc(m.dealer_name)} · ${esc(status)} · ${esc(price)}</small><small style="display:block;color:var(--muted);margin-top:5px">${esc((m.match_reason?.fitment || []).join('、'))}</small><button class="secondary" type="button" data-request-dealer="${esc(m.dealer_id)}" data-request-service="${esc(m.service_item_id)}">發送服務請求</button></div>`;
+        return `<div class="card" style="padding:16px;margin-top:12px"><b>${esc(m.service_name)}</b><small style="display:block;color:var(--muted);margin-top:5px">${esc(m.dealer_name)} · ${esc(m.branch_name || '')} · ${esc(status)} · ${esc(price)}</small><small style="display:block;color:var(--muted);margin-top:5px">${esc((m.match_reason?.fitment || []).join('、'))}</small><button class="secondary" type="button" data-request-dealer="${esc(m.dealer_id)}" data-request-branch="${esc(m.branch_id)}" data-request-service="${esc(m.service_item_id)}">${m.compatibility_state === 'confirmed' ? '發送服務請求' : '詢問是否適用'}</button></div>`;
       }).join('') + (d.unmatched_needs?.length ? `<div class="notice">${d.unmatched_needs.map((x) => esc(x.item) + '：' + esc(x.message)).join('<br>')}</div>` : '');
     } catch (error) {
       pane.innerHTML = `<p>${esc(error.message)}</p><a href="#/login">前往登入</a>`;
@@ -731,7 +732,7 @@ function showScreen(id){
     if (requestButton) {
       if (!window.confirm('要向此車商發送服務請求嗎？')) return;
       requestButton.disabled = true;
-      const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/service-requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_id: requestButton.dataset.requestDealer, dealer_service_item_id: requestButton.dataset.requestService }) });
+      const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/service-requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_id: requestButton.dataset.requestDealer, branch_id: requestButton.dataset.requestBranch, dealer_service_item_id: requestButton.dataset.requestService }) });
       const d = await r.json().catch(() => ({}));
       requestButton.textContent = r.ok ? '已送出請求' : (d.error?.message || '送出失敗');
       if (!r.ok) requestButton.disabled = false;
@@ -1023,6 +1024,7 @@ function showScreen(id){
     'admin/assets': renderAdminAssets,
     'admin/audit': renderAdminAudit,
     'admin/dealers': renderAdminDealers,
+    'admin/marketing': renderMarketing,
     dealer: renderDealerPortal,
   };
 
@@ -1093,7 +1095,7 @@ function showScreen(id){
     } else {
       anonLinks.forEach((a) => a.style.display = 'none');
       const workspaceLink = me.role === 'admin'
-        ? '<a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
+        ? '<a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/marketing" data-nav="admin-marketing">SEO</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
         : '<a href="#/dealer" data-nav="dealer">車商後台</a>';
       userEl.innerHTML = workspaceLink +
         '<span class="who">' + esc(me.display_name || me.email) +
@@ -1172,6 +1174,43 @@ function showScreen(id){
   });
 
   /* Admin 車商 */
+  async function renderMarketing(root) {
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>SEO 與分享設定</h1><p>編輯草稿，再發布到首頁或示範頁。發布後最多約一分鐘更新。</p></div></div><div id="marketingEditor" class="card form-card">載入中…</div></div>';
+    const host = document.getElementById('marketingEditor');
+    try {
+      const response = await fetch('/api/admin/marketing/pages');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || '無法載入');
+      const select = document.createElement('select');
+      for (const page of data.pages) select.add(new Option(page.path === '/' ? '首頁' : '示範護照', page.path));
+      host.replaceChildren(select);
+      const panel = document.createElement('div'); host.append(panel);
+      const draw = () => {
+        const page = data.pages.find(p => p.path === select.value);
+        const content = { title:'無界啟程 BOOUNDLESS', description:'建立你的車輛護照，掌握車況並匹配合適車行。', social_title:'', social_description:'', image:'/assets/booundless-social.png', image_alt:'無界啟程', indexable:page.path === '/', ...page.draft };
+        const labels = {title:'頁面標題',description:'搜尋描述',social_title:'分享標題',social_description:'分享描述',image:'分享圖片網址（本站）',image_alt:'圖片描述'};
+        panel.innerHTML = '<form class="form-grid" id="marketingForm">'+Object.entries(labels).map(([key,label])=>`<div class="field wide"><label for="seo-${key}">${label}</label><input id="seo-${key}" name="${key}" value="${esc(content[key])}"></div>`).join('')+`<label class="wide"><input name="indexable" type="checkbox" ${content.indexable?'checked':''}> 允許搜尋引擎索引</label><button class="primary" type="submit">儲存草稿</button><button class="secondary" type="button" id="seoPublish">發布已儲存草稿</button></form><p id="seoMessage" role="status"></p><div class="section-title">搜尋預覽</div><div class="card form-card"><h2 id="seoPreviewTitle"></h2><p id="seoPreviewDescription"></p></div><div class="section-title">發布紀錄</div><div id="seoRevisions"></div>`;
+        const form = panel.querySelector('form');
+        const message = panel.querySelector('#seoMessage');
+        const preview = () => { panel.querySelector('#seoPreviewTitle').textContent=form.elements.title.value; panel.querySelector('#seoPreviewDescription').textContent=form.elements.description.value; };
+        form.addEventListener('input',preview); preview();
+        const save = async (method, extra={}) => {
+          const buttons = panel.querySelectorAll('button'); buttons.forEach(b=>b.disabled=true);
+          try {
+            const response = await fetch('/api/admin/marketing/pages',{method,headers:{'content-type':'application/json'},body:JSON.stringify({path:page.path,version:page.version,...extra})});
+            const result = await response.json(); if(!response.ok) throw new Error(result.error?.message || '儲存失敗');
+            Object.assign(page,result.page); message.textContent=method==='PATCH'?'草稿已儲存。':'已發布。重新開啟頁面可查看更新。';
+          } catch(error){message.textContent=error.message;} finally{buttons.forEach(b=>b.disabled=false);}
+        };
+        form.onsubmit = e => {e.preventDefault(); const content=Object.fromEntries(new FormData(form)); content.indexable=form.elements.indexable.checked; save('PATCH',{content});};
+        panel.querySelector('#seoPublish').onclick=()=>save('POST');
+        const history=panel.querySelector('#seoRevisions');
+        for(const revision of data.revisions.filter(r=>r.page_path===page.path)) { const button=document.createElement('button'); button.type='button'; button.className='secondary'; button.textContent=`還原：${revision.content.title}（${new Date(revision.created_at).toLocaleString()}）`;button.onclick=()=>save('POST',{revision_id:revision.id});history.append(button); }
+      };
+      select.onchange=draw;draw();
+    } catch(error){host.textContent=error.message;}
+  }
+
   async function renderAdminDealers(root) {
     root.innerHTML = `<div class="wrap"><div class="top"><div><h1>車商管理</h1><p>新增、啟用車商，並邀請車商管理員。</p></div></div>
       <form id="dealerCreateForm" class="card form-card"><div class="form-grid">
@@ -1203,13 +1242,14 @@ function showScreen(id){
       e.preventDefault();
       const result = document.getElementById('dealerCreateResult'); result.classList.add('show'); result.textContent = '正在建立…';
       const payload = { display_name: document.getElementById('dealerDisplayName').value, legal_name: document.getElementById('dealerLegalName').value, phone: document.getElementById('dealerPhone').value, email: document.getElementById('dealerEmail').value, service_item_type_keys: [...document.querySelectorAll('input[name="dealerServices"]:checked')].map((input) => input.value) };
+      payload.branch = { name: document.getElementById('dealerBranchName').value.trim(), address: document.getElementById('dealerBranchAddress').value.trim() };
       const r = await fetch('/api/admin/dealers', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { result.textContent = d.error?.message || '建立失敗'; return; }
       const dealerId = d.dealer.id;
       let message = `車商已建立，已加入 ${d.services?.length || 0} 項服務。`;
       const branchName = document.getElementById('dealerBranchName').value.trim();
-      if (branchName) await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/branches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: branchName, address: document.getElementById('dealerBranchAddress').value }) });
+      if (branchName && !d.branch) message += ' 分店未建立，請檢查設定。';
       const ownerEmail = document.getElementById('dealerOwnerEmail').value.trim();
       if (ownerEmail) {
         const invite = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, role: 'owner' }) });
@@ -1240,10 +1280,35 @@ function showScreen(id){
     if (r.status === 401) { body.innerHTML = '<div class="card form-card"><p>請先登入車商帳號。</p><a href="#/login">前往登入</a></div>'; return; }
     if (!r.ok || !d.data?.length) { body.innerHTML = '<div class="card form-card"><h2>尚未加入車商</h2><p>請由管理員先建立車商並邀請你的帳號。</p><form id="dealerInviteAccept"><div class="field"><label>邀請 token</label><input id="dealerInviteToken" required></div><button class="primary" type="submit">接受邀請</button><div class="ai-result" id="dealerInviteResult"></div></form></div>'; document.getElementById('dealerInviteAccept').onsubmit = async (e) => { e.preventDefault(); const result = document.getElementById('dealerInviteResult'); result.classList.add('show'); const x = await fetch('/api/dealer/invites/accept', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: document.getElementById('dealerInviteToken').value }) }); const v = await x.json().catch(() => ({})); result.textContent = x.ok ? '邀請已接受，請重新整理。' : (v.error?.message || '接受邀請失敗'); }; return; }
     const dealer = d.data[0];
-    body.innerHTML = `<div class="card form-card"><div class="passport-head"><h2>${esc(dealer.display_name)}</h2><span class="state ${dealer.status === 'active' ? 'ok' : 'warn'}">${esc(dealer.role)} · ${esc(dealer.status)}</span></div><div class="form-grid"><div class="field"><label>服務項目 key</label><select id="dealerServiceKey"><option value="engine_oil">engine_oil · 機油</option><option value="oil_filter">oil_filter · 機油隔</option><option value="brake_fluid">brake_fluid · 煞車油</option><option value="brake_pads">brake_pads · 煞車皮</option><option value="coolant">coolant · 冷卻液</option><option value="spark_plugs">spark_plugs · 火花塞</option><option value="air_filter">air_filter · 空氣濾芯</option><option value="cabin_filter">cabin_filter · 冷氣濾芯</option><option value="tire">tire · 輪胎</option></select></div><div class="field"><label>服務名稱</label><input id="dealerServiceName" placeholder="機油及機油隔更換"></div><div class="field"><label>適用品牌</label><input id="dealerFitMake" placeholder="Toyota"></div><div class="field"><label>適用車款</label><input id="dealerFitModel" placeholder="Corolla Cross"></div><div class="field"><label>年份起</label><input id="dealerFitYearFrom" type="number" placeholder="2020"></div><div class="field"><label>年份止</label><input id="dealerFitYearTo" type="number" placeholder="2025"></div></div><button class="primary" id="dealerAddService" type="button">新增服務與配對規則</button><div class="ai-result" id="dealerPortalResult"></div></div><div class="section-title">目前服務目錄</div><div id="dealerServicesList" class="card list"><div class="row"><b>載入中…</b></div></div><div class="section-title">服務請求</div><div id="dealerRequestsList" class="card list"><div class="row"><b>載入中…</b></div></div></div>`;
+    body.innerHTML = `<div class="card form-card"><div class="passport-head"><h2>${esc(dealer.display_name)}</h2><span class="state ${dealer.status === 'active' ? 'ok' : 'warn'}">${esc(dealer.role)} · ${esc(dealer.status)}</span></div><div class="form-grid"><div class="field"><label>服務項目 key</label><select id="dealerServiceKey" aria-label="服務項目"><option value="">載入服務目錄…</option></select></div><div class="field"><label>服務名稱</label><input id="dealerServiceName" placeholder="機油及機油隔更換"></div><div class="field"><label>適用品牌</label><input id="dealerFitMake" placeholder="Toyota"></div><div class="field"><label>適用車款</label><input id="dealerFitModel" placeholder="Corolla Cross"></div><div class="field"><label>年份起</label><input id="dealerFitYearFrom" type="number" placeholder="2020"></div><div class="field"><label>年份止</label><input id="dealerFitYearTo" type="number" placeholder="2025"></div></div><button class="primary" id="dealerAddService" type="button">新增服務與配對規則</button><div class="ai-result" id="dealerPortalResult"></div></div><div class="section-title">目前服務目錄</div><div id="dealerServicesList" class="card list"><div class="row"><b>載入中…</b></div></div><div class="section-title">服務請求</div><div id="dealerRequestsList" class="card list"><div class="row"><b>載入中…</b></div></div></div>`;
+    const serviceKeySelect = document.getElementById('dealerServiceKey');
+    serviceKeySelect.replaceChildren();
+    document.getElementById('dealerAddService').disabled = true;
+    try {
+      const catalogueResponse = await fetch('/api/service-item-types');
+      const catalogue = await catalogueResponse.json();
+      if (!catalogueResponse.ok) throw new Error(catalogue.error?.message || '服務目錄載入失敗');
+      for (const type of catalogue.data || []) serviceKeySelect.add(new Option(type.display_names?.['zh-Hant'] || type.key, type.key));
+      document.getElementById('dealerAddService').disabled = !serviceKeySelect.options.length;
+    } catch (error) {
+      const message = document.getElementById('dealerPortalResult'); message.classList.add('show'); message.textContent = error.message;
+    }
     const loadPortal = async () => {
       const services = await fetch('/api/dealer/services?dealer_id=' + encodeURIComponent(dealer.id)).then((x) => x.json()).catch(() => ({}));
       const serviceList = document.getElementById('dealerServicesList'); serviceList.innerHTML = services.data?.length ? services.data.map((s) => `<div class="row"><span><b>${esc(s.name)}</b><small>${esc(s.service_item_type_key)} · ${(s.fitments || []).length} 配對規則</small></span><span class="state ok">服務</span></div>`).join('') : '<div class="row"><b>尚無服務</b></div>';
+      const branchResponse = await fetch('/api/dealer/branches?dealer_id='+encodeURIComponent(dealer.id));
+      const branches = await branchResponse.json();
+      if (branchResponse.ok) {
+        const section = document.createElement('div'); section.className='form-card';
+        section.innerHTML='<h2>分店提供的服務</h2><p>勾選實際提供的服務，配對才會包含該分店。</p>';
+        for (const branch of branches.data) {
+          const form=document.createElement('form');
+          form.innerHTML=`<h3>${esc(branch.name)}</h3>`+(services.data || []).map(service=>`<label style="display:block;padding:8px"><input type="checkbox" name="service_ids" value="${esc(service.id)}" ${branch.service_ids.includes(service.id)?'checked':''}> ${esc(service.name)}</label>`).join('')+'<button class="secondary">儲存分店服務</button><p role="status"></p>';
+          form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;try{const response=await fetch('/api/dealer/branches/'+encodeURIComponent(branch.id)+'/services?dealer_id='+encodeURIComponent(dealer.id),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({service_ids:new FormData(form).getAll('service_ids')})});const result=await response.json();form.querySelector('[role=status]').textContent=response.ok?'已儲存':result.error?.message || '儲存失敗';}catch(error){form.querySelector('[role=status]').textContent=error.message;}finally{button.disabled=false;}};
+          section.append(form);
+        }
+        serviceList.append(section);
+      }
       const requests = await fetch('/api/dealer/service-requests?dealer_id=' + encodeURIComponent(dealer.id)).then((x) => x.json()).catch(() => ({}));
       const requestList = document.getElementById('dealerRequestsList'); requestList.innerHTML = requests.data?.length ? requests.data.map((x) => `<div class="row"><span><b>${esc(x.vehicle_model)} · ${esc(x.service_name || x.service_item_type_key || '服務')}</b><small>${esc(x.user_email)} · ${esc(x.status)}</small></span><select data-request-id="${esc(x.id)}"><option ${x.status === 'new' ? 'selected' : ''}>new</option><option ${x.status === 'accepted' ? 'selected' : ''}>accepted</option><option ${x.status === 'scheduled' ? 'selected' : ''}>scheduled</option><option ${x.status === 'completed' ? 'selected' : ''}>completed</option><option ${x.status === 'cancelled' ? 'selected' : ''}>cancelled</option></select></div>`).join('') : '<div class="row"><b>尚無服務請求</b></div>';
       requestList.querySelectorAll('[data-request-id]').forEach((select) => { select.onchange = async () => { await fetch('/api/dealer/service-requests', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: select.dataset.requestId, status: select.value }) }); await loadPortal(); }; });

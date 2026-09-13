@@ -3,6 +3,8 @@
 Date: 2026-09-13
 Status: proposed implementation; this document does not deploy features or change the database.
 
+Implementation progress (2026-09-13): initial transactional onboarding, shared service catalogue, explicit branch offerings, conservative fitment states/coverage ranking, submit-time eligibility checks and versioned SEO drafts/publishing/rollback are implemented in the working code. API.md and DATABASE_SCHEMA.md document exact contracts. The full plan is not complete: campaign pages/ad tracking, quote lifecycle, invitations delivery, canonical need records, distance/availability and remaining production verification are outstanding. Do not infer these features exist from the proposed tables/routes below.
+
 ## 1. Outcomes and scope
 
 1. Admin can create, invite, review, activate and suspend merchants.

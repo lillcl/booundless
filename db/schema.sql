@@ -2,6 +2,8 @@
 -- Applied automatically by api/_lib/db.js on first connection, and
 -- can be run manually with:
 --   psql "$KC_DATABASE_URL" < db/schema.sql
+-- Additive feature migrations follow in order: db/marketing-schema.sql,
+-- db/merchant-v2-schema.sql. The shared getDb bootstrap applies all three.
 
 CREATE TABLE IF NOT EXISTS _meta (
   key   TEXT PRIMARY KEY,

@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { getDb } from '../_lib/db.js';
 import { audit, requireAdmin, requireUser } from '../_lib/auth.js';
 import { getOwnedVehicle } from '../_lib/tool-utils.js';
-import { calculateDealerMatches } from '../_lib/dealer-matcher.js';
+import { calculateDealerMatches, rankBranches } from '../_lib/dealer-matcher.js';
 import { readBody, sendError, sendJSON } from '../_lib/http.js';
 
 const DEALER_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
@@ -103,33 +103,51 @@ async function adminDealerRoute(req, res, admin, rest) {
     const displayName = text(body.display_name, null, 160);
     if (!displayName) return sendError(res, 422, 'unprocessable', 'display_name is required');
     const dealerId = `dealer-${randomUUID()}`;
-    const r = await db.query(`INSERT INTO dealers
+    const client = await db.connect();
+    try {
+    await client.query('BEGIN');
+    const r = await client.query(`INSERT INTO dealers
       (id, legal_name, display_name, registration_number, phone, email, website, status, created_by_user_id)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`, [
       dealerId, text(body.legal_name, null, 200), displayName, text(body.registration_number, null, 100),
       text(body.phone, null, 60), text(body.email, null, 240), text(body.website, null, 500),
-      body.status === 'active' ? 'active' : 'draft', admin.id,
+      'draft', admin.id,
     ]);
     const requestedKeys = Array.isArray(body.service_item_type_keys)
       ? [...new Set(body.service_item_type_keys.map((value) => text(value, null, 100)).filter(Boolean))].slice(0, 30)
       : [];
     let selectedServices = [];
     if (requestedKeys.length) {
-      const types = await db.query(
+      const types = await client.query(
         `SELECT key, display_names FROM service_item_types WHERE is_active AND key = ANY($1::text[])`,
         [requestedKeys],
       );
+      if (types.rows.length !== requestedKeys.length) {
+        await client.query('ROLLBACK');
+        return sendError(res, 422, 'unprocessable', 'Unknown or inactive service type');
+      }
       for (const type of types.rows) {
         const name = type.display_names?.['zh-Hant'] || type.display_names?.en || type.key;
-        const service = await db.query(`INSERT INTO dealer_service_items
+        const service = await client.query(`INSERT INTO dealer_service_items
           (id,dealer_id,service_item_type_key,name)
           VALUES ($1,$2,$3,$4) RETURNING *`,
         [`service-${randomUUID()}`, dealerId, type.key, name]);
         selectedServices.push(service.rows[0]);
       }
     }
+    let branch = null;
+    if (body.branch?.name) {
+      const created = await client.query(`INSERT INTO dealer_branches (id,dealer_id,name,address,district,phone)
+        VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [`branch-${randomUUID()}`, dealerId,
+        text(body.branch.name, null, 160), text(body.branch.address, null, 300), text(body.branch.district, null, 100), text(body.branch.phone, null, 60)]);
+      branch = created.rows[0];
+      for (const service of selectedServices) await client.query('INSERT INTO dealer_branch_services(branch_id,service_id) VALUES($1,$2)',[branch.id,service.id]);
+    }
+    await client.query('COMMIT');
     await audit({ actor: admin, action: 'dealer.create', targetType: 'dealer', targetId: dealerId, payload: { dealer: r.rows[0], services: selectedServices.map((service) => service.service_item_type_key) }, req });
-    return sendJSON(res, 201, { dealer: r.rows[0], services: selectedServices });
+    return sendJSON(res, 201, { dealer: r.rows[0], services: selectedServices, branch });
+    } catch (error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
   }
 
   if (rest.length === 1 && rest[0] === 'service-item-types' && req.method === 'GET') {
@@ -189,6 +207,13 @@ async function adminDealerRoute(req, res, admin, rest) {
     }
     if (body.status !== undefined) {
       if (!['draft', 'active', 'suspended'].includes(body.status)) return sendError(res, 422, 'unprocessable', 'Invalid dealer status');
+      if (body.status === 'active') {
+        const ready = await db.query(`SELECT
+          EXISTS(SELECT 1 FROM dealer_branches WHERE dealer_id=$1 AND is_active AND address IS NOT NULL) AS branch,
+          EXISTS(SELECT 1 FROM dealer_service_items WHERE dealer_id=$1 AND is_active) AS service`, [dealerId]);
+        if (!(body.phone || dealer.phone || body.email || dealer.email) || !ready.rows[0].branch || !ready.rows[0].service)
+          return sendError(res, 422, 'incomplete_setup', 'Add contact information, a branch address and at least one service before activation');
+      }
       fields.push(`status=$${values.length + 1}`); values.push(body.status);
     }
     if (!fields.length) return sendJSON(res, 200, { dealer });
@@ -227,6 +252,32 @@ async function dealerPortalRoute(req, res, path, query) {
   }
 
   const serviceMatch = path.match(/^\/api\/dealer\/services(?:\/([^/]+))?$/);
+  const branchRoute = path.match(/^\/api\/dealer\/branches(?:\/([^/]+)\/services)?$/);
+  if (branchRoute) {
+    const dealerId = await resolveDealerForUser(req,res,db,user);
+    const member = await getMember(db,dealerId,user.id);
+    if (req.method === 'GET') {
+      const rows = await db.query(`SELECT b.*,COALESCE((SELECT json_agg(service_id) FROM dealer_branch_services bs WHERE bs.branch_id=b.id AND bs.is_active),'[]') AS service_ids FROM dealer_branches b WHERE dealer_id=$1 ORDER BY name`,[dealerId]);
+      return sendJSON(res,200,{data:rows.rows});
+    }
+    if (req.method !== 'PUT' || !branchRoute[1]) return sendError(res,405,'method_not_allowed','Use GET or PUT');
+    if (!EDIT_ROLES.has(member.role)) return sendError(res,403,'forbidden','Manager access required');
+    const body = await readBody(req);
+    if (!Array.isArray(body.service_ids) || body.service_ids.length>100) return sendError(res,422,'unprocessable','service_ids array required');
+    const serviceIds=[...new Set(body.service_ids.map(value=>id(value)))];
+    const client=await db.connect();
+    try {
+      await client.query('BEGIN');
+      const branch=await client.query('SELECT id FROM dealer_branches WHERE id=$1 AND dealer_id=$2 FOR UPDATE',[branchRoute[1],dealerId]);
+      if (!branch.rowCount) throw new Error('Branch not found');
+      const services=await client.query('SELECT id FROM dealer_service_items WHERE dealer_id=$1 AND id=ANY($2::text[]) AND is_active',[dealerId,serviceIds]);
+      if (services.rowCount!==serviceIds.length) throw new Error('Invalid branch service');
+      await client.query('DELETE FROM dealer_branch_services WHERE branch_id=$1',[branchRoute[1]]);
+      for (const serviceId of serviceIds) await client.query('INSERT INTO dealer_branch_services(branch_id,service_id) VALUES($1,$2)',[branchRoute[1],serviceId]);
+      await client.query('COMMIT'); return sendJSON(res,200,{service_ids:serviceIds});
+    } catch(error){await client.query('ROLLBACK');return sendError(res,422,'unprocessable',error.message);}
+    finally{client.release();}
+  }
   if (serviceMatch) {
     const dealerId = await resolveDealerForUser(req, res, db, user);
     const member = await getMember(db, dealerId, user.id);
@@ -322,21 +373,21 @@ async function vehicleRoute(req, res, path) {
     if (query.get('dealer_id')) params.push(id(query.get('dealer_id'), 'dealer_id'));
     const [statuses, catalog] = await Promise.all([
       db.query('SELECT item,service_item_type_key,wear,last_done_km,last_done_at FROM vehicle_status WHERE vehicle_id=$1 ORDER BY display_order,id', [vehicleId]),
-      db.query(`SELECT d.id AS dealer_id,d.display_name AS dealer_name,s.id AS service_item_id,s.service_item_type_key,s.name AS service_name,s.description,s.price_min,s.price_max,s.currency,
+      db.query(`SELECT d.id AS dealer_id,d.display_name AS dealer_name,b.id AS branch_id,b.name AS branch_name,s.id AS service_item_id,s.service_item_type_key,s.name AS service_name,s.description,s.price_min,s.price_max,s.currency,
           f.id AS fitment_id,f.market,f.make_norm,f.model_norm,f.year_from,f.year_to,f.variant_norm,f.fuel_type_norm,f.engine_code,f.vin_prefix
         FROM dealers d JOIN dealer_service_items s ON s.dealer_id=d.id AND s.is_active
+        JOIN dealer_branch_services bs ON bs.service_id=s.id AND bs.is_active
+        JOIN dealer_branches b ON b.id=bs.branch_id AND b.dealer_id=d.id AND b.is_active
         LEFT JOIN dealer_item_fitments f ON f.dealer_service_item_id=s.id
         WHERE d.status='active'${dealerFilter}`, params),
     ]);
     const result = calculateDealerMatches(vehicle, statuses.rows, catalog.rows.map((row) => ({ ...row, fitment: row.fitment_id ? row : null })));
     const unique = new Map();
     for (const match of result.matches) {
-      const key = `${match.dealer_id}:${match.service_item_id}`;
+      const key = `${match.branch_id}:${match.service_item_id}`;
       if (!unique.has(key) || match.match_score > unique.get(key).match_score) unique.set(key, match);
-      await db.query(`INSERT INTO vehicle_item_matches (vehicle_id,dealer_id,dealer_service_item_id,match_score,match_level,match_reason,algorithm_version,calculated_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) ON CONFLICT (vehicle_id,dealer_service_item_id) DO UPDATE SET match_score=EXCLUDED.match_score,match_level=EXCLUDED.match_level,match_reason=EXCLUDED.match_reason,algorithm_version=EXCLUDED.algorithm_version,calculated_at=NOW()`, [vehicleId, match.dealer_id, match.service_item_id, match.match_score, match.match_level, JSON.stringify(match.match_reason), 'dealer-match-v1']);
     }
-    return sendJSON(res, 200, { vehicle, matches: [...unique.values()], unmatched_needs: result.unmatched_needs });
+    return sendJSON(res, 200, { vehicle, matches: [...unique.values()], branches: rankBranches([...unique.values()], statuses.rows), unmatched_needs: result.unmatched_needs });
   }
 
   if (match[2] === 'service-requests' && req.method === 'POST') {
@@ -352,9 +403,21 @@ async function vehicleRoute(req, res, path) {
       serviceKey = service.rows[0].service_item_type_key;
     }
     const branchId = body.branch_id ? id(body.branch_id, 'branch_id') : null;
+    if (!branchId || !serviceId) return sendError(res,422,'unprocessable','Select a branch and service');
+    const rules=await db.query(`SELECT f.*,s.name,s.service_item_type_key FROM dealer_service_items s LEFT JOIN dealer_item_fitments f ON f.dealer_service_item_id=s.id WHERE s.id=$1 AND s.dealer_id=$2`,[serviceId,dealerId]);
+    const checked=calculateDealerMatches(vehicle,[],rules.rows.map(row=>({...row,service_item_id:serviceId,dealer_id:dealerId,fitment:row.id?row:null})));
+    if (!checked.matches.length) return sendError(res,422,'incompatible','Service is not compatible with this vehicle');
+    if (body.package_id) {
+      const pkg=await db.query('SELECT id FROM dealer_service_packages WHERE id=$1 AND dealer_id=$2 AND is_active',[body.package_id,dealerId]);
+      if (!pkg.rowCount) return sendError(res,422,'unprocessable','Invalid merchant package');
+    }
     if (branchId) {
       const branch = await db.query('SELECT id FROM dealer_branches WHERE id=$1 AND dealer_id=$2 AND is_active', [branchId, dealerId]);
       if (!branch.rowCount) return sendError(res, 404, 'not_found', 'Dealer branch not found');
+      if (serviceId) {
+        const offered=await db.query('SELECT 1 FROM dealer_branch_services WHERE branch_id=$1 AND service_id=$2 AND is_active',[branchId,serviceId]);
+        if (!offered.rowCount) return sendError(res,422,'unprocessable','Service no longer available at this branch');
+      }
     }
     const r = await db.query(`INSERT INTO dealer_service_requests (id,dealer_id,branch_id,user_id,vehicle_id,service_item_type_key,dealer_service_item_id,package_id,message)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`, [`request-${randomUUID()}`, dealerId, branchId, user.id, vehicleId, serviceKey, serviceId, body.package_id ? id(body.package_id, 'package_id') : null, text(body.message, null, 2000)]);
@@ -368,10 +431,14 @@ async function vehicleRoute(req, res, path) {
 export default async function handler(req, res) {
   try {
     const { pathname, query } = pathInfo(req);
-    if (pathname.startsWith('/api/vehicles/')) {
-      const handled = await vehicleRoute(req, res, pathname);
-      if (handled) return;
+    if (pathname === '/api/service-item-types' && req.method === 'GET') {
+      if (!await requireUser(req, res)) return;
+      const db = await getDb();
+      const r = await db.query('SELECT key,category,display_names FROM service_item_types WHERE is_active ORDER BY category,key');
+      return sendJSON(res, 200, { data: r.rows });
     }
+    if (/^\/api\/vehicles\/[^/]+\/(dealer-matches|service-requests)$/.test(pathname))
+      return await vehicleRoute(req, res, pathname);
     if (pathname.startsWith('/api/admin/dealers')) {
       const admin = await requireAdmin(req, res);
       if (!admin) return;

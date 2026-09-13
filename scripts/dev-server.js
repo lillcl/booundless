@@ -24,6 +24,7 @@ import profileHandler from '../api/_handlers/profile.js';
 import aiHandler from '../api/ai.js';
 import agentHandler from '../api/agent.js';
 import dealersHandler from '../api/_handlers/dealers.js';
+import marketingHandler, { publicPage } from '../api/_handlers/marketing.js';
 import { closeDb } from '../api/_lib/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -76,6 +77,7 @@ app.post('/api/profile/support', adapt(profileHandler));
 app.post('/api/ai', adapt(aiHandler));
 app.post('/api/agent', adapt(agentHandler));
 app.get('/api/admin/dealers', adapt(dealersHandler));
+app.get('/api/service-item-types', adapt(dealersHandler));
 app.post('/api/admin/dealers', adapt(dealersHandler));
 app.get('/api/admin/dealers/:id', adapt(dealersHandler));
 app.patch('/api/admin/dealers/:id', adapt(dealersHandler));
@@ -83,6 +85,8 @@ app.get('/api/admin/dealers/:id/branches', adapt(dealersHandler));
 app.post('/api/admin/dealers/:id/branches', adapt(dealersHandler));
 app.post('/api/admin/dealers/:id/invites', adapt(dealersHandler));
 app.get('/api/dealer/me', adapt(dealersHandler));
+app.get('/api/dealer/branches', adapt(dealersHandler));
+app.put('/api/dealer/branches/:id/services', adapt(dealersHandler));
 app.post('/api/dealer/invites/accept', adapt(dealersHandler));
 app.get('/api/dealer/services', adapt(dealersHandler));
 app.post('/api/dealer/services', adapt(dealersHandler));
@@ -99,6 +103,8 @@ app.get('/api/vehicles/:id/dealer-matches', adapt(dealersHandler));
 app.post('/api/vehicles/:id/service-requests', adapt(dealersHandler));
 
 /* Static assets — serve the repo at root. */
+app.all('/api/admin/marketing/pages', adapt(marketingHandler));
+app.get(['/', '/demo'], adapt(publicPage));
 app.use(express.static(root, {
   extensions: ['html'],
   index: 'index.html',
