@@ -3,19 +3,19 @@ import {requireAdmin,requireUser} from '../_lib/auth.js';
 import {readBody,sendJSON,sendError} from '../_lib/http.js';
 
 export function validateTracking(body){
-  const config={enabled:body.enabled===true,ga4:String(body.ga4||''),ads:String(body.ads||''),request_label:String(body.request_label||''),vehicle_label:String(body.vehicle_label||''),booking_label:String(body.booking_label||'')};
-  if(config.ga4&&!/^G-[A-Z0-9]{4,20}$/.test(config.ga4))throw new Error('Invalid GA4 ID');
-  if(config.ads&&!/^AW-\d{5,20}$/.test(config.ads))throw new Error('Invalid Ads ID');
-  for(const key of ['request_label','vehicle_label','booking_label'])if(!/^[A-Za-z0-9_-]{0,100}$/.test(config[key]))throw new Error('Invalid conversion label');
-  if(config.enabled&&!config.ga4&&!config.ads)throw new Error('A measurement ID is required');
-  return config;
+  if(['ga4','ads','request_label','vehicle_label','booking_label'].some(key=>body[key]))throw new Error('僅支援站內推廣');
+  if(!Array.isArray(body.promotions)||body.promotions.length>50)throw new Error('請提供最多50項站內推廣');
+  return {enabled:body.enabled===true,promotions:body.promotions.map(p=>{
+    if(typeof p.dealer_id!=='string'||!p.dealer_id||p.dealer_id.length>100||!Number.isFinite(Date.parse(p.starts_at))||!Number.isFinite(Date.parse(p.ends_at))||Date.parse(p.ends_at)<=Date.parse(p.starts_at))throw new Error('商戶或期間無效');
+    return {dealer_id:p.dealer_id,starts_at:new Date(p.starts_at).toISOString(),ends_at:new Date(p.ends_at).toISOString()};
+  })};
 }
 export default async function handler(req,res){
   res.setHeader('Cache-Control','no-store');const path=new URL(req.url,'http://localhost').pathname;
   try{
     if(path==='/api/marketing/config'&&req.method==='GET'){
       const db=await getDb();const row=(await db.query('SELECT config FROM marketing_integrations WHERE id=TRUE')).rows[0];
-      return sendJSON(res,200,{config:row?.config||{enabled:false}});
+      return sendJSON(res,200,{config:{enabled:row?.config?.enabled===true}});
     }
     if(path==='/api/admin/marketing/tracking'){
       const admin=await requireAdmin(req,res);if(!admin)return;
@@ -23,10 +23,12 @@ export default async function handler(req,res){
       if(req.method==='GET'){
         const settings=(await db.query('SELECT * FROM marketing_integrations WHERE id=TRUE')).rows[0];
         const report=await db.query("SELECT event_name,campaign,source,count(*)::int AS count FROM conversion_events WHERE created_at>NOW()-INTERVAL '90 days' GROUP BY event_name,campaign,source ORDER BY count DESC LIMIT 100");
+        settings.config={enabled:settings.config.enabled===true,promotions:settings.config.promotions||[]};
         return sendJSON(res,200,{settings,report:report.rows});
       }
       if(req.method==='PATCH'){
         const body=await readBody(req);const config=validateTracking(body.config||{});
+        for(const p of config.promotions){const dealer=await db.query("SELECT id FROM dealers WHERE id=$1 AND status='active'",[p.dealer_id]);if(!dealer.rowCount)throw new Error('推廣商戶必須已啟用');}
         const result=await db.query('UPDATE marketing_integrations SET config=$1,version=version+1,updated_by=$2,updated_at=NOW() WHERE id=TRUE AND version=$3 RETURNING *',[config,admin.id,body.version]);
         return result.rowCount?sendJSON(res,200,{settings:result.rows[0]}):sendError(res,409,'conflict','Settings changed; reload');
       }

@@ -627,7 +627,7 @@ function showScreen(id){
       const branchSummary = (d.branches || []).filter(branch=>branch.mode==='needs').map(branch=>{
         const selected=new Map();for(const match of d.matches)if(match.branch_id===branch.branch_id&&match.compatibility_state==='confirmed'&&branch.covered_needs.includes(match.service_item_type_key)&&!selected.has(match.service_item_type_key))selected.set(match.service_item_type_key,match.service_item_id);
         const ids=[...selected.values()];
-        return `<div class="notice"><b>${esc(branch.dealer_name)} · ${esc(branch.branch_name)}</b><p>涵蓋 ${branch.covered_needs.length} / ${branch.covered_needs.length+branch.uncovered_needs.length} 個待處理項目 · 配對分數 ${branch.score}</p>${branch.uncovered_needs.length?'<small>尚有未涵蓋項目，請比較其他分店。</small>':''}${ids.length?`<button class="secondary" data-request-dealer="${esc(branch.dealer_id)}" data-request-branch="${esc(branch.branch_id)}" data-request-service="${esc(ids[0])}" data-request-services="${esc(ids.join(','))}">一併詢問 ${ids.length} 項服務報價</button>`:''}</div>`;
+        return `<div class="notice">${branch.sponsored?'<small>站內贊助推廣</small>':''}<b>${esc(branch.dealer_name)} · ${esc(branch.branch_name)}</b><p>涵蓋 ${branch.covered_needs.length} / ${branch.covered_needs.length+branch.uncovered_needs.length} 個待處理項目 · 配對分數 ${branch.score}</p>${branch.uncovered_needs.length?'<small>尚有未涵蓋項目，請比較其他分店。</small>':''}${ids.length?`<button class="secondary" data-request-dealer="${esc(branch.dealer_id)}" data-request-branch="${esc(branch.branch_id)}" data-request-service="${esc(ids[0])}" data-request-services="${esc(ids.join(','))}">一併詢問 ${ids.length} 項服務報價</button>`:''}</div>`;
       }).join('');
       pane.innerHTML = branchSummary + d.matches.map((m) => {
         const urgent = m.current_status?.needs_attention;
@@ -1210,7 +1210,7 @@ function showScreen(id){
       const select = document.createElement('select');
       for (const page of data.pages) select.add(new Option(page.path === '/' ? '首頁' : page.path === '/demo' ? '示範護照' : page.path, page.path));
       host.replaceChildren(select);
-      const trackingLink=document.createElement('a');trackingLink.href='#/admin/tracking';trackingLink.textContent='廣告追蹤設定與報告 →';host.append(trackingLink);
+      const trackingLink=document.createElement('a');trackingLink.href='#/admin/tracking';trackingLink.textContent='站內商戶推廣 →';host.append(trackingLink);
       const create=document.createElement('button');create.className='secondary';create.textContent='新增廣告活動頁';host.append(create);
       create.onclick=async()=>{const slug=prompt('活動網址名稱，例如 summer-service');if(!slug)return;const response=await fetch('/api/admin/marketing/pages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'create',path:'/campaigns/'+slug})});const result=await response.json();if(!response.ok){alert(result.error?.message||'建立失敗');return;}renderMarketing(root);};
       const panel = document.createElement('div'); host.append(panel);
@@ -1221,7 +1221,6 @@ function showScreen(id){
         panel.innerHTML = '<form class="form-grid" id="marketingForm">'+Object.entries(labels).map(([key,label])=>`<div class="field wide"><label for="seo-${key}">${label}</label><input id="seo-${key}" name="${key}" value="${esc(content[key]||String())}"></div>`).join('')+`<label class="wide"><input name="indexable" type="checkbox" ${content.indexable?'checked':''}> 允許搜尋引擎索引</label><button class="primary" type="submit">儲存草稿</button><button class="secondary" type="button" id="seoPublish">發布已儲存草稿</button></form><p id="seoMessage" role="status"></p><div class="section-title">搜尋預覽</div><div class="card form-card"><h2 id="seoPreviewTitle"></h2><p id="seoPreviewDescription"></p></div><div class="section-title">發布紀錄</div><div id="seoRevisions"></div>`;
         const form = panel.querySelector('form');
         const link=document.createElement('a');link.href=page.path;link.target='_blank';link.rel='noopener';link.textContent='開啟已發布頁面';panel.append(link);
-        const builder=document.createElement('form');builder.className='form-card';builder.innerHTML='<h3>廣告連結產生器</h3><label>來源<input name="source" placeholder="google" required></label><label>活動名稱<input name="campaign" required></label><button class="secondary">產生連結</button><p style="overflow-wrap:anywhere" role="status"></p>';builder.onsubmit=e=>{e.preventDefault();const url=new URL(page.path,'https://www.booundless.com');url.searchParams.set('utm_source',builder.elements.source.value);url.searchParams.set('utm_medium','cpc');url.searchParams.set('utm_campaign',builder.elements.campaign.value);builder.querySelector('p').textContent=url.href;};panel.append(builder);
         const message = panel.querySelector('#seoMessage');
         const preview = () => { panel.querySelector('#seoPreviewTitle').textContent=form.elements.title.value; panel.querySelector('#seoPreviewDescription').textContent=form.elements.description.value; };
         form.addEventListener('input',preview); preview();

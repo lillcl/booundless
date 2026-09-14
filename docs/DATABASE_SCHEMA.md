@@ -72,6 +72,10 @@ Rollback: revert dependent application code first; leave additive tables/columns
 
 Not created: matching_runs, standalone campaigns, attribution_sessions or scheduling-slot tables. Campaigns and integrations use the concrete tables above; distance, slot inventory and Meta remain outside this release.
 
+## Internal-only correction
+
+marketing_integrations.config stores enabled and promotions (dealer_id, starts_at, ends_at). Legacy external IDs are ignored, never returned and replaced on admin save. Existing conversion_events is retained for history; browser measurement is disabled. SEO tables are unchanged; no destructive migration is required.
+
 ## Rules
 - No agent invents DB field/table names without updating this document.
 - Every schema change requires migration + documentation.

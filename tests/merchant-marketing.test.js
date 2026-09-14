@@ -36,7 +36,13 @@ test('quote monetary values use nonnegative integer minor units',()=>{
 });
 test('tracking rejects scripts and invalid destination IDs',()=>{
   assert.throws(()=>validateTracking({ga4:'<script>'}));assert.throws(()=>validateTracking({enabled:true}));
-  assert.equal(validateTracking({enabled:false}).enabled,false);
+  assert.equal(validateTracking({enabled:false,promotions:[]}).enabled,false);
+});
+test('internal promotion validates dates and rejects external IDs',()=>{
+  const promotion={dealer_id:'merchant-1',starts_at:'2026-09-01T00:00:00Z',ends_at:'2026-10-01T00:00:00Z'};
+  assert.equal(validateTracking({enabled:true,promotions:[promotion]}).promotions.length,1);
+  assert.throws(()=>validateTracking({enabled:true,promotions:[{...promotion,ends_at:promotion.starts_at}]}));
+  assert.throws(()=>validateTracking({ga4:'G-VALID123',promotions:[]}));
 });
 test('invitation sender reports missing credentials without sending',async()=>{
   const key=process.env.RESEND_API_KEY;delete process.env.RESEND_API_KEY;

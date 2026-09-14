@@ -79,6 +79,10 @@ Successful page cache: `public, max-age=0, s-maxage=60`. Publishing may take up 
 
 UI routes: `#/requests`, `#/dealer` (including invitation entry), `#/admin/marketing`, `#/admin/tracking`. No Meta tracking, ad purchasing, live scheduling inventory or distance scoring is included. Campaigns reuse marketing_pages rather than a separate campaigns table.
 
+## Internal-only correction (supersedes external tracking above)
+
+SEO is a first-party metadata editor. External tags, provider ID fields and the UTM/CPC builder are removed. Admin tracking now accepts only `{enabled,promotions:[{dealer_id,starts_at,ends_at}]}` with active merchant IDs and valid date intervals; external fields are rejected. Eligible branch matches add sponsored=true during that period without changing scores or compatibility. Browser measurement is disabled. Impression/click reporting is not implemented.
+
 ## Rules
 - Frontend and backend consume the same documented contract.
 - Never silently change request/response/error shapes.

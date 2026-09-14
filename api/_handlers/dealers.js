@@ -412,7 +412,11 @@ async function vehicleRoute(req, res, path) {
       const key = `${match.branch_id}:${match.service_item_id}`;
       if (!unique.has(key) || match.match_score > unique.get(key).match_score) unique.set(key, match);
     }
-    return sendJSON(res, 200, { vehicle, matches: [...unique.values()], branches: rankBranches([...unique.values()], statuses.rows), unmatched_needs: result.unmatched_needs });
+    const config=(await db.query('SELECT config FROM marketing_integrations WHERE id=TRUE')).rows[0]?.config;
+    const now=Date.now();
+    const promoted=new Set((config?.enabled && Array.isArray(config.promotions)?config.promotions:[]).filter(p=>Date.parse(p.starts_at)<=now&&Date.parse(p.ends_at)>now).map(p=>p.dealer_id));
+    const branches=rankBranches([...unique.values()], statuses.rows).map(branch=>({...branch,sponsored:branch.covered_needs.length>0&&promoted.has(branch.dealer_id)}));
+    return sendJSON(res, 200, { vehicle, matches: [...unique.values()], branches, unmatched_needs: result.unmatched_needs });
   }
 
   if (match[2] === 'service-requests' && req.method === 'POST') {
