@@ -7,6 +7,7 @@
     qinao: '琴澳行程', videos: '保養影片', login: '登入', dealer: '車商後台',
     'admin/users': '用戶管理', 'admin/assets': '所有資產',
     'admin/audit': '稽核紀錄', 'admin/dealers': '車商管理', 'admin/marketing': 'SEO 與分享設定',
+    requests:'服務請求與報價','admin/tracking':'廣告成效追蹤',
   };
   function update() {
     if (document.documentElement.dataset.publishedMetadata && (!location.hash || ['#/landing','#/demo'].includes(location.hash))) {

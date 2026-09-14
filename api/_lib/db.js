@@ -30,6 +30,7 @@ async function applySchema(pool) {
     await client.query(sql);
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
+    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
   } finally {
     client.release();
   }

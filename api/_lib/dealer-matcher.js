@@ -64,7 +64,8 @@ export function scoreFitment(vehicle, fitment) {
     reasons.push('VIN prefix matched');
   }
   if (!sameOrEmpty(fitment.make_norm, vehicle.make)) return null;
-  if (!sameOrEmpty(fitment.model_norm, vehicle.model)) return null;
+  const modelName=value=>normalize(value).replace(new RegExp('^'+normalize(vehicle.make).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),'');
+  if (fitment.model_norm && (!vehicle.model || modelName(fitment.model_norm)!==modelName(vehicle.model))) return null;
   if (fitment.make_norm) reasons.push('make matched');
   if (fitment.model_norm) reasons.push('model matched');
   if (fitment.year_from != null && (!vehicle.year || vehicle.year < fitment.year_from)) return null;
@@ -102,17 +103,20 @@ export function matchLevel(score) {
 }
 
 export function calculateDealerMatches(vehicle, statuses, catalogRows) {
+  const electric=/^(electric|bev|ev|電動|純電|纯电|純電動|纯电动)$/.test(normalize(vehicle.fuel_type));
+  const combustionOnly=new Set(['engine_oil','oil_filter','spark_plugs']);
   const currentItems = (statuses || []).flatMap((row) => canonicalServiceKeys(row.service_item_type_key || row.item).map((key) => ({
     ...row,
     service_item_type_key: key,
-  })));
+  }))).filter(row=>!electric||!combustionOnly.has(row.service_item_type_key));
   const matches = [];
   const matchedKeys = new Set();
 
   for (const row of catalogRows || []) {
     const itemKey = row.service_item_type_key || canonicalServiceKey(row.name);
+    if(electric&&combustionOnly.has(itemKey))continue;
     const status = currentItems.find((item) => item.service_item_type_key === itemKey);
-    const fitment = scoreFitment(vehicle, row.fitment);
+    const fitment = !row.fitment&&row.compatibility_mode==='universal'?{score:55,state:'confirmed',reasons:['Merchant explicitly offers universal support']}:scoreFitment(vehicle, row.fitment);
     if (!fitment) continue;
     const score = fitment.score;
     if (status && fitment.state === 'confirmed') matchedKeys.add(itemKey);

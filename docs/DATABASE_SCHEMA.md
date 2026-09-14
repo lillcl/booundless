@@ -49,7 +49,28 @@ Legacy `vehicle_item_matches` is retained for compatibility/history, but the mat
 
 Rollback procedure: first revert dependent application code and remove new public rewrites/bootstrap imports, then back up the three tables. Drop new tables only after explicit approval and backup, in dependency order (marketing_revisions, marketing_pages, dealer_branch_services). Code-only rollback may leave additive tables safely in place. Existing dealer/vehicle data is not part of rollback deletion.
 
-Not yet created: vehicle_needs, quotes/quote_items, request_events, matching_runs, campaigns, integrations, attribution_sessions and conversion_events. Their proposed shapes remain in the implementation plan and must not be treated as deployed schema.
+### Workflow extension — db/workflow-schema.sql (2026-09-14)
+
+This additive bootstrap follows the merchant and marketing SQL files. All new tables enable RLS and revoke PUBLIC/anon/authenticated access; privileged server handlers enforce ownership and membership. SQL is the authoritative field-level definition.
+
+| Table / extension | Keys, data and constraints |
+|---|---|
+| vehicle_needs | Composite PK vehicle_id/service_key; vehicle FK cascade, canonical service FK; required state confirmed/dismissed/resolved, urgency routine/soon/urgent, source default owner, updated_at default now |
+| dealer_request_items | Composite PK request_id/service_id; request FK cascade, service and canonical key FKs; required name snapshot |
+| dealer_quotes | UUID PK; request/user FKs; unique request_id/version; required currency MOP/HKD/CNY, JSONB items, nonnegative integer total_minor, expires_at; nullable accepted_at; created_at default now |
+| dealer_request_events | Bigserial PK; required request/user FKs and action; created_at default now |
+| marketing_integrations | Boolean singleton PK constrained true; config JSONB defaults disabled; version defaults 0; nullable updated_by FK; updated_at default now |
+| conversion_events | UUID PK; user FK cascade; required event_name/business_id; unique event_name/business_id; source/campaign default empty; created_at default now |
+| dealer_service_requests | version default 0, nullable completion_confirmed_at/request_key/request_fingerprint; partial unique user_id/request_key when nonnull; status adds quoted/accepted/declined |
+| dealer_service_items | compatibility_mode required default unverified; constrained unverified/restricted/universal |
+| dealer_invites | delivery_status required default not_sent; nullable delivery_id |
+| marketing_pages | Path constraint extends to clean /campaigns/:slug; campaign copy lives in draft/published JSON and publication revisions |
+
+Quote line items use JSONB (not a quote_items table), validated by the server as descriptions and integer minor-unit amounts. Request mutation locks rows and checks version. Completion confirmation creates deterministic service-history IDs, preventing duplicate history. Conversion ingestion prunes events older than 90 days; this is ingestion-triggered rather than a scheduled deletion guarantee. Browser attribution expires after 30 days. No vehicle details are sent to advertising providers.
+
+Rollback: revert dependent application code first; leave additive tables/columns in place. Back up before any explicitly authorized removal. Quote/event FKs intentionally prevent deleting referenced business records. Do not restore the old request-status/path constraints while expanded statuses/campaigns remain.
+
+Not created: matching_runs, standalone campaigns, attribution_sessions or scheduling-slot tables. Campaigns and integrations use the concrete tables above; distance, slot inventory and Meta remain outside this release.
 
 ## Rules
 - No agent invents DB field/table names without updating this document.

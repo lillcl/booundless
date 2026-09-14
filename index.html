@@ -31,6 +31,7 @@
 {"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"CarAI","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"車輛管理、保養提醒與琴澳行程規劃。"}
 </script>
 <script src="/assets/site-metadata.js" defer></script>
+<script src="/assets/marketing-tracking.js" defer></script>
 <style>
 :root{
   --bg:#f5f6f7;--card:#fff;--ink:#131516;--muted:#747b80;--line:#e5e8ea;
@@ -453,6 +454,7 @@ button,input,select,textarea{font-family:inherit}
   <div class="wrap">
     <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
     <div class="card profile-card"><h2 id="profileDisplayName">你的帳戶</h2><p id="profileVehicleSummary">登入後查看你的車輛護照</p></div>
+    <a class="row card" href="#/requests">服務請求、報價與預約 →</a>
     <div class="section-title">設定</div>
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
@@ -612,7 +614,7 @@ function showScreen(id){
   document.getElementById('detailFixBtn')?.addEventListener('click', () => openSheet('<h2>保養提醒</h2><p>目前最需要處理的是機油及機油隔。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   let selectedVehicleId = 'toyota';
   async function openDealerMatches() {
-    openSheet('<h2>車商服務配對</h2><div id="dealerMatchesPane"><p>正在尋找適用服務…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
+    openSheet('<h2>車商服務配對</h2><button class="secondary" type="button" id="reviewNeedsBtn">檢查／補充我的服務需求</button><div id="dealerMatchesPane"><p>正在尋找適用服務…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
     const pane = document.getElementById('dealerMatchesPane');
     try {
       const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/dealer-matches');
@@ -622,7 +624,11 @@ function showScreen(id){
         pane.innerHTML = '<p>目前沒有已設定的適用車商服務。請由管理員新增車商，或由車商設定服務配對。</p>';
         return;
       }
-      const branchSummary = (d.branches || []).filter(branch=>branch.mode==='needs').map(branch=>`<div class="notice"><b>${esc(branch.dealer_name)} · ${esc(branch.branch_name)}</b><p>涵蓋 ${branch.covered_needs.length} / ${branch.covered_needs.length+branch.uncovered_needs.length} 個待處理項目 · 配對分數 ${branch.score}</p>${branch.uncovered_needs.length?'<small>尚有未涵蓋項目，請比較其他分店。</small>':''}</div>`).join('');
+      const branchSummary = (d.branches || []).filter(branch=>branch.mode==='needs').map(branch=>{
+        const selected=new Map();for(const match of d.matches)if(match.branch_id===branch.branch_id&&match.compatibility_state==='confirmed'&&branch.covered_needs.includes(match.service_item_type_key)&&!selected.has(match.service_item_type_key))selected.set(match.service_item_type_key,match.service_item_id);
+        const ids=[...selected.values()];
+        return `<div class="notice"><b>${esc(branch.dealer_name)} · ${esc(branch.branch_name)}</b><p>涵蓋 ${branch.covered_needs.length} / ${branch.covered_needs.length+branch.uncovered_needs.length} 個待處理項目 · 配對分數 ${branch.score}</p>${branch.uncovered_needs.length?'<small>尚有未涵蓋項目，請比較其他分店。</small>':''}${ids.length?`<button class="secondary" data-request-dealer="${esc(branch.dealer_id)}" data-request-branch="${esc(branch.branch_id)}" data-request-service="${esc(ids[0])}" data-request-services="${esc(ids.join(','))}">一併詢問 ${ids.length} 項服務報價</button>`:''}</div>`;
+      }).join('');
       pane.innerHTML = branchSummary + d.matches.map((m) => {
         const urgent = m.current_status?.needs_attention;
         const status = m.compatibility_state !== 'confirmed' ? '車款資料不足，需要車商確認' : m.current_status ? (urgent ? '目前需要處理' : '目前正常，可提供') : '適用服務';
@@ -634,6 +640,20 @@ function showScreen(id){
     }
   }
   document.getElementById('dealerMatchBtn')?.addEventListener('click', openDealerMatches);
+  document.addEventListener('click',async event=>{
+    if(!event.target.closest?.('#reviewNeedsBtn'))return;
+    openSheet('<h2>服務需求</h2><p>依保養紀錄推算，不代表實際檢測結果。你可以確認或略過項目。</p><div id="needsBody">載入中…</div><button class="secondary" data-close-sheet>關閉</button>');
+    const host=document.getElementById('needsBody');
+    try{
+      const response=await fetch('/api/vehicles/'+encodeURIComponent(selectedVehicleId)+'/needs');const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'無法載入');host.replaceChildren();
+      const typesResponse=await fetch('/api/service-item-types');const types=await typesResponse.json();
+      const form=document.createElement('form');form.innerHTML='<label>補充需求<select name="service"></select></label><label>優先程度<select name="urgency"><option value="routine">一般</option><option value="soon">近期處理</option><option value="urgent">優先處理</option></select></label><button class="primary">確認需求</button><p role="status"></p>';
+      for(const type of types.data||[])form.elements.service.add(new Option(type.display_names?.['zh-Hant']||type.key,type.key));
+      const update=async(key,state,urgency='soon')=>{const r=await fetch('/api/vehicles/'+encodeURIComponent(selectedVehicleId)+'/needs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({service_key:key,state,urgency})});const d=await r.json();if(!r.ok)throw new Error(d.error?.message||'更新失敗');return d;};
+      form.onsubmit=async e=>{e.preventDefault();try{await update(form.elements.service.value,'confirmed',form.elements.urgency.value);form.querySelector('p').textContent='已確認，重新配對時會使用此需求。';}catch(error){form.querySelector('p').textContent=error.message;}};host.append(form);
+      for(const need of result.data){const row=document.createElement('div');row.className='row';const label=document.createElement('span');label.textContent=need.item+' · '+need.state;row.append(label);for(const [text,state] of [['需要處理','confirmed'],['暫時略過','dismissed']]){const b=document.createElement('button');b.className='secondary';b.textContent=text;b.onclick=async()=>{try{await update(need.service_item_type_key,state);label.textContent=need.item+' · '+state;}catch(error){label.textContent=error.message;}};row.append(b);}host.append(row);}
+    }catch(error){host.textContent=error.message;}
+  });
   const goBackToCars = () => {
     closeSheet();
     const onDemo = window.location.pathname.replace(/\/+$/, '') === '/demo' && !window.location.hash;
@@ -732,9 +752,11 @@ function showScreen(id){
     if (requestButton) {
       if (!window.confirm('要向此車商發送服務請求嗎？')) return;
       requestButton.disabled = true;
-      const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/service-requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_id: requestButton.dataset.requestDealer, branch_id: requestButton.dataset.requestBranch, dealer_service_item_id: requestButton.dataset.requestService }) });
+      requestButton.dataset.requestKey ||= crypto.randomUUID();
+      const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/service-requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_id: requestButton.dataset.requestDealer, branch_id: requestButton.dataset.requestBranch, dealer_service_item_id: requestButton.dataset.requestService,service_ids:(requestButton.dataset.requestServices||requestButton.dataset.requestService).split(','),request_key:requestButton.dataset.requestKey }) });
       const d = await r.json().catch(() => ({}));
       requestButton.textContent = r.ok ? '已送出請求' : (d.error?.message || '送出失敗');
+      if(r.ok)window.booundlessTrack?.('service_request_submitted',d.request?.id);
       if (!r.ok) requestButton.disabled = false;
     }
   });
@@ -1003,7 +1025,7 @@ function showScreen(id){
     if (e.target?.id === 'addVehicleForm') {
       e.preventDefault(); const result=document.getElementById('addVehicleResult'); result.classList.add('show'); result.textContent='正在新增…';
       const payload={model:document.getElementById('newVehicleModel').value,make:document.getElementById('newVehicleMake').value,year:document.getElementById('newVehicleYear').value,fuel_type:document.getElementById('newVehicleFuel').value,plate:document.getElementById('newVehiclePlate').value,mileage_km:document.getElementById('newVehicleMileage').value,image:newVehicleImageData||null};
-      const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){result.textContent='已新增車輛，重新整理後會顯示。';}else result.textContent=d.error?.message||'新增失敗';
+      const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){result.textContent='已新增車輛，重新整理後會顯示。';window.booundlessTrack?.('vehicle_created',d.vehicle?.id||d.data?.id);}else result.textContent=d.error?.message||'新增失敗';
     }
     if (e.target?.id === 'supportForm') {
       e.preventDefault(); const result=document.getElementById('supportResult'); result.classList.add('show'); result.textContent='正在送出…';
@@ -1025,6 +1047,8 @@ function showScreen(id){
     'admin/audit': renderAdminAudit,
     'admin/dealers': renderAdminDealers,
     'admin/marketing': renderMarketing,
+    'requests': renderRequests,
+    'admin/tracking': async root => (await import('/assets/tracking-admin.js')).render(root),
     dealer: renderDealerPortal,
   };
 
@@ -1106,7 +1130,8 @@ function showScreen(id){
         await fetch('/api/auth/logout', { method: 'POST' });
         me = null;
         renderTopbar();
-        window.location.hash = '#/home';
+        window.location.hash = sessionStorage.getItem('merchantInvite') ? '#/dealer' : '#/home';
+        window.location.reload();
       };
     }
     syncTopbarNav();
@@ -1174,6 +1199,7 @@ function showScreen(id){
   });
 
   /* Admin 車商 */
+  async function renderRequests(root) { const module=await import('/assets/request-flow.js'); await module.render(root); }
   async function renderMarketing(root) {
     root.innerHTML = '<div class="wrap"><div class="top"><div><h1>SEO 與分享設定</h1><p>編輯草稿，再發布到首頁或示範頁。發布後最多約一分鐘更新。</p></div></div><div id="marketingEditor" class="card form-card">載入中…</div></div>';
     const host = document.getElementById('marketingEditor');
@@ -1182,15 +1208,20 @@ function showScreen(id){
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || '無法載入');
       const select = document.createElement('select');
-      for (const page of data.pages) select.add(new Option(page.path === '/' ? '首頁' : '示範護照', page.path));
+      for (const page of data.pages) select.add(new Option(page.path === '/' ? '首頁' : page.path === '/demo' ? '示範護照' : page.path, page.path));
       host.replaceChildren(select);
+      const trackingLink=document.createElement('a');trackingLink.href='#/admin/tracking';trackingLink.textContent='廣告追蹤設定與報告 →';host.append(trackingLink);
+      const create=document.createElement('button');create.className='secondary';create.textContent='新增廣告活動頁';host.append(create);
+      create.onclick=async()=>{const slug=prompt('活動網址名稱，例如 summer-service');if(!slug)return;const response=await fetch('/api/admin/marketing/pages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'create',path:'/campaigns/'+slug})});const result=await response.json();if(!response.ok){alert(result.error?.message||'建立失敗');return;}renderMarketing(root);};
       const panel = document.createElement('div'); host.append(panel);
       const draw = () => {
         const page = data.pages.find(p => p.path === select.value);
         const content = { title:'無界啟程 BOOUNDLESS', description:'建立你的車輛護照，掌握車況並匹配合適車行。', social_title:'', social_description:'', image:'/assets/booundless-social.png', image_alt:'無界啟程', indexable:page.path === '/', ...page.draft };
-        const labels = {title:'頁面標題',description:'搜尋描述',social_title:'分享標題',social_description:'分享描述',image:'分享圖片網址（本站）',image_alt:'圖片描述'};
-        panel.innerHTML = '<form class="form-grid" id="marketingForm">'+Object.entries(labels).map(([key,label])=>`<div class="field wide"><label for="seo-${key}">${label}</label><input id="seo-${key}" name="${key}" value="${esc(content[key])}"></div>`).join('')+`<label class="wide"><input name="indexable" type="checkbox" ${content.indexable?'checked':''}> 允許搜尋引擎索引</label><button class="primary" type="submit">儲存草稿</button><button class="secondary" type="button" id="seoPublish">發布已儲存草稿</button></form><p id="seoMessage" role="status"></p><div class="section-title">搜尋預覽</div><div class="card form-card"><h2 id="seoPreviewTitle"></h2><p id="seoPreviewDescription"></p></div><div class="section-title">發布紀錄</div><div id="seoRevisions"></div>`;
+        const labels = {title:'頁面標題',description:'搜尋描述',social_title:'分享標題',social_description:'分享描述',image:'分享圖片網址（本站）',image_alt:'圖片描述',headline:'活動頁主標題',copy:'活動頁內容',cta_label:'活動頁按鈕文字'};
+        panel.innerHTML = '<form class="form-grid" id="marketingForm">'+Object.entries(labels).map(([key,label])=>`<div class="field wide"><label for="seo-${key}">${label}</label><input id="seo-${key}" name="${key}" value="${esc(content[key]||String())}"></div>`).join('')+`<label class="wide"><input name="indexable" type="checkbox" ${content.indexable?'checked':''}> 允許搜尋引擎索引</label><button class="primary" type="submit">儲存草稿</button><button class="secondary" type="button" id="seoPublish">發布已儲存草稿</button></form><p id="seoMessage" role="status"></p><div class="section-title">搜尋預覽</div><div class="card form-card"><h2 id="seoPreviewTitle"></h2><p id="seoPreviewDescription"></p></div><div class="section-title">發布紀錄</div><div id="seoRevisions"></div>`;
         const form = panel.querySelector('form');
+        const link=document.createElement('a');link.href=page.path;link.target='_blank';link.rel='noopener';link.textContent='開啟已發布頁面';panel.append(link);
+        const builder=document.createElement('form');builder.className='form-card';builder.innerHTML='<h3>廣告連結產生器</h3><label>來源<input name="source" placeholder="google" required></label><label>活動名稱<input name="campaign" required></label><button class="secondary">產生連結</button><p style="overflow-wrap:anywhere" role="status"></p>';builder.onsubmit=e=>{e.preventDefault();const url=new URL(page.path,'https://www.booundless.com');url.searchParams.set('utm_source',builder.elements.source.value);url.searchParams.set('utm_medium','cpc');url.searchParams.set('utm_campaign',builder.elements.campaign.value);builder.querySelector('p').textContent=url.href;};panel.append(builder);
         const message = panel.querySelector('#seoMessage');
         const preview = () => { panel.querySelector('#seoPreviewTitle').textContent=form.elements.title.value; panel.querySelector('#seoPreviewDescription').textContent=form.elements.description.value; };
         form.addEventListener('input',preview); preview();
@@ -1254,7 +1285,7 @@ function showScreen(id){
       if (ownerEmail) {
         const invite = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, role: 'owner' }) });
         const inviteData = await invite.json().catch(() => ({}));
-        if (inviteData.invite_token) message += ` 邀請 token：${inviteData.invite_token}`;
+        if (inviteData.invite_url) message += ` ${inviteData.invitation_sent?'邀請已寄出':'可複製邀請連結（郵件未寄出）'}：${inviteData.invite_url}`;
         else if (!invite.ok) message += ' 管理員邀請建立失敗。';
         else message += ' 已加入現有帳號。';
       }
@@ -1269,11 +1300,18 @@ function showScreen(id){
     if (!r.ok) { list.innerHTML = '<div class="row"><b>無法讀取車商</b></div>'; return; }
     list.innerHTML = d.data?.length ? d.data.map((dealer) => `<div class="row"><span><b>${esc(dealer.display_name)}</b><small>${esc(dealer.status)} · ${dealer.branch_count} 分店 · ${dealer.member_count} 成員 · ${dealer.service_count} 服務 · ${dealer.fitment_count} 配對規則</small></span><span style="display:flex;gap:8px;align-items:center"><button type="button" class="kc-tab" data-dealer-status="${esc(dealer.id)}" data-next-status="${dealer.status === 'active' ? 'suspended' : 'active'}">${dealer.status === 'active' ? '暫停' : '啟用'}</button><button type="button" class="kc-tab" data-dealer-invite="${esc(dealer.id)}">邀請</button></span></div>`).join('') : '<div class="row"><b>尚未建立車商</b></div>';
     list.querySelectorAll('[data-dealer-status]').forEach((button) => { button.onclick = async () => { await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerStatus), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: button.dataset.nextStatus }) }); await loadAdminDealers(); }; });
-    list.querySelectorAll('[data-dealer-invite]').forEach((button) => { button.onclick = async () => { const inviteEmail = window.prompt('輸入車商管理員電郵'); if (!inviteEmail) return; const r = await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerInvite) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'manager' }) }); const d = await r.json().catch(() => ({})); window.alert(d.invite_token ? `請安全地分享邀請 token：${d.invite_token}` : (d.error?.message || '邀請已處理')); }; });
+    list.querySelectorAll('[data-dealer-invite]').forEach((button) => { button.onclick = async () => { const inviteEmail = window.prompt('輸入車商管理員電郵'); if (!inviteEmail) return; const r = await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerInvite) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'manager' }) }); const d = await r.json().catch(() => ({})); window.alert(d.invite_url ? `${d.invitation_sent ? '邀請已寄出' : '郵件未寄出，請安全地分享邀請連結'}：${d.invite_url}` : (d.error?.message || '成員已加入')); }; });
   }
 
   /* 車商 portal */
   async function renderDealerPortal(root) {
+    const invited=new URLSearchParams(location.hash.split('?')[1]||'').get('invite');
+    if(invited&&/^[a-f0-9]{48}$/.test(invited)){sessionStorage.setItem('merchantInvite',invited);history.replaceState(null,'',location.pathname+'#/dealer');}
+    const inviteToken=sessionStorage.getItem('merchantInvite');
+    if(inviteToken){
+      root.innerHTML='<div class="wrap"><div class="card form-card"><h1>接受車商邀請</h1><p>已有帳號請先登入；首次使用請設定密碼。</p><a href="#/login">登入已有帳號</a><form id="inviteJoin"><label>顯示名稱<input name="name" autocomplete="name"></label><label>新帳號密碼（至少12字元）<input name="password" type="password" minlength="12" autocomplete="new-password"></label><button class="primary">'+(me?'接受邀請':'建立帳號並接受邀請')+'</button><p role="status"></p></form></div></div>';
+      const form=root.querySelector('form');form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('button');button.disabled=true;try{const response=await fetch(me?'/api/dealer/invites/accept':'/api/dealer/invites/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:inviteToken,display_name:form.elements.name.value,password:form.elements.password.value})});const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'邀請失敗');sessionStorage.removeItem('merchantInvite');location.reload();}catch(error){form.querySelector('[role=status]').textContent=error.message;button.disabled=false;}};return;
+    }
     root.innerHTML = '<div class="wrap"><div class="top"><div><h1>車商後台</h1><p>管理服務、車款配對與服務請求。</p></div></div><div id="dealerPortalBody"><div class="card form-card"><b>載入中…</b></div></div></div>';
     const body = document.getElementById('dealerPortalBody');
     const r = await fetch('/api/dealer/me'); const d = await r.json().catch(() => ({}));
@@ -1282,6 +1320,7 @@ function showScreen(id){
     const dealer = d.data[0];
     body.innerHTML = `<div class="card form-card"><div class="passport-head"><h2>${esc(dealer.display_name)}</h2><span class="state ${dealer.status === 'active' ? 'ok' : 'warn'}">${esc(dealer.role)} · ${esc(dealer.status)}</span></div><div class="form-grid"><div class="field"><label>服務項目 key</label><select id="dealerServiceKey" aria-label="服務項目"><option value="">載入服務目錄…</option></select></div><div class="field"><label>服務名稱</label><input id="dealerServiceName" placeholder="機油及機油隔更換"></div><div class="field"><label>適用品牌</label><input id="dealerFitMake" placeholder="Toyota"></div><div class="field"><label>適用車款</label><input id="dealerFitModel" placeholder="Corolla Cross"></div><div class="field"><label>年份起</label><input id="dealerFitYearFrom" type="number" placeholder="2020"></div><div class="field"><label>年份止</label><input id="dealerFitYearTo" type="number" placeholder="2025"></div></div><button class="primary" id="dealerAddService" type="button">新增服務與配對規則</button><div class="ai-result" id="dealerPortalResult"></div></div><div class="section-title">目前服務目錄</div><div id="dealerServicesList" class="card list"><div class="row"><b>載入中…</b></div></div><div class="section-title">服務請求</div><div id="dealerRequestsList" class="card list"><div class="row"><b>載入中…</b></div></div></div>`;
     const serviceKeySelect = document.getElementById('dealerServiceKey');
+    const extra=document.createElement('div');extra.className='form-grid';extra.innerHTML='<div class="field"><label>參考最低價<input id="dealerPriceMin" type="number" min="0" step="0.01"></label></div><div class="field"><label>參考最高價<input id="dealerPriceMax" type="number" min="0" step="0.01"></label></div><div class="field"><label>幣別<select id="dealerCurrency"><option>MOP</option><option>HKD</option><option>CNY</option></select></label></div><div class="field"><label>適用範圍<select id="dealerCompatibility"><option value="unverified">需向車商確認</option><option value="restricted">依品牌／車款規則</option><option value="universal">確認提供通用服務</option></select></label></div>';serviceKeySelect.closest('.form-grid').after(extra);
     serviceKeySelect.replaceChildren();
     document.getElementById('dealerAddService').disabled = true;
     try {
@@ -1310,17 +1349,20 @@ function showScreen(id){
         serviceList.append(section);
       }
       const requests = await fetch('/api/dealer/service-requests?dealer_id=' + encodeURIComponent(dealer.id)).then((x) => x.json()).catch(() => ({}));
-      const requestList = document.getElementById('dealerRequestsList'); requestList.innerHTML = requests.data?.length ? requests.data.map((x) => `<div class="row"><span><b>${esc(x.vehicle_model)} · ${esc(x.service_name || x.service_item_type_key || '服務')}</b><small>${esc(x.user_email)} · ${esc(x.status)}</small></span><select data-request-id="${esc(x.id)}"><option ${x.status === 'new' ? 'selected' : ''}>new</option><option ${x.status === 'accepted' ? 'selected' : ''}>accepted</option><option ${x.status === 'scheduled' ? 'selected' : ''}>scheduled</option><option ${x.status === 'completed' ? 'selected' : ''}>completed</option><option ${x.status === 'cancelled' ? 'selected' : ''}>cancelled</option></select></div>`).join('') : '<div class="row"><b>尚無服務請求</b></div>';
+      const requestList = document.getElementById('dealerRequestsList'); requestList.innerHTML = requests.data?.length ? requests.data.map((x) => `<div class="row"><span><b>${esc(x.vehicle_model)} · ${esc(x.service_name || x.service_item_type_key || '服務')}</b><small>${esc(x.user_email)} · ${esc(x.status)}</small></span><a href="#/requests">管理報價與預約 →</a></div>`).join('') : '<div class="row"><b>尚無服務請求</b></div>';
       requestList.querySelectorAll('[data-request-id]').forEach((select) => { select.onchange = async () => { await fetch('/api/dealer/service-requests', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: select.dataset.requestId, status: select.value }) }); await loadPortal(); }; });
     };
     document.getElementById('dealerAddService').onclick = async () => {
       const result = document.getElementById('dealerPortalResult'); result.classList.add('show'); result.textContent = '正在新增服務…';
-      const service = await fetch('/api/dealer/services?dealer_id=' + encodeURIComponent(dealer.id), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ service_item_type_key: document.getElementById('dealerServiceKey').value, name: document.getElementById('dealerServiceName').value }) });
+      const service = await fetch('/api/dealer/services?dealer_id=' + encodeURIComponent(dealer.id), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ service_item_type_key: document.getElementById('dealerServiceKey').value, name: document.getElementById('dealerServiceName').value,price_min:document.getElementById('dealerPriceMin').value||null,price_max:document.getElementById('dealerPriceMax').value||null,currency:document.getElementById('dealerCurrency').value,compatibility_mode:document.getElementById('dealerCompatibility').value }) });
       const serviceData = await service.json().catch(() => ({}));
       if (!service.ok) { result.textContent = serviceData.error?.message || '新增失敗'; return; }
       const make = document.getElementById('dealerFitMake').value.trim(); const model = document.getElementById('dealerFitModel').value.trim();
-      if (make || model) await fetch('/api/dealer/fitments?dealer_id=' + encodeURIComponent(dealer.id), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_service_item_id: serviceData.service.id, make_norm: make, model_norm: model, year_from: document.getElementById('dealerFitYearFrom').value || null, year_to: document.getElementById('dealerFitYearTo').value || null }) });
-      result.textContent = '服務與配對規則已新增。'; await loadPortal();
+      if (make || model) {
+        const fit=await fetch('/api/dealer/fitments?dealer_id=' + encodeURIComponent(dealer.id), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_service_item_id: serviceData.service.id, make_norm: make, model_norm: model, year_from: document.getElementById('dealerFitYearFrom').value || null, year_to: document.getElementById('dealerFitYearTo').value || null }) });
+        if(!fit.ok){result.textContent='服務已建立，但車款規則儲存失敗。請先確認規則，再加入分店服務。';await loadPortal();return;}
+      }
+      result.textContent = '服務已新增。請在下方勾選提供此服務的分店並儲存。'; await loadPortal();
     };
     await loadPortal();
   }

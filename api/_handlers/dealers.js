@@ -1,9 +1,11 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { getDb } from '../_lib/db.js';
-import { audit, requireAdmin, requireUser } from '../_lib/auth.js';
+import { audit, requireAdmin, requireUser, hashPassword, signSession, setSessionCookie } from '../_lib/auth.js';
 import { getOwnedVehicle } from '../_lib/tool-utils.js';
 import { calculateDealerMatches, rankBranches } from '../_lib/dealer-matcher.js';
 import { readBody, sendError, sendJSON } from '../_lib/http.js';
+import { sendInvitation } from '../_lib/invitation-mail.js';
+import {vehicleNeeds} from '../_lib/vehicle-needs.js';
 
 const DEALER_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
 const EDIT_ROLES = new Set(['owner', 'manager']);
@@ -69,12 +71,12 @@ async function resolveDealerForUser(req, res, db, user) {
   const requested = query.get('dealer_id');
   if (requested) {
     const member = await getMember(db, requested, user.id);
-    if (!member || member.status !== 'active') throw new Error('Dealer access denied');
+    if (!member || member.status === 'suspended') throw new Error('Dealer access denied');
     return requested;
   }
   const r = await db.query(
     `SELECT dm.dealer_id FROM dealer_members dm JOIN dealers d ON d.id = dm.dealer_id
-      WHERE dm.user_id = $1 AND dm.role IN ('owner','manager','staff','viewer') AND d.status = 'active'
+      WHERE dm.user_id = $1 AND dm.role IN ('owner','manager','staff','viewer') AND d.status <> 'suspended'
       ORDER BY d.display_name LIMIT 1`,
     [user.id],
   );
@@ -173,7 +175,10 @@ async function adminDealerRoute(req, res, admin, rest) {
     const r = await db.query(`INSERT INTO dealer_invites (dealer_id,email,role,token_hash,expires_at,created_by_user_id)
       VALUES ($1,$2,$3,$4,NOW()+INTERVAL '7 days',$5) RETURNING id,email,role,expires_at`, [dealerId, inviteEmail, role, tokenHash, admin.id]);
     await audit({ actor: admin, action: 'dealer.invite.create', targetType: 'dealer', targetId: dealerId, payload: { email: inviteEmail, role, invite_id: r.rows[0].id }, req });
-    return sendJSON(res, 201, { invite: r.rows[0], invite_token: token, note: 'Email delivery is not configured; share this token securely.' });
+    const inviteUrl='https://www.booundless.com/#/dealer?invite='+token;
+    const delivery=await sendInvitation({email:inviteEmail,link:inviteUrl,id:r.rows[0].id});
+    await db.query('UPDATE dealer_invites SET delivery_status=$1,delivery_id=$2 WHERE id=$3',[delivery.status,delivery.id||null,r.rows[0].id]);
+    return sendJSON(res, 201, { invite: r.rows[0], invite_token: token, invite_url:inviteUrl, delivery_status:delivery.status, invitation_sent:delivery.status==='sent' });
   }
 
   if (rest[1] === 'branches' && (req.method === 'GET' || req.method === 'POST')) {
@@ -231,13 +236,18 @@ async function acceptInvite(req, res, user) {
   if (!token) return sendError(res, 422, 'unprocessable', 'Invite token is required');
   const hash = createHash('sha256').update(token).digest('hex');
   const db = await getDb();
-  const r = await db.query(`SELECT * FROM dealer_invites WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at > NOW() AND lower(email)=lower($2)`, [hash, user.email]);
-  if (!r.rowCount) return sendError(res, 400, 'invalid_invite', 'Invite is invalid, expired, or not for this account');
+  const client=await db.connect();
+  try {
+  await client.query('BEGIN');
+  const r = await client.query(`SELECT * FROM dealer_invites WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at > NOW() AND lower(email)=lower($2) FOR UPDATE`, [hash, user.email]);
+  if (!r.rowCount) {await client.query('ROLLBACK');return sendError(res, 400, 'invalid_invite', 'Invite is invalid, expired, or not for this account');}
   const invite = r.rows[0];
-  await db.query('INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,$3) ON CONFLICT (dealer_id,user_id) DO UPDATE SET role=EXCLUDED.role', [invite.dealer_id, user.id, invite.role]);
-  await db.query('UPDATE dealer_invites SET accepted_at=NOW() WHERE id=$1', [invite.id]);
+  await client.query('INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,$3) ON CONFLICT (dealer_id,user_id) DO UPDATE SET role=EXCLUDED.role', [invite.dealer_id, user.id, invite.role]);
+  await client.query('UPDATE dealer_invites SET accepted_at=NOW() WHERE id=$1', [invite.id]);
+  await client.query('COMMIT');
   await audit({ actor: user, action: 'dealer.invite.accept', targetType: 'dealer', targetId: invite.dealer_id, payload: { invite_id: invite.id }, req });
   sendJSON(res, 200, { ok: true, dealer_id: invite.dealer_id, role: invite.role });
+  } catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
 }
 
 async function dealerPortalRoute(req, res, path, query) {
@@ -281,7 +291,7 @@ async function dealerPortalRoute(req, res, path, query) {
   if (serviceMatch) {
     const dealerId = await resolveDealerForUser(req, res, db, user);
     const member = await getMember(db, dealerId, user.id);
-    if (!member || member.status !== 'active') return sendError(res, 403, 'forbidden', 'Dealer access denied');
+    if (!member || member.status === 'suspended') return sendError(res, 403, 'forbidden', 'Dealer access denied');
     const serviceId = serviceMatch[1] ? id(serviceMatch[1], 'service_id') : null;
     if (req.method === 'GET') {
       const params = [dealerId]; const filter = serviceId ? ' AND s.id=$2' : '';
@@ -294,18 +304,22 @@ async function dealerPortalRoute(req, res, path, query) {
     if (!EDIT_ROLES.has(member.role)) return sendError(res, 403, 'forbidden', 'Catalog editing requires dealer manager access');
     const body = await readBody(req);
     const itemKey = text(body.service_item_type_key, null, 100);
+    const mode=body.compatibility_mode||'unverified';
+    if(!['universal','restricted','unverified'].includes(mode))return sendError(res,422,'unprocessable','Invalid compatibility mode');
+    for(const key of ['price_min','price_max'])if(body[key]!=null&&(!Number.isFinite(Number(body[key]))||Number(body[key])<0))return sendError(res,422,'unprocessable','Invalid price');
+    if(body.price_min!=null&&body.price_max!=null&&Number(body.price_min)>Number(body.price_max))return sendError(res,422,'unprocessable','Minimum price exceeds maximum');
     const name = text(body.name, null, 160);
     if (!itemKey || !name) return sendError(res, 422, 'unprocessable', 'service_item_type_key and name are required');
     const type = await db.query('SELECT key FROM service_item_types WHERE key=$1 AND is_active', [itemKey]);
     if (!type.rowCount) return sendError(res, 422, 'unprocessable', 'Unknown service item type');
     const fields = [itemKey, name, text(body.description, null, 1000), body.interval_km == null ? null : Number(body.interval_km), body.interval_months == null ? null : Number(body.interval_months), body.price_min == null ? null : Number(body.price_min), body.price_max == null ? null : Number(body.price_max), text(body.currency, 'MOP', 8), dealerId];
     if (serviceId) {
-      const r = await db.query(`UPDATE dealer_service_items SET service_item_type_key=$1,name=$2,description=$3,interval_km=$4,interval_months=$5,price_min=$6,price_max=$7,currency=$8,updated_at=NOW() WHERE id=$9 AND dealer_id=$10 RETURNING *`, [...fields.slice(0, 8), serviceId, dealerId]);
+      const r = await db.query(`UPDATE dealer_service_items SET service_item_type_key=$1,name=$2,description=$3,interval_km=$4,interval_months=$5,price_min=$6,price_max=$7,currency=$8,compatibility_mode=$11,updated_at=NOW() WHERE id=$9 AND dealer_id=$10 RETURNING *`, [...fields.slice(0, 8), serviceId, dealerId,mode]);
       if (!r.rowCount) return sendError(res, 404, 'not_found', 'Service item not found');
       return sendJSON(res, 200, { service: r.rows[0] });
     }
-    const r = await db.query(`INSERT INTO dealer_service_items (id,dealer_id,service_item_type_key,name,description,interval_km,interval_months,price_min,price_max,currency)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`, [`service-${randomUUID()}`, dealerId, ...fields.slice(0, 8)]);
+    const r = await db.query(`INSERT INTO dealer_service_items (id,dealer_id,service_item_type_key,name,description,interval_km,interval_months,price_min,price_max,currency,compatibility_mode)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`, [`service-${randomUUID()}`, dealerId, ...fields.slice(0, 8),mode]);
     return sendJSON(res, 201, { service: r.rows[0] });
   }
 
@@ -336,6 +350,7 @@ async function dealerPortalRoute(req, res, path, query) {
 
   const requestMatch = path.match(/^\/api\/dealer\/service-requests(?:\/([^/]+))?$/);
   if (requestMatch && (req.method === 'GET' || req.method === 'PATCH')) {
+    if(req.method==='PATCH')return sendError(res,409,'workflow_required','Use the versioned service request workflow');
     const dealerId = await resolveDealerForUser(req, res, db, user);
     const member = await getMember(db, dealerId, user.id);
     if (!member || !['owner', 'manager', 'staff', 'viewer'].includes(member.role)) return sendError(res, 403, 'forbidden', 'Dealer access denied');
@@ -358,13 +373,23 @@ async function dealerPortalRoute(req, res, path, query) {
 }
 
 async function vehicleRoute(req, res, path) {
-  const match = path.match(/^\/api\/vehicles\/([^/]+)\/(dealer-matches|service-requests)$/);
+  const match = path.match(/^\/api\/vehicles\/([^/]+)\/(dealer-matches|service-requests|needs)$/);
   if (!match) return false;
   const user = await requireUser(req, res);
   if (!user) return true;
   const vehicleId = decodeURIComponent(match[1]);
   const db = await getDb();
   const vehicle = await getOwnedVehicle(db, user.id, vehicleId);
+  if(match[2]==='needs'){
+    if(req.method==='GET')return sendJSON(res,200,{data:await vehicleNeeds(db,vehicle)});
+    if(req.method!=='POST')return sendError(res,405,'method_not_allowed','Use GET or POST');
+    const body=await readBody(req);
+    if(!['confirmed','dismissed','resolved'].includes(body.state)||!['routine','soon','urgent'].includes(body.urgency))return sendError(res,422,'unprocessable','Invalid need state/urgency');
+    const type=(await db.query('SELECT key FROM service_item_types WHERE key=$1 AND is_active',[body.service_key])).rows[0];
+    if(!type)return sendError(res,422,'unprocessable','Unknown service type');
+    await db.query(`INSERT INTO vehicle_needs(vehicle_id,service_key,state,urgency) VALUES($1,$2,$3,$4) ON CONFLICT(vehicle_id,service_key) DO UPDATE SET state=EXCLUDED.state,urgency=EXCLUDED.urgency,source='owner',updated_at=NOW()`,[vehicleId,type.key,body.state,body.urgency]);
+    return sendJSON(res,200,{data:await vehicleNeeds(db,vehicle)});
+  }
 
   if (match[2] === 'dealer-matches' && req.method === 'GET') {
     const { query } = pathInfo(req);
@@ -372,8 +397,8 @@ async function vehicleRoute(req, res, path) {
     const dealerFilter = query.get('dealer_id') ? ' AND d.id=$1' : '';
     if (query.get('dealer_id')) params.push(id(query.get('dealer_id'), 'dealer_id'));
     const [statuses, catalog] = await Promise.all([
-      db.query('SELECT item,service_item_type_key,wear,last_done_km,last_done_at FROM vehicle_status WHERE vehicle_id=$1 ORDER BY display_order,id', [vehicleId]),
-      db.query(`SELECT d.id AS dealer_id,d.display_name AS dealer_name,b.id AS branch_id,b.name AS branch_name,s.id AS service_item_id,s.service_item_type_key,s.name AS service_name,s.description,s.price_min,s.price_max,s.currency,
+      vehicleNeeds(db,vehicle).then(rows=>({rows})),
+      db.query(`SELECT d.id AS dealer_id,d.display_name AS dealer_name,b.id AS branch_id,b.name AS branch_name,s.id AS service_item_id,s.compatibility_mode,s.service_item_type_key,s.name AS service_name,s.description,s.price_min,s.price_max,s.currency,
           f.id AS fitment_id,f.market,f.make_norm,f.model_norm,f.year_from,f.year_to,f.variant_norm,f.fuel_type_norm,f.engine_code,f.vin_prefix
         FROM dealers d JOIN dealer_service_items s ON s.dealer_id=d.id AND s.is_active
         JOIN dealer_branch_services bs ON bs.service_id=s.id AND bs.is_active
@@ -396,6 +421,13 @@ async function vehicleRoute(req, res, path) {
     const dealer = await db.query('SELECT id FROM dealers WHERE id=$1 AND status=\'active\'', [dealerId]);
     if (!dealer.rowCount) return sendError(res, 404, 'not_found', 'Active dealer not found');
     const serviceId = body.dealer_service_item_id ? id(body.dealer_service_item_id, 'dealer_service_item_id') : null;
+    const serviceIds=[...new Set(Array.isArray(body.service_ids)?body.service_ids:[serviceId])];
+    if(!serviceIds.length||serviceIds.length>30||!serviceIds.includes(serviceId))return sendError(res,422,'unprocessable','Select 1–30 services including the primary service');
+    for(const value of serviceIds)id(value,'service_id');
+    const requestKey=body.request_key||null;
+    if(requestKey&&(!/^[a-f0-9-]{36}$/.test(requestKey)))return sendError(res,422,'unprocessable','Invalid request key');
+    const fingerprint=createHash('sha256').update(JSON.stringify([vehicleId,dealerId,body.branch_id,[...serviceIds].sort(),body.message||'',body.package_id||null])).digest('hex');
+    if(requestKey){const previous=(await db.query('SELECT * FROM dealer_service_requests WHERE user_id=$1 AND request_key=$2',[user.id,requestKey])).rows[0];if(previous)return previous.request_fingerprint===fingerprint?sendJSON(res,200,{request:previous}):sendError(res,409,'conflict','Request key already used with different content');}
     let serviceKey = text(body.service_item_type_key, null, 100);
     if (serviceId) {
       const service = await db.query('SELECT id,service_item_type_key FROM dealer_service_items WHERE id=$1 AND dealer_id=$2 AND is_active', [serviceId, dealerId]);
@@ -419,8 +451,30 @@ async function vehicleRoute(req, res, path) {
         if (!offered.rowCount) return sendError(res,422,'unprocessable','Service no longer available at this branch');
       }
     }
-    const r = await db.query(`INSERT INTO dealer_service_requests (id,dealer_id,branch_id,user_id,vehicle_id,service_item_type_key,dealer_service_item_id,package_id,message)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`, [`request-${randomUUID()}`, dealerId, branchId, user.id, vehicleId, serviceKey, serviceId, body.package_id ? id(body.package_id, 'package_id') : null, text(body.message, null, 2000)]);
+    const selected=await db.query(`SELECT s.id,s.service_item_type_key,s.name FROM dealer_service_items s JOIN dealer_branch_services bs ON bs.service_id=s.id WHERE s.id=ANY($1::text[]) AND s.dealer_id=$2 AND s.is_active AND bs.branch_id=$3 AND bs.is_active`,[serviceIds,dealerId,branchId]);
+    if(selected.rowCount!==serviceIds.length)return sendError(res,422,'unprocessable','One or more branch services are unavailable');
+    const allFitments=await db.query('SELECT * FROM dealer_item_fitments WHERE dealer_service_item_id=ANY($1::text[])',[serviceIds]);
+    for(const service of selected.rows){
+      const fitments=allFitments.rows.filter(f=>f.dealer_service_item_id===service.id);
+      const candidates=fitments.length?fitments:[null];
+      if(!calculateDealerMatches(vehicle,[],candidates.map(f=>({...service,fitment:f}))).matches.length)return sendError(res,422,'incompatible','One or more services are incompatible');
+    }
+    const client=await db.connect();let r;
+    try{
+      await client.query('BEGIN');
+      const activeMerchant=await client.query("SELECT id FROM dealers WHERE id=$1 AND status='active' FOR SHARE",[dealerId]);
+      const activeBranch=await client.query('SELECT id FROM dealer_branches WHERE id=$1 AND dealer_id=$2 AND is_active FOR SHARE',[branchId,dealerId]);
+      const activeServices=await client.query('SELECT s.id FROM dealer_service_items s JOIN dealer_branch_services bs ON bs.service_id=s.id WHERE s.id=ANY($1::text[]) AND s.dealer_id=$2 AND s.is_active AND bs.branch_id=$3 AND bs.is_active FOR SHARE OF s,bs',[serviceIds,dealerId,branchId]);
+      if(!activeMerchant.rowCount||!activeBranch.rowCount||activeServices.rowCount!==serviceIds.length)throw new Error('Merchant service availability changed; refresh matches');
+      r=await client.query(`INSERT INTO dealer_service_requests (id,dealer_id,branch_id,user_id,vehicle_id,service_item_type_key,dealer_service_item_id,package_id,message,request_key,request_fingerprint)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (user_id,request_key) WHERE request_key IS NOT NULL DO NOTHING RETURNING *`, [`request-${randomUUID()}`, dealerId, branchId, user.id, vehicleId, serviceKey, serviceId, body.package_id ? id(body.package_id, 'package_id') : null, text(body.message, null, 2000),requestKey,fingerprint]);
+      if(!r.rowCount){
+        const previous=(await client.query('SELECT * FROM dealer_service_requests WHERE user_id=$1 AND request_key=$2',[user.id,requestKey])).rows[0];
+        await client.query('ROLLBACK');return previous?.request_fingerprint===fingerprint?sendJSON(res,200,{request:previous}):sendError(res,409,'conflict','Request key conflict');
+      }
+      for(const service of selected.rows)await client.query('INSERT INTO dealer_request_items(request_id,service_id,service_key,name) VALUES($1,$2,$3,$4)',[r.rows[0].id,service.id,service.service_item_type_key,service.name]);
+      await client.query('COMMIT');
+    }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
     await audit({ actor: user, action: 'dealer.request.create', targetType: 'dealer_service_request', targetId: r.rows[0].id, payload: { dealer_id: dealerId, vehicle_id: vehicleId, service_item_type_key: serviceKey }, req });
     return sendJSON(res, 201, { request: r.rows[0] });
   }
@@ -431,13 +485,30 @@ async function vehicleRoute(req, res, path) {
 export default async function handler(req, res) {
   try {
     const { pathname, query } = pathInfo(req);
+    if(pathname==='/api/dealer/invites/register'&&req.method==='POST'){
+      const body=await readBody(req);
+      if(typeof body.token!=='string'||!/^[a-f0-9]{48}$/.test(body.token)||typeof body.password!=='string'||body.password.length<12||Buffer.byteLength(body.password)>72)return sendError(res,422,'unprocessable','Valid invitation and password of 12–72 bytes required');
+      const db=await getDb();const client=await db.connect();
+      try{
+        await client.query('BEGIN');
+        const invite=(await client.query('SELECT * FROM dealer_invites WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at>NOW() FOR UPDATE',[createHash('sha256').update(body.token).digest('hex')])).rows[0];
+        if(!invite)throw new Error('Invitation is invalid or expired');
+        if((await client.query('SELECT id FROM users WHERE lower(email)=lower($1)',[invite.email])).rowCount)throw new Error('Account already exists; sign in to accept the invitation');
+        const user={id:randomUUID(),email:invite.email,role:'user'};
+        await client.query('INSERT INTO users(id,email,password_hash,role,display_name) VALUES($1,$2,$3,$4,$5)',[user.id,user.email,await hashPassword(body.password),user.role,text(body.display_name,'車商成員',100)]);
+        await client.query('INSERT INTO dealer_members(dealer_id,user_id,role) VALUES($1,$2,$3)',[invite.dealer_id,user.id,invite.role]);
+        await client.query('UPDATE dealer_invites SET accepted_at=NOW() WHERE id=$1',[invite.id]);
+        const session=await signSession(user);
+        await client.query('COMMIT');setSessionCookie(res,session);return sendJSON(res,201,{user,dealer_id:invite.dealer_id});
+      }catch(error){await client.query('ROLLBACK');return sendError(res,422,'unprocessable',error.message);}finally{client.release();}
+    }
     if (pathname === '/api/service-item-types' && req.method === 'GET') {
       if (!await requireUser(req, res)) return;
       const db = await getDb();
       const r = await db.query('SELECT key,category,display_names FROM service_item_types WHERE is_active ORDER BY category,key');
       return sendJSON(res, 200, { data: r.rows });
     }
-    if (/^\/api\/vehicles\/[^/]+\/(dealer-matches|service-requests)$/.test(pathname))
+    if (/^\/api\/vehicles\/[^/]+\/(dealer-matches|service-requests|needs)$/.test(pathname))
       return await vehicleRoute(req, res, pathname);
     if (pathname.startsWith('/api/admin/dealers')) {
       const admin = await requireAdmin(req, res);

@@ -25,6 +25,8 @@ import aiHandler from '../api/ai.js';
 import agentHandler from '../api/agent.js';
 import dealersHandler from '../api/_handlers/dealers.js';
 import marketingHandler, { publicPage } from '../api/_handlers/marketing.js';
+import requestsHandler from '../api/_handlers/requests.js';
+import trackingHandler from '../api/_handlers/tracking.js';
 import { closeDb } from '../api/_lib/db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -88,6 +90,7 @@ app.get('/api/dealer/me', adapt(dealersHandler));
 app.get('/api/dealer/branches', adapt(dealersHandler));
 app.put('/api/dealer/branches/:id/services', adapt(dealersHandler));
 app.post('/api/dealer/invites/accept', adapt(dealersHandler));
+app.post('/api/dealer/invites/register', adapt(dealersHandler));
 app.get('/api/dealer/services', adapt(dealersHandler));
 app.post('/api/dealer/services', adapt(dealersHandler));
 app.get('/api/dealer/services/:id', adapt(dealersHandler));
@@ -100,11 +103,20 @@ app.get('/api/dealer/service-requests', adapt(dealersHandler));
 app.patch('/api/dealer/service-requests', adapt(dealersHandler));
 app.patch('/api/dealer/service-requests/:id', adapt(dealersHandler));
 app.get('/api/vehicles/:id/dealer-matches', adapt(dealersHandler));
+app.get('/api/vehicles/:id/needs',adapt(dealersHandler));
+app.post('/api/vehicles/:id/needs',adapt(dealersHandler));
 app.post('/api/vehicles/:id/service-requests', adapt(dealersHandler));
 
 /* Static assets — serve the repo at root. */
 app.all('/api/admin/marketing/pages', adapt(marketingHandler));
+app.all('/api/admin/marketing/tracking',adapt(trackingHandler));
+app.all('/api/marketing/config',adapt(trackingHandler));
+app.all('/api/marketing/conversions',adapt(trackingHandler));
+app.all('/api/service-requests',adapt(requestsHandler));
+app.all('/api/service-requests/:id',adapt(requestsHandler));
 app.get(['/', '/demo'], adapt(publicPage));
+app.get('/campaigns/:slug',adapt(publicPage));
+app.get('/sitemap.xml',adapt(publicPage));
 app.use(express.static(root, {
   extensions: ['html'],
   index: 'index.html',

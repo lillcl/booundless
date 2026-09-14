@@ -64,6 +64,21 @@ Routed through existing API entry point without adding a serverless function. Us
 
 Successful page cache: `public, max-age=0, s-maxage=60`. Publishing may take up to the cache TTL to appear; external search/social caches have their own timing. If DB is unavailable, returns static template with no-store; there is currently no durable last-published fallback. No new campaign public paths, dynamic sitemap or tracking scripts are implemented in this delivery.
 
+## Workflow extension (2026-09-14; supersedes pending limitations above)
+
+- `GET/POST /api/vehicles/:id/needs`: owner-only canonical needs. POST accepts `service_key`, `state` (confirmed/dismissed/resolved), `urgency` (routine/soon/urgent). Matching merges these overrides with recorded wear; pure EVs exclude combustion-only services.
+- Service offerings add `compatibility_mode`: unverified (default), restricted, universal. Universal must be an explicit merchant assertion; missing rules otherwise never imply confirmed compatibility.
+- `POST /api/vehicles/:id/service-requests` additionally accepts `service_ids` (up to 30, same branch/merchant) and optional `request_key`. First creation returns 201; identical keyed retry returns 200; changed payload with same key returns 409. Items are snapshotted transactionally.
+- `GET /api/service-requests`: authenticated owner or authorized merchant list, latest 100; returns items, quotes and `can_manage`.
+- `POST /api/service-requests/:id`: `{action,version,...}` with optimistic version checking (409). Actions: quote (operator, integer minor-unit items/currency/expiry), accept_quote (owner, quote_id), schedule (operator, scheduled_at), complete (operator), confirm_completion (owner), cancel, decline (operator). Status transitions are enforced server-side. Customer confirmation writes service history once and resolves requested needs. Legacy direct status PATCH is rejected.
+- `POST /api/dealer/invites/register`: valid single-use token, display_name and password (12 characters minimum, 72 bytes maximum). Email and merchant role come only from the invite. Creates user/membership/session atomically. Existing users sign in and accept instead. Invitation responses distinguish email delivery from manual invite links; delivery requires RESEND_API_KEY and INVITATION_FROM_EMAIL.
+- Marketing page paths additionally support `/campaigns/:slug`. POST `action:create` creates a draft; `action:unpublish` with version removes a campaign publication. Draft content adds headline (160), copy (3000), cta_label (60). Existing publish/rollback version rules apply.
+- `GET /campaigns/:slug`: published server-rendered HTML only; draft/missing 404, database failure 503. `GET /sitemap.xml` includes published indexable pages.
+- `GET /api/marketing/config`: public non-secret tracking settings. `GET/PATCH /api/admin/marketing/tracking`: admin versioned settings and 90-day conversion counts. Enabled defaults false; accepts validated GA4/Google Ads IDs and conversion labels, never arbitrary scripts.
+- `POST /api/marketing/conversions`: authenticated `{consent:true,event_name,business_id,source?,campaign?}`. Validates ownership and actual business state; unique event/business deduplication. Events: vehicle_created, service_request_submitted, booking_confirmed. Disabled tracking records nothing. Browser tags load only after explicit consent; withdrawal stops tags. External provider delivery is best-effort, not exactly-once.
+
+UI routes: `#/requests`, `#/dealer` (including invitation entry), `#/admin/marketing`, `#/admin/tracking`. No Meta tracking, ad purchasing, live scheduling inventory or distance scoring is included. Campaigns reuse marketing_pages rather than a separate campaigns table.
+
 ## Rules
 - Frontend and backend consume the same documented contract.
 - Never silently change request/response/error shapes.
