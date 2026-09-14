@@ -501,6 +501,21 @@ function showScreen(id){
 </script>
 
 <script>
+function appDialog(message, mode='notice') {
+  return new Promise(resolve => {
+    const previous=document.activeElement;
+    const dialog=document.createElement('dialog');
+    dialog.style.cssText='max-width:480px;width:calc(100% - 48px);border:1px solid #cbdadd;border-radius:20px;padding:24px;font:inherit';
+    const form=document.createElement('form');form.method='dialog';
+    const label=document.createElement('label');label.textContent=message;
+    const input=document.createElement('input');input.style.cssText='display:block;width:100%;margin:16px 0';
+    if(mode==='input'){input.required=true;label.append(input);}form.append(label);
+    const submit=document.createElement('button');submit.textContent='確認';submit.className='primary';form.append(submit);
+    if(mode!=='notice'){const cancel=document.createElement('button');cancel.type='button';cancel.textContent='取消';cancel.onclick=()=>dialog.close();form.append(cancel);}
+    let value=null;form.onsubmit=()=>{value=mode==='input'?input.value:true;};
+    dialog.append(form);dialog.onclose=()=>{dialog.remove();previous?.focus();resolve(value);};document.body.append(dialog);dialog.showModal();if(mode==='input')input.focus();
+  });
+}
 /* 康程 CarAI — live data hydration.
    Pulls vehicles + reminders from /api/* (SQLite-backed) and rewrites the
    hardcoded Home card, Car list, and Detail screen content. The original
@@ -750,7 +765,7 @@ function showScreen(id){
     }
     const requestButton = e.target.closest?.('[data-request-dealer][data-request-service]');
     if (requestButton) {
-      if (!window.confirm('要向此車商發送服務請求嗎？')) return;
+      if (!(await appDialog('要向此車商發送服務請求嗎？','confirm'))) return;
       requestButton.disabled = true;
       requestButton.dataset.requestKey ||= crypto.randomUUID();
       const r = await fetch('/api/vehicles/' + encodeURIComponent(selectedVehicleId) + '/service-requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dealer_id: requestButton.dataset.requestDealer, branch_id: requestButton.dataset.requestBranch, dealer_service_item_id: requestButton.dataset.requestService,service_ids:(requestButton.dataset.requestServices||requestButton.dataset.requestService).split(','),request_key:requestButton.dataset.requestKey }) });
@@ -1212,7 +1227,7 @@ function showScreen(id){
       host.replaceChildren(select);
       const trackingLink=document.createElement('a');trackingLink.href='#/admin/tracking';trackingLink.textContent='站內商戶推廣 →';host.append(trackingLink);
       const create=document.createElement('button');create.className='secondary';create.textContent='新增廣告活動頁';host.append(create);
-      create.onclick=async()=>{const slug=prompt('活動網址名稱，例如 summer-service');if(!slug)return;const response=await fetch('/api/admin/marketing/pages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'create',path:'/campaigns/'+slug})});const result=await response.json();if(!response.ok){alert(result.error?.message||'建立失敗');return;}renderMarketing(root);};
+      create.onclick=async()=>{const slug=await appDialog('活動網址名稱，例如 summer-service','input');if(!slug)return;create.disabled=true;try{const response=await fetch('/api/admin/marketing/pages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'create',path:'/campaigns/'+slug.trim()})});const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'建立失敗');await renderMarketing(root);}catch(error){await appDialog(error.message);}finally{create.disabled=false;}};
       const panel = document.createElement('div'); host.append(panel);
       const draw = () => {
         const page = data.pages.find(p => p.path === select.value);
@@ -1299,7 +1314,7 @@ function showScreen(id){
     if (!r.ok) { list.innerHTML = '<div class="row"><b>無法讀取車商</b></div>'; return; }
     list.innerHTML = d.data?.length ? d.data.map((dealer) => `<div class="row"><span><b>${esc(dealer.display_name)}</b><small>${esc(dealer.status)} · ${dealer.branch_count} 分店 · ${dealer.member_count} 成員 · ${dealer.service_count} 服務 · ${dealer.fitment_count} 配對規則</small></span><span style="display:flex;gap:8px;align-items:center"><button type="button" class="kc-tab" data-dealer-status="${esc(dealer.id)}" data-next-status="${dealer.status === 'active' ? 'suspended' : 'active'}">${dealer.status === 'active' ? '暫停' : '啟用'}</button><button type="button" class="kc-tab" data-dealer-invite="${esc(dealer.id)}">邀請</button></span></div>`).join('') : '<div class="row"><b>尚未建立車商</b></div>';
     list.querySelectorAll('[data-dealer-status]').forEach((button) => { button.onclick = async () => { await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerStatus), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: button.dataset.nextStatus }) }); await loadAdminDealers(); }; });
-    list.querySelectorAll('[data-dealer-invite]').forEach((button) => { button.onclick = async () => { const inviteEmail = window.prompt('輸入車商管理員電郵'); if (!inviteEmail) return; const r = await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerInvite) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'manager' }) }); const d = await r.json().catch(() => ({})); window.alert(d.invite_url ? `${d.invitation_sent ? '邀請已寄出' : '郵件未寄出，請安全地分享邀請連結'}：${d.invite_url}` : (d.error?.message || '成員已加入')); }; });
+    list.querySelectorAll('[data-dealer-invite]').forEach((button) => { button.onclick = async () => { const inviteEmail = await appDialog('輸入車商管理員電郵','input'); if (!inviteEmail) return; const r = await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerInvite) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'manager' }) }); const d = await r.json().catch(() => ({})); await appDialog(d.invite_url ? `${d.invitation_sent ? '邀請已寄出' : '郵件未寄出，請安全地分享邀請連結'}：${d.invite_url}` : (d.error?.message || '成員已加入')); }; });
   }
 
   /* 車商 portal */
@@ -1393,7 +1408,7 @@ function showScreen(id){
         await loadUsersList();
       } else {
         const d = await r.json().catch(() => ({}));
-        alert(d?.error?.message || '建立失敗');
+        await appDialog(d?.error?.message || '建立失敗');
       }
     };
   }
