@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "車輛詳情",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "wear-bar": "/components/wear-bar/wear-bar",
+    "status-pill": "/components/status-pill/status-pill",
+    "empty-state": "/components/empty-state/empty-state",
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button",
+    "app-dialog": "/components/app-dialog/app-dialog"
+  }
+}

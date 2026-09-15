@@ -1,0 +1,23 @@
+<view class="kc-page kc-support">
+  <view class="kc-support__head">
+    <view class="kc-support__title">聯絡客服</view>
+    <view class="kc-support__sub">我們會儘快回覆你的訊息</view>
+  </view>
+
+  <view class="kc-card">
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">主題 *</view>
+      <input class="kc-input" placeholder="簡短描述問題" value="{{form.subject}}" bindinput="onSubjectInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">詳細描述 *</view>
+      <textarea class="kc-textarea" value="{{form.message}}" bindinput="onMessageInput" placeholder="請詳細說明你的問題..." maxlength="1000"></textarea>
+    </view>
+
+    <primary-button block disabled="{{sending || !form.subject || !form.message}}" bind:tap="onSubmit">
+      {{sending ? '送出中...' : '送出'}}
+    </primary-button>
+
+    <view wx:if="{{status}}" class="kc-status {{statusTone === 'error' ? 'kc-status--error' : 'kc-status--ok'}}">{{status}}</view>
+  </view>
+</view>

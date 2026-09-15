@@ -1,0 +1,44 @@
+.kc-reminder {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  background: var(--card);
+  border-radius: 20rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-reminder--overdue { border-left: 6rpx solid var(--amber); }
+
+.kc-reminder__icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  flex-shrink: 0;
+}
+
+.kc-reminder__body { flex: 1; min-width: 0; }
+
+.kc-reminder__title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6rpx;
+}
+
+.kc-reminder__meta {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-bottom: 4rpx;
+}
+
+.kc-reminder__vehicle { margin-left: 4rpx; }
+
+.kc-reminder__hint {
+  font-size: 24rpx;
+  color: var(--muted);
+}

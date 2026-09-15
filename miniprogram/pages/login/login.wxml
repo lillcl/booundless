@@ -1,0 +1,48 @@
+<view class="kc-page kc-login">
+  <view class="kc-login__header">
+    <view class="kc-login__brand">康程 CarAI</view>
+    <view class="kc-login__sub">{{devMode ? '開發模式：可選郵箱 + 密碼登入' : '微信一鍵登入'}}</view>
+  </view>
+
+  <view class="kc-login__card" wx:if="{{devMode}}">
+    <view class="kc-login__card-title">郵箱 + 密碼</view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">電郵</view>
+      <input class="kc-input" type="text" placeholder="name@example.com" value="{{email}}" bindinput="onEmailInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">密碼</view>
+      <input class="kc-input" password="true" placeholder="密碼" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+    <primary-button block disabled="{{!email || !password || loading}}" bind:tap="onEmailLogin">
+      {{loading ? '登入中...' : '登入'}}
+    </primary-button>
+  </view>
+
+  <view class="kc-login__divider" wx:if="{{devMode}}">或</view>
+
+  <view class="kc-login__card">
+    <view class="kc-login__card-title">微信一鍵登入</view>
+    <view class="kc-login__hint">使用微信帳戶一鍵進入，新用戶會自動建立帳號。</view>
+    <primary-button block bind:tap="onWechatLogin" disabled="{{loading}}">
+      {{loading ? '登入中...' : '使用微信登入'}}
+    </primary-button>
+  </view>
+
+  <view class="kc-login__status" wx:if="{{status}}" style="color: {{statusTone === 'error' ? 'var(--red)' : 'var(--brand)'}}">
+    {{status}}
+  </view>
+
+  <view class="kc-login__footer">
+    登入即代表同意 <text class="kc-login__link" bindtap="onAbout">使用條款與私隱政策</text>
+  </view>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

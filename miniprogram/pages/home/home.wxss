@@ -1,0 +1,142 @@
+.kc-home { padding: 24rpx 24rpx 0; }
+
+.kc-home__greeting {
+  background: linear-gradient(135deg, var(--brand) 0%, #0c4880 100%);
+  color: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  margin-bottom: 32rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-home__greeting-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  margin-bottom: 8rpx;
+}
+
+.kc-home__greeting-sub {
+  font-size: 24rpx;
+  opacity: 0.85;
+}
+
+.kc-home__section {
+  margin-bottom: 32rpx;
+}
+
+.kc-home__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8rpx 16rpx;
+}
+
+.kc-home__section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-home__section-action {
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.kc-home__vehicles {
+  display: flex;
+  gap: 16rpx;
+  overflow-x: auto;
+  padding: 0 0 8rpx;
+}
+
+.kc-home__vehicle {
+  flex: 0 0 240rpx;
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 16rpx;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.kc-home__vehicle-img {
+  width: 100%;
+  height: 160rpx;
+  border-radius: 12rpx;
+  background: var(--soft);
+  margin-bottom: 12rpx;
+}
+
+.kc-home__vehicle-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-home__vehicle-meta {
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.kc-home__trips { display: flex; flex-direction: column; gap: 12rpx; }
+
+.kc-home__trip {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-home__trip-route {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6rpx;
+}
+
+.kc-home__trip-arrow { color: var(--muted); }
+
+.kc-home__trip-meta { font-size: 24rpx; color: var(--muted); }
+
+.kc-home__quick {
+  background: var(--card);
+  border-radius: 24rpx;
+  padding: 24rpx 32rpx 32rpx;
+  margin: 24rpx 0 32rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-home__quick-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 24rpx;
+}
+
+.kc-home__quick-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.kc-home__quick-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.kc-home__quick-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+}
+
+.kc-home__quick-label { font-size: 24rpx; color: var(--ink); }

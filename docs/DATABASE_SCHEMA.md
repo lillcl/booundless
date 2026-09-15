@@ -72,6 +72,25 @@ Rollback: revert dependent application code first; leave additive tables/columns
 
 Not created: matching_runs, standalone campaigns, attribution_sessions or scheduling-slot tables. Campaigns and integrations use the concrete tables above; distance, slot inventory and Meta remain outside this release.
 
+## WeChat Mini Program additions — 2026-09-14
+
+Source migration: `server-patch/db/migrations/2026_09_wechat_columns.sql`. Additive; nullable; non-destructive. Verified against the same isolated Postgres used for the workflow extension.
+
+### `users` — six new columns
+
+| Field | Type | Null/default | Constraints / meaning |
+| --- | --- | --- | --- |
+| wechat_openid | text | nullable | App-scoped openid from `jscode2session`; partial unique index `idx_users_wechat_openid_unique(wechat_openid) WHERE wechat_openid IS NOT NULL` |
+| wechat_unionid | text | nullable | Cross-app union id when developer has unified accounts; partial index `idx_users_wechat_unionid(wechat_unionid) WHERE wechat_unionid IS NOT NULL` |
+| wechat_appid | text | nullable | Which mini-program / public-account issued the openid; useful when multiple apps share a users table |
+| nickname | text | nullable | Display name from `wx.getUserProfile`; falls back to `display_name` when empty |
+| avatar_url | text | nullable | Avatar URL; same source |
+| phone | text | nullable | Reserved for future phone-binding flow |
+
+Existing `users.email` retains its UNIQUE constraint and remains required; the WeChat handler stores a synthetic email (`wx_<openid>@wechat.local`) on insert so the legacy schema accepts the row without dropping the NOT NULL constraint. Synthetic emails are stable per openid and never collide.
+
+Rollback: drop the six columns. No data loss; existing rows have NULL in the new fields. Drop the partial indexes if you also drop the columns.
+
 ## Internal-only correction
 
 marketing_integrations.config stores enabled and promotions (dealer_id, starts_at, ends_at). Legacy external IDs are ignored, never returned and replaced on admin save. Existing conversion_events is retained for history; browser measurement is disabled. SEO tables are unchanged; no destructive migration is required.
@@ -97,6 +116,9 @@ marketing_integrations.config stores enabled and promotions (dealer_id, starts_a
 | Version | Migration | Status | Agent Signature |
 |---|---|---|---|
 | 001 | Initial schema | Pending | — |
+| 002 | Merchant v2 + Marketing (`db/merchant-v2-schema.sql`, `db/marketing-schema.sql`) | Applied | unassigned |
+| 003 | Workflow extension (`db/workflow-schema.sql`) | Applied | unassigned |
+| 004 | WeChat Mini Program columns (`server-patch/db/migrations/2026_09_wechat_columns.sql`) | Pending | Lead / Orchestrator |
 
 ## Data Integrity / Security
 - Ownership:

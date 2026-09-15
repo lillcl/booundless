@@ -1,0 +1,67 @@
+<view class="kc-page kc-vehicle-detail">
+  <view class="kc-vehicle-detail__head" wx:if="{{vehicle}}">
+    <image class="kc-vehicle-detail__img" src="{{vehicle.image || '/images/vehicles/vehicle-placeholder.svg'}}" mode="aspectFill"></image>
+    <view class="kc-vehicle-detail__head-body">
+      <view class="kc-vehicle-detail__title">{{vehicle.model}}</view>
+      <view class="kc-vehicle-detail__sub" wx:if="{{vehicle.plate}}">{{vehicle.plate}}</view>
+      <view class="kc-vehicle-detail__meta">
+        <text wx:if="{{vehicle.mileageLabel}}">{{vehicle.mileageLabel}}</text>
+        <text wx:if="{{vehicle.year}}"> · {{vehicle.year}} 年</text>
+        <text wx:if="{{vehicle.fuel_type}}"> · {{vehicle.fuel_type}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="kc-vehicle-detail__actions" wx:if="{{vehicle}}">
+    <primary-button block bind:tap="onRequestService">查找服務商</primary-button>
+    <secondary-button block bind:tap="onOpenAiChat">車主 AI 諮詢</secondary-button>
+  </view>
+
+  <view class="kc-vehicle-detail__section">
+    <view class="kc-vehicle-detail__section-title">保養狀態（{{attentionCount}} 需關注）</view>
+    <view class="kc-vehicle-detail__card">
+      <block wx:if="{{statusItems.length > 0}}">
+        <wear-bar
+          wx:for="{{statusItems}}"
+          wx:key="item"
+          label="{{item.label}}"
+          wear="{{item.wear}}"
+        ></wear-bar>
+      </block>
+      <block wx:else>
+        <view class="kc-vehicle-detail__hint">暫無資料</view>
+      </block>
+    </view>
+  </view>
+
+  <view class="kc-vehicle-detail__section">
+    <view class="kc-vehicle-detail__section-title">維修記錄</view>
+    <view class="kc-vehicle-detail__card">
+      <block wx:if="{{history.length > 0}}">
+        <view class="kc-vehicle-detail__history" wx:for="{{history}}" wx:key="id">
+          <view class="kc-vehicle-detail__history-row">
+            <view class="kc-vehicle-detail__history-title">{{item.title}}</view>
+            <view class="kc-vehicle-detail__history-date">{{item.dateLabel}}</view>
+          </view>
+          <view class="kc-vehicle-detail__history-meta">
+            <text wx:if="{{item.kind}}">{{item.kind}}</text>
+            <text wx:if="{{item.mileage_km}}"> · {{item.mileage_km}} km</text>
+          </view>
+          <view class="kc-vehicle-detail__history-notes" wx:if="{{item.notes}}">{{item.notes}}</view>
+        </view>
+      </block>
+      <block wx:else>
+        <empty-state icon="📋" title="還沒有維修記錄" hint="服務完成後會自動寫入這裡。"></empty-state>
+      </block>
+    </view>
+  </view>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

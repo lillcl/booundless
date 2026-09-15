@@ -1,0 +1,15 @@
+.kc-support { padding: 24rpx; }
+
+.kc-support__head { margin: 0 8rpx 24rpx; }
+
+.kc-support__title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kc-support__sub {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-top: 8rpx;
+}

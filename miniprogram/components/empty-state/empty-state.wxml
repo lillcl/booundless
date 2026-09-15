@@ -1,0 +1,6 @@
+<view class="kc-empty">
+  <view class="kc-empty__icon" wx:if="{{icon}}">{{icon}}</view>
+  <view class="kc-empty__title">{{title}}</view>
+  <view class="kc-empty__hint" wx:if="{{hint}}">{{hint}}</view>
+  <slot name="action"></slot>
+</view>

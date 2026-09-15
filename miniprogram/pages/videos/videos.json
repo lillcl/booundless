@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "影片",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

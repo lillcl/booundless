@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "維修記錄",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

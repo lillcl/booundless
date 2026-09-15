@@ -1,0 +1,37 @@
+.kc-wear-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.kc-wear-row__title {
+  width: 200rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.kc-wear-row__bar {
+  flex: 1;
+  height: 16rpx;
+  background: var(--soft);
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.kc-wear-row__fill {
+  height: 100%;
+  border-radius: 999rpx;
+  transition: width 0.3s ease;
+}
+
+.kc-wear-row__fill--green { background: var(--green); }
+.kc-wear-row__fill--amber { background: var(--amber); }
+.kc-wear-row__fill--red { background: var(--red); }
+
+.kc-wear-row__pct {
+  width: 80rpx;
+  text-align: right;
+  font-size: 24rpx;
+  font-weight: 600;
+}

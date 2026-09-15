@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "通知偏好",
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button"
+  }
+}

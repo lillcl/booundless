@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "主頁",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "reminder-card": "/components/reminder-card/reminder-card",
+    "empty-state": "/components/empty-state/empty-state",
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button"
+  }
+}

@@ -1,0 +1,75 @@
+.kc-login { padding: 64rpx 32rpx 96rpx; }
+
+.kc-login__header { text-align: center; margin-bottom: 48rpx; }
+
+.kc-login__brand {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.kc-login__sub {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-top: 8rpx;
+}
+
+.kc-login__card {
+  background: var(--card);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: var(--shadow);
+  margin-bottom: 32rpx;
+}
+
+.kc-login__card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 24rpx;
+  color: var(--ink);
+}
+
+.kc-login__hint {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-bottom: 24rpx;
+  line-height: 1.5;
+}
+
+.kc-login__divider {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--muted);
+  margin: 24rpx 0;
+  position: relative;
+}
+
+.kc-login__divider::before, .kc-login__divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1rpx;
+  background: var(--line);
+}
+
+.kc-login__divider::before { left: 0; }
+.kc-login__divider::after { right: 0; }
+
+.kc-login__status {
+  margin: 24rpx 0;
+  font-size: 26rpx;
+  text-align: center;
+}
+
+.kc-login__footer {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--muted);
+  margin-top: 48rpx;
+}
+
+.kc-login__link {
+  color: var(--brand);
+  text-decoration: underline;
+}

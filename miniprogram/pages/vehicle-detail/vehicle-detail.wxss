@@ -1,0 +1,105 @@
+.kc-vehicle-detail { padding: 24rpx; }
+
+.kc-vehicle-detail__head {
+  display: flex;
+  gap: 20rpx;
+  background: var(--card);
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-vehicle-detail__img {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  background: var(--soft);
+  flex-shrink: 0;
+}
+
+.kc-vehicle-detail__head-body { flex: 1; min-width: 0; }
+
+.kc-vehicle-detail__title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8rpx;
+}
+
+.kc-vehicle-detail__sub {
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.kc-vehicle-detail__meta {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: var(--brand);
+}
+
+.kc-vehicle-detail__actions {
+  margin: 24rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.kc-vehicle-detail__section { margin-top: 24rpx; }
+
+.kc-vehicle-detail__section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12rpx;
+  padding: 0 8rpx;
+}
+
+.kc-vehicle-detail__card {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-vehicle-detail__hint {
+  padding: 24rpx;
+  text-align: center;
+  color: var(--muted);
+  font-size: 26rpx;
+}
+
+.kc-vehicle-detail__history {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-vehicle-detail__history:last-child { border-bottom: none; }
+
+.kc-vehicle-detail__history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.kc-vehicle-detail__history-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-vehicle-detail__history-date {
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.kc-vehicle-detail__history-meta {
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.kc-vehicle-detail__history-notes {
+  font-size: 24rpx;
+  color: var(--ink);
+  margin-top: 4rpx;
+}

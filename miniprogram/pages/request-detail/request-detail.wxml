@@ -1,0 +1,82 @@
+<view class="kc-page kc-req">
+  <view class="kc-req__head">
+    <view class="kc-req__head-row">
+      <view class="kc-req__title">{{request.dealer_display_name || request.dealer_name || '商戶'}}</view>
+      <status-pill label="{{statusLabel(request.status)}}" tone="{{statusTone(request.status)}}"></status-pill>
+    </view>
+    <view class="kc-req__sub" wx:if="{{request.vehicle_model}}">{{request.vehicle_model}}<text wx:if="{{request.vehicle_plate}}"> · {{request.vehicle_plate}}</text></view>
+    <view class="kc-req__meta">
+      <text>建立：{{formatDate(request.created_at)}}</text>
+      <text wx:if="{{request.scheduled_at}}"> · 預約：{{formatDate(request.scheduled_at)}}</text>
+    </view>
+  </view>
+
+  <view class="kc-req__section">
+    <view class="kc-req__section-title">服務項目</view>
+    <view class="kc-req__card">
+      <view class="kc-req__service" wx:for="{{request.items}}" wx:key="service_id">
+        <view class="kc-req__service-name">{{item.name}}</view>
+        <view class="kc-req__service-key" wx:if="{{item.service_key}}">{{serviceLabel(item.service_key)}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="kc-req__section" wx:if="{{request.quotes && request.quotes.length > 0}}">
+    <view class="kc-req__section-title">報價</view>
+    <view class="kc-req__card">
+      <view class="kc-req__quote" wx:for="{{request.quotes}}" wx:key="id" wx:for-item="q">
+        <view class="kc-req__quote-head">
+          <view class="kc-req__quote-total">{{formatMoney(q.total_minor, q.currency)}}</view>
+          <view class="kc-req__quote-ver" wx:if="{{q.version}}">v{{q.version}}</view>
+        </view>
+        <view class="kc-req__quote-meta">
+          <text wx:if="{{q.expires_at}}">有效至 {{formatDate(q.expires_at)}}</text>
+          <text wx:if="{{q.accepted_at}}"> · 已接受</text>
+        </view>
+        <view class="kc-req__quote-items">
+          <view class="kc-req__quote-item" wx:for="{{q.items}}" wx:key="description" wx:for-item="qi">
+            <view class="kc-req__quote-desc">{{qi.description}}</view>
+            <view class="kc-req__quote-amount">{{formatMoney(qi.amount_minor, q.currency)}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="kc-req__section" wx:if="{{request.message}}">
+    <view class="kc-req__section-title">備註</view>
+    <view class="kc-req__card">
+      <view class="kc-req__notes">{{request.message}}</view>
+    </view>
+  </view>
+
+  <view class="kc-req__actions">
+    <block wx:if="{{request.status === 'quoted'}}">
+      <primary-button block disabled="{{acting}}" bind:tap="onAcceptQuote">接受報價</primary-button>
+      <secondary-button block disabled="{{acting}}" bind:tap="onCancel">取消請求</secondary-button>
+    </block>
+    <block wx:elif="{{request.status === 'accepted'}}">
+      <view class="kc-req__hint">已接受報價，等待商戶排期</view>
+    </block>
+    <block wx:elif="{{request.status === 'scheduled'}}">
+      <view class="kc-req__hint">已排期，服務完成後請確認</view>
+      <primary-button block disabled="{{acting}}" bind:tap="onConfirmCompletion">確認完成</primary-button>
+    </block>
+    <block wx:elif="{{request.status === 'completed'}}">
+      <view class="kc-req__hint">已確認完成</view>
+    </block>
+    <block wx:elif="{{request.status === 'new'}}">
+      <view class="kc-req__hint">等待商戶報價</view>
+      <secondary-button block disabled="{{acting}}" bind:tap="onCancel">取消請求</secondary-button>
+    </block>
+  </view>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

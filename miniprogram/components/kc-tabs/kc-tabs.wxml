@@ -1,0 +1,9 @@
+<view class="kc-tabs">
+  <view
+    class="kc-tabs__item {{activeIndex === index ? 'kc-tabs__item--active' : ''}}"
+    wx:for="{{items}}"
+    wx:key="key"
+    data-index="{{index}}"
+    bindtap="onTap"
+  >{{item.label}}</view>
+</view>

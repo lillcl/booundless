@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "登入",
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button",
+    "app-dialog": "/components/app-dialog/app-dialog"
+  }
+}

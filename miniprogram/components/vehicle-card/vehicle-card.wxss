@@ -1,0 +1,46 @@
+.kc-vehicle-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  background: var(--card);
+  border-radius: 20rpx;
+  box-shadow: var(--shadow);
+  margin-bottom: 20rpx;
+}
+
+.kc-vehicle-card__img {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 16rpx;
+  background: var(--soft);
+  flex-shrink: 0;
+}
+
+.kc-vehicle-card__body { flex: 1; min-width: 0; }
+
+.kc-vehicle-card__title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8rpx;
+}
+
+.kc-vehicle-card__meta {
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.kc-vehicle-card__plate { margin-left: 4rpx; }
+
+.kc-vehicle-card__hint {
+  font-size: 24rpx;
+  color: var(--brand);
+  margin-top: 6rpx;
+}
+
+.kc-vehicle-card__arrow {
+  color: var(--muted);
+  font-size: 36rpx;
+  font-weight: 300;
+}

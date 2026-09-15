@@ -1,0 +1,11 @@
+<view class="kc-reminder {{status === 'overdue' ? 'kc-reminder--overdue' : ''}}" bindtap="onTap">
+  <view class="kc-reminder__icon" style="background: {{status === 'overdue' ? 'var(--amber-bg)' : 'var(--brand-soft)'}}; color: {{status === 'overdue' ? 'var(--amber)' : 'var(--brand)'}}">⏰</view>
+  <view class="kc-reminder__body">
+    <view class="kc-reminder__title">{{title}}</view>
+    <view class="kc-reminder__meta">
+      <text class="kc-reminder__vehicle" wx:if="{{vehicleLabel}}">·  {{vehicleLabel}}</text>
+    </view>
+    <view class="kc-reminder__hint" wx:if="{{dueLabel}}">{{dueLabel}}</view>
+  </view>
+  <status-pill wx:if="{{status === 'overdue'}}" label="逾期" tone="amber"></status-pill>
+</view>

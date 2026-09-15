@@ -1,0 +1,78 @@
+{
+  "pages": [
+    "pages/landing/landing",
+    "pages/login/login",
+    "pages/home/home",
+    "pages/garage/garage",
+    "pages/vehicle-detail/vehicle-detail",
+    "pages/dealer-matches/dealer-matches",
+    "pages/service/service",
+    "pages/qinao/qinao",
+    "pages/videos/videos",
+    "pages/profile/profile",
+    "pages/notifications/notifications",
+    "pages/support/support",
+    "pages/team/team",
+    "pages/history/history",
+    "pages/requests/requests",
+    "pages/request-detail/request-detail",
+    "pages/ai-chat/ai-chat",
+    "pages/ai-image/ai-image",
+    "pages/about/about",
+    "pages/404/404"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#073568",
+    "navigationBarTitleText": "康程 CarAI",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f3ef"
+  },
+  "tabBar": {
+    "color": "#5b6675",
+    "selectedColor": "#073568",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "主頁",
+        "iconPath": "images/icons/tab-home.png",
+        "selectedIconPath": "images/icons/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/garage/garage",
+        "text": "車庫",
+        "iconPath": "images/icons/tab-garage.png",
+        "selectedIconPath": "images/icons/tab-garage-active.png"
+      },
+      {
+        "pagePath": "pages/qinao/qinao",
+        "text": "琴澳",
+        "iconPath": "images/icons/tab-qinao.png",
+        "selectedIconPath": "images/icons/tab-qinao-active.png"
+      },
+      {
+        "pagePath": "pages/videos/videos",
+        "text": "影片",
+        "iconPath": "images/icons/tab-videos.png",
+        "selectedIconPath": "images/icons/tab-videos-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/icons/tab-profile.png",
+        "selectedIconPath": "images/icons/tab-profile-active.png"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用於顯示附近的服務商與行程距離"
+    }
+  },
+  "requiredBackgroundModes": [],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

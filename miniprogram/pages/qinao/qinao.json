@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "琴澳自駕",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

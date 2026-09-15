@@ -1,0 +1,25 @@
+<view class="kc-page kc-page--with-tabbar kc-videos">
+  <view class="kc-videos__head">
+    <view class="kc-videos__title">教學影片</view>
+    <view class="kc-videos__sub">車主日常保養、維修技巧</view>
+  </view>
+
+  <block wx:if="{{videos.length > 0}}">
+    <view class="kc-videos__list">
+      <view class="kc-videos__item" wx:for="{{videos}}" wx:key="id" data-id="{{item.id}}" data-url="{{item.url}}" bindtap="onVideoTap">
+        <image class="kc-videos__thumb" src="{{item.thumbnail_url || '/images/icons/booundless-car.png'}}" mode="aspectFill"></image>
+        <view class="kc-videos__body">
+          <view class="kc-videos__title-row">{{item.title}}</view>
+          <view class="kc-videos__desc" wx:if="{{item.description}}">{{item.description}}</view>
+          <view class="kc-videos__meta">
+            <text wx:if="{{item.category}}">{{item.category}}</text>
+            <text wx:if="{{item.duration_seconds}}"> · {{formatDuration(item.duration_seconds)}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <empty-state icon="🎬" title="暫無影片" hint="敬請期待更多教學影片。"></empty-state>
+  </block>
+</view>

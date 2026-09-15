@@ -83,6 +83,70 @@ UI routes: `#/requests`, `#/dealer` (including invitation entry), `#/admin/marke
 
 SEO is a first-party metadata editor. External tags, provider ID fields and the UTM/CPC builder are removed. Admin tracking now accepts only `{enabled,promotions:[{dealer_id,starts_at,ends_at}]}` with active merchant IDs and valid date intervals; external fields are rejected. Eligible branch matches add sponsored=true during that period without changing scores or compatibility. Browser measurement is disabled. Impression/click reporting is not implemented.
 
+## WeChat Mini Program transport — 2026-09-14
+
+The WeChat Mini Program (小程序) reuses every route above via two additive changes:
+
+1. `api/_lib/auth.js#readSessionToken` now accepts `Authorization: Bearer <jwt>` first, then falls back to the existing `kc_session` HttpOnly cookie. Web and admin flows are unchanged.
+2. New endpoint `POST /api/auth/wechat` (see below) exchanges a `wx.login` code for the same `kc_session` JWT and returns it in the body.
+
+These are documented separately so the web app's cookie contract is not confused with the mobile Bearer contract. See `server-patch/README.md` for the apply steps and the full handler source.
+
+### POST /api/auth/wechat
+
+**Purpose:** Sign in (or auto-register) a user from a WeChat Mini Program login code.
+
+**Auth:** None required (this is the entry point).
+
+**Permission:** Anonymous. The endpoint upserts `users` by `wechat_openid`. New users get `role='user'`.
+
+**Configuration:** Server env vars `WECHAT_APPID` and `WECHAT_SECRET` (from 微信公众平台 → 开发管理 → 开发设置) must be set; otherwise the endpoint returns 500 `wechat_not_configured`.
+
+#### Request
+```json
+{
+  "code": "string, required — from wx.login()",
+  "nickname": "string, optional — from wx.getUserProfile",
+  "avatar_url": "string, optional — from wx.getUserProfile",
+  "phone": "string, optional — reserved for future phone-binding flow",
+  "unionid": "string, optional — when the mini-program is bound to a 微信开放平台 account"
+}
+```
+
+#### Success Response
+```json
+{
+  "user": {
+    "id": "u-...",
+    "email": "wx_<openid>@wechat.local",
+    "role": "user",
+    "display_name": "...",
+    "nickname": "...",
+    "avatar_url": "...",
+    "is_active": true
+  },
+  "token": "<kc_session JWT, HS256, 7-day expiry>"
+}
+```
+
+The endpoint also sets `Set-Cookie: kc_session=<jwt>; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800` (and `Secure` in production) for any same-origin browser usage.
+
+#### Errors
+| Code | HTTP | Meaning | Retryable |
+|---|---:|---|---|
+| `wechat_not_configured` | 500 | Server missing `WECHAT_APPID`/`WECHAT_SECRET` | No (config) |
+| `wechat_unreachable` | 502 | Cannot reach `api.weixin.qq.com/sns/jscode2session` | Yes |
+| `wechat_rejected` | 422 | `jscode2session` returned no `openid` (invalid code, app mismatch) | No |
+| `unprocessable` | 422 | Missing `code` in body | No |
+| `wechat_upsert_failed` | 500 | DB upsert failed for non-conflict reason | No |
+| `method_not_allowed` | 405 | Non-POST | No |
+
+#### Notes
+- Idempotency: A retry with the same `code` after success is undefined behaviour (the code is single-use; re-login via `wx.login()` produces a new code).
+- Side effects: Inserts `audit_log` row `auth.wechat_login` (openid truncated to first 6 chars).
+- Privacy: `wechat_openid` is treated as a secret; only the first six characters are stored in the audit payload.
+- Client contract: The 小程序 persists `token` in `wx.setStorageSync('kc_mp_token', token)` and replays it as `Authorization: Bearer <token>` on every subsequent request.
+
 ## Rules
 - Frontend and backend consume the same documented contract.
 - Never silently change request/response/error shapes.

@@ -1,0 +1,7 @@
+<view class="kc-wear-row">
+  <view class="kc-wear-row__title">{{label}}</view>
+  <view class="kc-wear-row__bar">
+    <view class="kc-wear-row__fill kc-wear-row__fill--{{tone}}" style="width: {{width}}%"></view>
+  </view>
+  <view class="kc-wear-row__pct kc-{{tone === 'red' ? 'red' : (tone === 'amber' ? 'amber' : 'muted')}}">{{wear}}%</view>
+</view>

@@ -1,0 +1,80 @@
+<view class="kc-page kc-page--with-tabbar kc-garage">
+  <view class="kc-garage__head">
+    <view class="kc-garage__title">我的車隊</view>
+    <view class="kc-garage__sub">管理車輛、查看保養狀態</view>
+  </view>
+
+  <view class="kc-garage__list">
+    <vehicle-card
+      wx:for="{{vehicles}}"
+      wx:key="id"
+      vehicle-id="{{item.id}}"
+      title="{{item.model}}"
+      image="{{item.image}}"
+      mileage-label="{{item.mileageLabel}}"
+      plate="{{item.plate}}"
+      hint="{{item.hint}}"
+      bind:tap="onVehicleTap"
+    ></vehicle-card>
+  </view>
+
+  <view wx:if="{{vehicles.length === 0 && loaded}}" class="kc-garage__empty">
+    <empty-state icon="🚗" title="車庫是空的" hint="點下方按鈕新增你的第一輛車。"></empty-state>
+  </view>
+
+  <view class="kc-garage__fab" bindtap="onAdd">
+    <text>＋ 新增車輛</text>
+  </view>
+
+  <bottom-sheet visible="{{sheetVisible}}" title="新增車輛" bind:close="closeSheet">
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">型號 *</view>
+      <input class="kc-input" placeholder="例：Toyota Corolla" value="{{form.model}}" bindinput="onModelInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">廠牌</view>
+      <input class="kc-input" placeholder="例：Toyota" value="{{form.make}}" bindinput="onMakeInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">出廠年份</view>
+      <input class="kc-input" type="number" placeholder="例：2020" value="{{form.year}}" bindinput="onYearInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">燃料類型</view>
+      <picker mode="selector" range="{{fuelTypes}}" value="{{fuelIndex}}" bindchange="onFuelChange">
+        <view class="kc-input kc-picker">{{fuelTypes[fuelIndex] || '請選擇'}}</view>
+      </picker>
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">車牌</view>
+      <input class="kc-input" placeholder="例：AA-1234" value="{{form.plate}}" bindinput="onPlateInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">目前里數（km）</view>
+      <input class="kc-input" type="number" placeholder="例：45000" value="{{form.mileage_km}}" bindinput="onMileageInput" />
+    </view>
+    <view class="kc-form-field">
+      <view class="kc-form-field__label">車輛照片</view>
+      <view class="kc-garage__photo">
+        <image wx:if="{{form.image}}" class="kc-garage__photo-img" src="{{form.image}}" mode="aspectFill" />
+        <view wx:else class="kc-garage__photo-placeholder" bindtap="onPickImage">＋ 選擇照片</view>
+        <view wx:if="{{form.image}}" class="kc-garage__photo-clear" bindtap="onClearImage">更換</view>
+      </view>
+    </view>
+
+    <view class="kc-garage__form-actions">
+      <primary-button block disabled="{{saving}}" bind:tap="onSubmit">{{saving ? '儲存中...' : '儲存'}}</primary-button>
+    </view>
+
+    <view wx:if="{{status}}" class="kc-status {{statusTone === 'error' ? 'kc-status--error' : 'kc-status--ok'}}">{{status}}</view>
+  </bottom-sheet>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

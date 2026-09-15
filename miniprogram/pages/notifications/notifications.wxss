@@ -1,0 +1,48 @@
+.kc-notif { padding: 24rpx; }
+
+.kc-notif__head { margin: 0 8rpx 24rpx; }
+
+.kc-notif__title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kc-notif__sub {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-top: 8rpx;
+}
+
+.kc-notif__list {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 0 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-notif__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-notif__row:last-child { border-bottom: none; }
+
+.kc-notif__row-body { flex: 1; }
+
+.kc-notif__row-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4rpx;
+}
+
+.kc-notif__row-hint {
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.kc-notif__action { margin-top: 32rpx; }

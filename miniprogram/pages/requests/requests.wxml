@@ -1,0 +1,35 @@
+<view class="kc-page kc-requests">
+  <view class="kc-requests__head">
+    <view class="kc-requests__title">服務請求</view>
+    <view class="kc-requests__sub">查看服務商報價與進度</view>
+  </view>
+
+  <view class="kc-requests__tabs">
+    <view class="kc-requests__tab {{tabIndex === 0 ? 'kc-requests__tab--active' : ''}}" data-idx="0" bindtap="onTab">進行中</view>
+    <view class="kc-requests__tab {{tabIndex === 1 ? 'kc-requests__tab--active' : ''}}" data-idx="1" bindtap="onTab">已完成</view>
+    <view class="kc-requests__tab {{tabIndex === 2 ? 'kc-requests__tab--active' : ''}}" data-idx="2" bindtap="onTab">全部</view>
+  </view>
+
+  <block wx:if="{{filtered.length > 0}}">
+    <view class="kc-requests__list">
+      <view class="kc-requests__item" wx:for="{{filtered}}" wx:key="id" data-id="{{item.id}}" bindtap="onItemTap">
+        <view class="kc-requests__item-head">
+          <view class="kc-requests__item-title">{{item.dealer_name || '商戶'}}</view>
+          <status-pill label="{{statusLabel(item.status)}}" tone="{{statusTone(item.status)}}"></status-pill>
+        </view>
+        <view class="kc-requests__item-sub">
+          <text wx:if="{{item.vehicle_model}}">{{item.vehicle_model}}</text>
+          <text wx:if="{{item.service_item_type_key}}"> · {{serviceLabel(item.service_item_type_key)}}</text>
+        </view>
+        <view class="kc-requests__item-meta">
+          <text wx:if="{{item.created_at}}">{{formatDate(item.created_at)}}</text>
+          <text wx:if="{{item.scheduled_at}}"> · 預約 {{formatDate(item.scheduled_at)}}</text>
+          <text wx:if="{{item.latest_quote}}"> · 報價 {{item.latest_quote}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <empty-state icon="📋" title="暫無服務請求" hint="到車輛詳情頁或服務頁發起你的第一個請求。"></empty-state>
+  </block>
+</view>

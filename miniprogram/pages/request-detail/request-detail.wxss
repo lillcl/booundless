@@ -1,0 +1,138 @@
+.kc-req { padding: 24rpx; }
+
+.kc-req__head {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: var(--shadow);
+  margin-bottom: 24rpx;
+}
+
+.kc-req__head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.kc-req__title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kc-req__sub {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-bottom: 6rpx;
+}
+
+.kc-req__meta {
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.kc-req__section { margin-bottom: 24rpx; }
+
+.kc-req__section-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12rpx;
+  padding: 0 8rpx;
+}
+
+.kc-req__card {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-req__service {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-req__service:last-child { border-bottom: none; }
+
+.kc-req__service-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-req__service-key {
+  font-size: 22rpx;
+  color: var(--muted);
+  margin-top: 4rpx;
+}
+
+.kc-req__quote {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-req__quote:last-child { border-bottom: none; }
+
+.kc-req__quote-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
+.kc-req__quote-total {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.kc-req__quote-ver {
+  font-size: 22rpx;
+  color: var(--muted);
+  padding: 4rpx 12rpx;
+  background: var(--soft);
+  border-radius: 999rpx;
+}
+
+.kc-req__quote-meta {
+  font-size: 22rpx;
+  color: var(--muted);
+  margin-bottom: 8rpx;
+}
+
+.kc-req__quote-items { margin-top: 12rpx; }
+
+.kc-req__quote-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6rpx 0;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.kc-req__quote-amount {
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.kc-req__notes {
+  font-size: 26rpx;
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.kc-req__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.kc-req__hint {
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--muted);
+  margin-bottom: 8rpx;
+}

@@ -1,0 +1,8 @@
+<view class="kc-page kc-404">
+  <view class="kc-404__hero">
+    <image class="kc-404__logo" src="/images/icons/booundless-car.png" mode="aspectFit"></image>
+    <view class="kc-404__title">404</view>
+    <view class="kc-404__sub">頁面不存在</view>
+  </view>
+  <view class="kc-404__action" bindtap="onHome">回到主頁</view>
+</view>

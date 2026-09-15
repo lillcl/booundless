@@ -1,0 +1,37 @@
+.kc-sheet__mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 53, 104, 0.45);
+  display: flex;
+  align-items: flex-end;
+  z-index: 9000;
+}
+
+.kc-sheet {
+  width: 100%;
+  background: var(--card);
+  border-top-left-radius: 28rpx;
+  border-top-right-radius: 28rpx;
+  padding: 24rpx 32rpx 48rpx;
+  box-sizing: border-box;
+  box-shadow: 0 -16rpx 40rpx rgba(7, 53, 104, 0.12);
+  overflow-y: auto;
+}
+
+.kc-sheet__handle {
+  width: 80rpx;
+  height: 8rpx;
+  background: var(--line);
+  border-radius: 999rpx;
+  margin: 0 auto 24rpx;
+}
+
+.kc-sheet__title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+  text-align: center;
+  color: var(--ink);
+}
+
+.kc-sheet__body { font-size: 28rpx; color: var(--ink); }

@@ -1,0 +1,40 @@
+<view class="kc-page kc-chat">
+  <scroll-view class="kc-chat__scroll" scroll-y="true" scroll-into-view="{{scrollIntoView}}">
+    <view class="kc-chat__messages">
+      <block wx:for="{{messages}}" wx:key="id">
+        <view class="kc-chat__row {{item.role === 'user' ? 'kc-chat__row--user' : ''}}">
+          <view class="kc-chat__avatar" wx:if="{{item.role !== 'user'}}">🤖</view>
+          <view class="kc-chat__bubble {{item.role === 'user' ? 'kc-chat__bubble--user' : 'kc-chat__bubble--bot'}}">
+            <view wx:if="{{item.type === 'tool'}}" class="kc-chat__tool">
+              ⚙️ {{item.toolName}}: {{item.toolStatus}}
+            </view>
+            <view wx:else class="kc-chat__text">{{item.text}}</view>
+          </view>
+          <view class="kc-chat__avatar" wx:if="{{item.role === 'user'}}">🧑</view>
+        </view>
+      </block>
+      <view wx:if="{{loading}}" class="kc-chat__row">
+        <view class="kc-chat__avatar">🤖</view>
+        <view class="kc-chat__bubble kc-chat__bubble--bot">
+          <view class="kc-chat__typing"><text class="kc-chat__dot"></text><text class="kc-chat__dot"></text><text class="kc-chat__dot"></text></view>
+        </view>
+      </view>
+      <view id="chat-end"></view>
+    </view>
+  </scroll-view>
+
+  <view class="kc-chat__composer">
+    <textarea class="kc-chat__input" value="{{draft}}" bindinput="onInput" placeholder="問問車主 AI…" auto-height="true" adjust-position="true"></textarea>
+    <view class="kc-chat__send" bindtap="onSend" wx:if="{{!loading}}">送出</view>
+    <view class="kc-chat__send kc-chat__send--disabled" wx:else>…</view>
+  </view>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

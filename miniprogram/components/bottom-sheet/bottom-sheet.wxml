@@ -1,0 +1,9 @@
+<view class="kc-sheet__mask" wx:if="{{visible}}" bindtap="onMaskTap">
+  <view class="kc-sheet" catchtap="noop" style="max-height: {{maxHeight || '80vh'}}">
+    <view class="kc-sheet__handle"></view>
+    <view class="kc-sheet__title" wx:if="{{title}}">{{title}}</view>
+    <view class="kc-sheet__body">
+      <slot></slot>
+    </view>
+  </view>
+</view>

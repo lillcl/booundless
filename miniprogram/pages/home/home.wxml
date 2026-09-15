@@ -1,0 +1,94 @@
+<view class="kc-page kc-page--with-tabbar kc-home">
+  <view class="kc-home__greeting">
+    <view class="kc-home__greeting-title">{{greeting}}，{{userName}}</view>
+    <view class="kc-home__greeting-sub">{{todayLabel}} · {{weatherHint}}</view>
+  </view>
+
+  <view class="kc-home__section">
+    <view class="kc-home__section-head">
+      <view class="kc-home__section-title">即將到期的保養</view>
+      <view class="kc-home__section-action" bindtap="onAllReminders">全部 ›</view>
+    </view>
+    <block wx:if="{{reminders.length > 0}}">
+      <reminder-card
+        wx:for="{{reminders}}"
+        wx:key="id"
+        reminder-id="{{item.id}}"
+        title="{{item.title}}"
+        vehicle-label="{{item.vehicleLabel}}"
+        due-label="{{item.dueLabel}}"
+        status="{{item.status}}"
+        bind:tap="onReminderTap"
+      ></reminder-card>
+    </block>
+    <block wx:else>
+      <empty-state icon="✓" title="目前沒有即將到期項目" hint="新增車輛後，系統會按里數自動提示保養。"></empty-state>
+    </block>
+  </view>
+
+  <view class="kc-home__section">
+    <view class="kc-home__section-head">
+      <view class="kc-home__section-title">我的車隊</view>
+      <view class="kc-home__section-action" bindtap="onAllVehicles">全部 ›</view>
+    </view>
+    <block wx:if="{{vehicles.length > 0}}">
+      <view class="kc-home__vehicles">
+        <view class="kc-home__vehicle" wx:for="{{vehicles}}" wx:key="id" data-id="{{item.id}}" bindtap="onVehicleTap">
+          <image class="kc-home__vehicle-img" src="{{item.image || '/images/vehicles/vehicle-placeholder.svg'}}" mode="aspectFill"></image>
+          <view class="kc-home__vehicle-name">{{item.model}}</view>
+          <view class="kc-home__vehicle-meta">{{item.mileageLabel}}</view>
+        </view>
+      </view>
+    </block>
+    <block wx:else>
+      <empty-state icon="＋" title="尚未新增車輛" hint="到「車庫」頁面新增第一輛車。"></empty-state>
+    </block>
+  </view>
+
+  <view class="kc-home__section">
+    <view class="kc-home__section-head">
+      <view class="kc-home__section-title">最近行程</view>
+      <view class="kc-home__section-action" bindtap="onAllTrips">全部 ›</view>
+    </view>
+    <block wx:if="{{trips.length > 0}}">
+      <view class="kc-home__trips">
+        <view class="kc-home__trip" wx:for="{{trips}}" wx:key="id" data-id="{{item.id}}" bindtap="onTripTap">
+          <view class="kc-home__trip-route">
+            <text>{{item.origin}}</text>
+            <text class="kc-home__trip-arrow"> → </text>
+            <text>{{item.destination}}</text>
+          </view>
+          <view class="kc-home__trip-meta">
+            <text wx:if="{{item.distance_km}}">{{item.distance_km}} km</text>
+            <text wx:if="{{item.duration_min}}"> · {{item.duration_min}} 分鐘</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <block wx:else>
+      <empty-state icon="🛣️" title="還沒有行程" hint="到「琴澳」頁面規劃你的自駕路線。"></empty-state>
+    </block>
+  </view>
+
+  <view class="kc-home__quick">
+    <view class="kc-home__quick-title">快速操作</view>
+    <view class="kc-home__quick-grid">
+      <view class="kc-home__quick-item" bindtap="onGoChat">
+        <view class="kc-home__quick-icon" style="background: var(--brand-soft); color: var(--brand)">🤖</view>
+        <view class="kc-home__quick-label">車主 AI</view>
+      </view>
+      <view class="kc-home__quick-item" bindtap="onGoImage">
+        <view class="kc-home__quick-icon" style="background: var(--green-bg); color: var(--green)">📷</view>
+        <view class="kc-home__quick-label">拍照識別</view>
+      </view>
+      <view class="kc-home__quick-item" bindtap="onGoRequests">
+        <view class="kc-home__quick-icon" style="background: var(--amber-bg); color: var(--amber)">📋</view>
+        <view class="kc-home__quick-label">服務請求</view>
+      </view>
+      <view class="kc-home__quick-item" bindtap="onGoQinao">
+        <view class="kc-home__quick-icon" style="background: var(--red-bg); color: var(--red)">🌉</view>
+        <view class="kc-home__quick-label">琴澳路線</view>
+      </view>
+    </view>
+  </view>
+</view>

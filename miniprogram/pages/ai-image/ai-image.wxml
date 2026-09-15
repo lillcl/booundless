@@ -1,0 +1,48 @@
+<view class="kc-page kc-ai-image">
+  <view class="kc-ai-image__head">
+    <view class="kc-ai-image__title">拍照識別車型</view>
+    <view class="kc-ai-image__sub">拍下你的車輛，AI 會幫你識別型號、年份、油耗規格。</view>
+  </view>
+
+  <view class="kc-ai-image__preview">
+    <image wx:if="{{imagePath}}" class="kc-ai-image__img" src="{{imagePath}}" mode="aspectFit"></image>
+    <view wx:else class="kc-ai-image__placeholder" bindtap="onPick">
+      <view class="kc-ai-image__placeholder-icon">📷</view>
+      <view>點擊選擇照片</view>
+    </view>
+  </view>
+
+  <view class="kc-ai-image__actions">
+    <primary-button block disabled="{{loading || !imagePath}}" bind:tap="onIdentify">
+      {{loading ? '識別中...' : '開始識別'}}
+    </primary-button>
+    <secondary-button block bind:tap="onPick" disabled="{{loading}}">{{imagePath ? '更換照片' : '選擇照片'}}</secondary-button>
+  </view>
+
+  <view class="kc-ai-image__result" wx:if="{{result}}">
+    <view class="kc-ai-image__result-title">識別結果</view>
+    <view class="kc-ai-image__result-row">
+      <view class="kc-ai-image__result-label">廠牌</view>
+      <view class="kc-ai-image__result-value">{{result.make || '—'}}</view>
+    </view>
+    <view class="kc-ai-image__result-row">
+      <view class="kc-ai-image__result-label">型號</view>
+      <view class="kc-ai-image__result-value">{{result.model || '—'}}</view>
+    </view>
+    <view class="kc-ai-image__result-row" wx:if="{{result.variant}}">
+      <view class="kc-ai-image__result-label">版本</view>
+      <view class="kc-ai-image__result-value">{{result.variant}}</view>
+    </view>
+    <view class="kc-ai-image__result-row" wx:if="{{result.year}}">
+      <view class="kc-ai-image__result-label">年份</view>
+      <view class="kc-ai-image__result-value">{{result.year}}</view>
+    </view>
+    <view class="kc-ai-image__result-row" wx:if="{{result.fuel_type}}">
+      <view class="kc-ai-image__result-label">燃料</view>
+      <view class="kc-ai-image__result-value">{{result.fuel_type}}</view>
+    </view>
+    <view class="kc-ai-image__result-confidence" wx:if="{{result.confidence}}">可信度 {{Math.round((result.confidence || 0) * 100)}}%</view>
+  </view>
+
+  <view class="kc-ai-image__hint" wx:if="{{status}}">{{status}}</view>
+</view>

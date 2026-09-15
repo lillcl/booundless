@@ -1,0 +1,36 @@
+<view class="kc-page kc-page--with-tabbar kc-qinao">
+  <view class="kc-qinao__head">
+    <view class="kc-qinao__title">琴澳自駕</view>
+    <view class="kc-qinao__sub">珠海 · 澳門 · 橫琴 路線一覽</view>
+  </view>
+
+  <view class="kc-qinao__card" wx:for="{{routes}}" wx:key="id" data-id="{{item.id}}" bindtap="onRouteTap">
+    <image class="kc-qinao__img" src="{{item.image}}" mode="aspectFill"></image>
+    <view class="kc-qinao__body">
+      <view class="kc-qinao__name">{{item.title}}</view>
+      <view class="kc-qinao__route">{{item.subtitle}}</view>
+      <view class="kc-qinao__meta">
+        <text wx:if="{{item.distance_km}}">{{item.distance_km}} km</text>
+        <text wx:if="{{item.duration_min}}"> · {{item.duration_min}} 分鐘</text>
+        <text wx:if="{{item.crossings}}"> · {{item.crossings}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="kc-qinao__tips">
+    <view class="kc-qinao__tips-title">自駕貼士</view>
+    <view class="kc-qinao__tip" wx:for="{{tips}}" wx:key="text">
+      <view class="kc-qinao__tip-icon">{{item.icon}}</view>
+      <view class="kc-qinao__tip-body">
+        <view class="kc-qinao__tip-title">{{item.title}}</view>
+        <view class="kc-qinao__tip-text">{{item.text}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="kc-qinao__ai">
+    <view class="kc-qinao__ai-title">需要行程規劃？</view>
+    <view class="kc-qinao__ai-text">讓車主 AI 幫你設計路線、推薦關口與停車場。</view>
+    <view class="kc-qinao__ai-btn" bindtap="onAskAi">向 AI 諮詢</view>
+  </view>
+</view>

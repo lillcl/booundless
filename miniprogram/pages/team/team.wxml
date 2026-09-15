@@ -1,0 +1,21 @@
+<view class="kc-page kc-team">
+  <view class="kc-team__head">
+    <view class="kc-team__title">家庭車隊</view>
+    <view class="kc-team__sub">共享車輛、共同維護</view>
+  </view>
+
+  <block wx:if="{{teams.length > 0}}">
+    <view class="kc-team__list">
+      <view class="kc-team__item" wx:for="{{teams}}" wx:key="id">
+        <view class="kc-team__item-head">
+          <view class="kc-team__item-name">{{item.name}}</view>
+          <view class="kc-team__item-role">{{roleLabel(item.role)}}</view>
+        </view>
+        <view class="kc-team__item-meta" wx:if="{{item.created_at}}">建立於 {{formatDate(item.created_at)}}</view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <empty-state icon="👥" title="尚未加入任何車隊" hint="聯絡家庭成員創建或加入車隊。"></empty-state>
+  </block>
+</view>

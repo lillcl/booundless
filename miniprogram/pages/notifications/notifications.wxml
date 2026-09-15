@@ -1,0 +1,36 @@
+<view class="kc-page kc-notif">
+  <view class="kc-notif__head">
+    <view class="kc-notif__title">通知偏好</view>
+    <view class="kc-notif__sub">選擇你希望接收的提醒類型</view>
+  </view>
+
+  <view class="kc-notif__list">
+    <view class="kc-notif__row">
+      <view class="kc-notif__row-body">
+        <view class="kc-notif__row-title">保養提醒</view>
+        <view class="kc-notif__row-hint">到達里數或期限時通知</view>
+      </view>
+      <switch checked="{{prefs.maintenance_reminders}}" bindchange="onToggle" data-key="maintenance_reminders" color="#073568"/>
+    </view>
+    <view class="kc-notif__row">
+      <view class="kc-notif__row-body">
+        <view class="kc-notif__row-title">行程更新</view>
+        <view class="kc-notif__row-hint">服務商報價、排期變更</view>
+      </view>
+      <switch checked="{{prefs.trip_updates}}" bindchange="onToggle" data-key="trip_updates" color="#073568"/>
+    </view>
+    <view class="kc-notif__row">
+      <view class="kc-notif__row-body">
+        <view class="kc-notif__row-title">AI 建議</view>
+        <view class="kc-notif__row-hint">車主 AI 個性化推薦</view>
+      </view>
+      <switch checked="{{prefs.ai_suggestions}}" bindchange="onToggle" data-key="ai_suggestions" color="#073568"/>
+    </view>
+  </view>
+
+  <view class="kc-notif__action">
+    <primary-button block disabled="{{saving}}" bind:tap="onSave">{{saving ? '儲存中...' : '儲存設定'}}</primary-button>
+  </view>
+
+  <view wx:if="{{status}}" class="kc-status {{statusTone === 'error' ? 'kc-status--error' : 'kc-status--ok'}}">{{status}}</view>
+</view>

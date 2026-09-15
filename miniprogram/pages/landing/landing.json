@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "康程 CarAI",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button"
+  }
+}

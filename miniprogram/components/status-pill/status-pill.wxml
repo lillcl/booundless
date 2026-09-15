@@ -1,0 +1,1 @@
+<view class="kc-pill kc-pill--{{tone}} kc-status-pill">{{label}}</view>

@@ -1,0 +1,25 @@
+<view class="kc-page kc-service">
+  <view class="kc-service__head">
+    <view class="kc-service__title">服務目錄</view>
+    <view class="kc-service__sub">選擇要查找的服務類型</view>
+  </view>
+
+  <view class="kc-service__cars" wx:if="{{vehicles.length > 0}}">
+    <view class="kc-service__cars-title">選擇車輛</view>
+    <picker mode="selector" range="{{vehicleLabels}}" value="{{vehicleIndex}}" bindchange="onVehicleChange">
+      <view class="kc-input kc-picker">{{vehicleLabels[vehicleIndex] || '請選擇車輛'}}</view>
+    </picker>
+  </view>
+
+  <view class="kc-service__grid">
+    <view class="kc-service__card" wx:for="{{groupedTypes}}" wx:for-item="group" wx:key="category" wx:for-index="gIdx">
+      <view class="kc-service__card-title">{{group.categoryLabel}}</view>
+      <view class="kc-service__items">
+        <view class="kc-service__item" wx:for="{{group.items}}" wx:key="key" data-key="{{item.key}}" data-name="{{item.label}}" bindtap="onItemTap">
+          <view class="kc-service__item-name">{{item.label}}</view>
+          <view class="kc-service__item-arrow">›</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

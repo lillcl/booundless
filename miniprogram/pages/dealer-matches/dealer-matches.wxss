@@ -1,0 +1,136 @@
+.kc-dealer { padding: 24rpx; }
+
+.kc-dealer__head { margin: 0 8rpx 24rpx; }
+
+.kc-dealer__title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kc-dealer__sub {
+  font-size: 24rpx;
+  color: var(--brand);
+  margin-top: 8rpx;
+}
+
+.kc-dealer__list { display: flex; flex-direction: column; gap: 16rpx; }
+
+.kc-dealer__item {
+  background: var(--card);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: var(--shadow);
+}
+
+.kc-dealer__item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.kc-dealer__branch-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.kc-dealer__coverage {
+  font-size: 22rpx;
+  color: var(--brand);
+  font-weight: 600;
+  padding: 4rpx 12rpx;
+  background: var(--brand-soft);
+  border-radius: 999rpx;
+}
+
+.kc-dealer__dealer-name {
+  font-size: 26rpx;
+  color: var(--muted);
+  margin-bottom: 6rpx;
+}
+
+.kc-dealer__address {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-bottom: 6rpx;
+}
+
+.kc-dealer__meta {
+  font-size: 22rpx;
+  color: var(--amber);
+  margin: 8rpx 0;
+}
+
+.kc-dealer__items {
+  margin: 16rpx 0;
+  background: var(--soft);
+  border-radius: 12rpx;
+  padding: 8rpx 16rpx;
+}
+
+.kc-dealer__item-row {
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-dealer__item-row:last-child { border-bottom: none; }
+
+.kc-dealer__item-name {
+  font-size: 26rpx;
+  color: var(--ink);
+  margin-bottom: 4rpx;
+}
+
+.kc-dealer__item-price {
+  font-size: 24rpx;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.kc-dealer__item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 6rpx;
+}
+
+.kc-dealer__item-score {
+  font-size: 22rpx;
+  color: var(--muted);
+}
+
+.kc-dealer__item-actions {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.kc-dealer__confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.kc-dealer__confirm-label {
+  font-size: 26rpx;
+  color: var(--muted);
+}
+
+.kc-dealer__confirm-value {
+  font-size: 26rpx;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+  margin-left: 16rpx;
+}
+
+.kc-dealer__confirm-actions {
+  margin-top: 24rpx;
+}

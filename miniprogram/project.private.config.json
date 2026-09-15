@@ -1,0 +1,12 @@
+{
+  "projectname": "kc-carai-miniprogram",
+  "setting": {
+    "compileHotReLoad": true,
+    "urlCheck": false
+  },
+  "condition": {
+    "miniprogram": {
+      "list": []
+    }
+  }
+}

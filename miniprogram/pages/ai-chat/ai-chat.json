@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "車主 AI",
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button",
+    "app-dialog": "/components/app-dialog/app-dialog"
+  }
+}

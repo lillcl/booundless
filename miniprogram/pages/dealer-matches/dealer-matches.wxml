@@ -1,0 +1,77 @@
+<view class="kc-page kc-dealer">
+  <view class="kc-dealer__head">
+    <view class="kc-dealer__title">{{vehicleLabel}}</view>
+    <view class="kc-dealer__sub" wx:if="{{serviceLabel}}">需要：{{serviceLabel}}</view>
+  </view>
+
+  <block wx:if="{{branches.length > 0}}">
+    <view class="kc-dealer__list">
+      <view class="kc-dealer__item" wx:for="{{branches}}" wx:key="branch_id">
+        <view class="kc-dealer__item-head">
+          <view class="kc-dealer__branch-name">
+            {{item.branch_name}}
+            <text class="kc-pill kc-pill--amber" wx:if="{{item.sponsored}}">推薦</text>
+          </view>
+          <view class="kc-dealer__coverage">{{item.coverage || 0}}% 覆蓋</view>
+        </view>
+        <view class="kc-dealer__dealer-name">{{item.dealer_name}}</view>
+        <view class="kc-dealer__address" wx:if="{{item.address}}">📍 {{item.address}}</view>
+        <view class="kc-dealer__meta" wx:if="{{item.uncovered_needs && item.uncovered_needs.length > 0}}">
+          未覆蓋：{{item.uncovered_needs.join('、')}}
+        </view>
+        <view class="kc-dealer__items">
+          <view class="kc-dealer__item-row" wx:for="{{item.matches}}" wx:key="dealer_service_item_id" wx:for-item="m">
+            <view class="kc-dealer__item-name">{{m.service_name}}</view>
+            <view class="kc-dealer__item-price" wx:if="{{m.price_min || m.price_max}}">
+              {{formatPriceRange(m.price_min, m.price_max, m.currency)}}
+            </view>
+            <view class="kc-dealer__item-meta">
+              <status-pill label="{{matchLevelLabel(m.match_level)}}" tone="{{m.match_level === 'exact' ? 'green' : (m.match_level === 'likely' ? 'amber' : 'muted')}}"></status-pill>
+              <text class="kc-dealer__item-score" wx:if="{{m.match_score}}">{{m.match_score}} 分</text>
+            </view>
+          </view>
+        </view>
+        <view class="kc-dealer__item-actions">
+          <primary-button bind:tap="onRequest" data-branch="{{item}}" data-branch-idx="{{index}}">選擇此分店</primary-button>
+        </view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <empty-state icon="🔍" title="尚未找到匹配商戶" hint="可嘗試其他服務類型，或稍後再查。"></empty-state>
+  </block>
+
+  <bottom-sheet visible="{{sheetVisible}}" title="確認服務請求" bind:close="closeSheet">
+    <view wx:if="{{selectedBranch}}">
+      <view class="kc-dealer__confirm-row">
+        <view class="kc-dealer__confirm-label">分店</view>
+        <view class="kc-dealer__confirm-value">{{selectedBranch.branch_name}}</view>
+      </view>
+      <view class="kc-dealer__confirm-row">
+        <view class="kc-dealer__confirm-label">商戶</view>
+        <view class="kc-dealer__confirm-value">{{selectedBranch.dealer_name}}</view>
+      </view>
+      <view class="kc-dealer__confirm-row" wx:if="{{serviceLabel}}">
+        <view class="kc-dealer__confirm-label">服務</view>
+        <view class="kc-dealer__confirm-value">{{serviceLabel}}</view>
+      </view>
+      <view class="kc-form-field">
+        <view class="kc-form-field__label">備註（可選）</view>
+        <textarea class="kc-textarea" value="{{form.message}}" bindinput="onMessageInput" placeholder="告訴商戶你的需求..."></textarea>
+      </view>
+      <view class="kc-dealer__confirm-actions">
+        <primary-button block disabled="{{submitting}}" bind:tap="onSubmit">{{submitting ? '送出中...' : '送出請求'}}</primary-button>
+      </view>
+      <view wx:if="{{status}}" class="kc-status {{statusTone === 'error' ? 'kc-status--error' : 'kc-status--ok'}}">{{status}}</view>
+    </view>
+  </bottom-sheet>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

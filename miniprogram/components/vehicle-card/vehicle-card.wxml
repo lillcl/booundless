@@ -1,0 +1,12 @@
+<view class="kc-vehicle-card" bindtap="onTap">
+  <image class="kc-vehicle-card__img" src="{{image || '/images/vehicles/vehicle-placeholder.svg'}}" mode="aspectFill"></image>
+  <view class="kc-vehicle-card__body">
+    <view class="kc-vehicle-card__title">{{title}}</view>
+    <view class="kc-vehicle-card__meta">
+      <text wx:if="{{mileageLabel}}">{{mileageLabel}}</text>
+      <text wx:if="{{plate}}" class="kc-vehicle-card__plate">·  {{plate}}</text>
+    </view>
+    <view class="kc-vehicle-card__hint" wx:if="{{hint}}">{{hint}}</view>
+  </view>
+  <view class="kc-vehicle-card__arrow">›</view>
+</view>

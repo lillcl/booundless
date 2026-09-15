@@ -1,0 +1,15 @@
+<view class="kc-app-dialog__mask" wx:if="{{visible}}" bindtap="onMaskTap">
+  <view class="kc-app-dialog" catchtap="noop">
+    <view class="kc-app-dialog__title" wx:if="{{title}}">{{title}}</view>
+    <view class="kc-app-dialog__body">
+      <text wx:if="{{mode === 'notice' || mode === 'confirm'}}">{{message}}</text>
+      <block wx:elif="{{mode === 'input'}}">
+        <input class="kc-app-dialog__input" type="text" value="{{inputValue}}" placeholder="{{placeholder || '請輸入'}}" bindinput="onInput" confirm-type="done" focus="{{visible}}"/>
+      </block>
+    </view>
+    <view class="kc-app-dialog__actions">
+      <view class="kc-app-dialog__btn kc-app-dialog__btn--ghost" wx:if="{{mode !== 'notice'}}" bindtap="onCancel">{{cancelText}}</view>
+      <view class="kc-app-dialog__btn kc-app-dialog__btn--primary" bindtap="onConfirm">{{confirmText}}</view>
+    </view>
+  </view>
+</view>

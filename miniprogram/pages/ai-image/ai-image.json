@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "拍照識別",
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

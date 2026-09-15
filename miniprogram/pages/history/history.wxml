@@ -1,0 +1,26 @@
+<view class="kc-page kc-history">
+  <view class="kc-history__head">
+    <view class="kc-history__title">維修記錄</view>
+    <view class="kc-history__sub">所有車輛的歷史服務</view>
+  </view>
+
+  <block wx:if="{{history.length > 0}}">
+    <view class="kc-history__list">
+      <view class="kc-history__item" wx:for="{{history}}" wx:key="id">
+        <view class="kc-history__item-head">
+          <view class="kc-history__item-title">{{item.title}}</view>
+          <view class="kc-history__item-date">{{formatDate(item.performed_at)}}</view>
+        </view>
+        <view class="kc-history__item-meta">
+          <text wx:if="{{item.vehicle_model}}">{{item.vehicle_model}}</text>
+          <text wx:if="{{item.vehicle_plate}}"> · {{item.vehicle_plate}}</text>
+          <text wx:if="{{item.mileage_km}}"> · {{item.mileage_km}} km</text>
+        </view>
+        <view class="kc-history__item-notes" wx:if="{{item.notes}}">{{item.notes}}</view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <empty-state icon="🛠️" title="還沒有維修記錄" hint="服務完成後會自動寫入這裡。"></empty-state>
+  </block>
+</view>

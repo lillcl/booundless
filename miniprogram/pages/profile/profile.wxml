@@ -1,0 +1,73 @@
+<view class="kc-page kc-page--with-tabbar kc-profile">
+  <view class="kc-profile__user">
+    <image class="kc-profile__avatar" src="{{user.avatar_url || '/images/icons/booundless-car.png'}}" mode="aspectFill"></image>
+    <view class="kc-profile__user-body">
+      <view class="kc-profile__name">{{user.display_name || user.nickname || '車主'}}</view>
+      <view class="kc-profile__email" wx:if="{{user.email}}">{{user.email}}</view>
+      <view class="kc-profile__role">{{user.role === 'admin' ? '管理員' : '一般車主'}}</view>
+    </view>
+  </view>
+
+  <view class="kc-list">
+    <view class="kc-list-item" bindtap="onGarage">
+      <view>
+        <view class="kc-list-item__title">車庫管理</view>
+        <view class="kc-list-item__hint">查看、新增、編輯車輛</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onRequests">
+      <view>
+        <view class="kc-list-item__title">服務請求</view>
+        <view class="kc-list-item__hint">查看服務商報價與進度</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onHistory">
+      <view>
+        <view class="kc-list-item__title">維修記錄</view>
+        <view class="kc-list-item__hint">歷史服務與保養</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onNotifications">
+      <view>
+        <view class="kc-list-item__title">通知偏好</view>
+        <view class="kc-list-item__hint">保養提醒、行程更新、AI 建議</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onTeam">
+      <view>
+        <view class="kc-list-item__title">家庭車隊</view>
+        <view class="kc-list-item__hint">共享車輛、共同維護</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onSupport">
+      <view>
+        <view class="kc-list-item__title">聯絡客服</view>
+        <view class="kc-list-item__hint">提交問題、回報 Bug</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+    <view class="kc-list-item" bindtap="onAbout">
+      <view>
+        <view class="kc-list-item__title">關於康程 CarAI</view>
+        <view class="kc-list-item__hint">致謝與私隱政策</view>
+      </view>
+      <view class="kc-list-item__arrow">›</view>
+    </view>
+  </view>
+
+  <view class="kc-profile__logout" bindtap="onLogout">登出</view>
+
+  <app-dialog
+    visible="{{dialog.visible}}"
+    mode="{{dialog.mode}}"
+    title="{{dialog.title}}"
+    message="{{dialog.message}}"
+    bind:confirm="onDialogConfirm"
+    bind:cancel="onDialogCancel"
+  ></app-dialog>
+</view>

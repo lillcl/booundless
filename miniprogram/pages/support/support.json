@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "聯絡客服",
+  "usingComponents": {
+    "primary-button": "/components/primary-button/primary-button"
+  }
+}

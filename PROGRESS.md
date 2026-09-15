@@ -1,10 +1,10 @@
 # PROGRESS.md
 
 ## Project Status
-- Current Phase: Phase 0 — Initialization
-- Overall Status: Repo scaffolded from template; awaiting project-scoping answers
-- Last Updated: 2026-09-02
-- Orchestrator: `unassigned`
+- Current Phase: Phase 4 — WeChat Mini Program (delivered)
+- Overall Status: Web app live; 小程序 port complete; server-patch documented but not auto-applied
+- Last Updated: 2026-09-14
+- Orchestrator: `Lead / Orchestrator`
 
 ## Phase 0 — Initialization
 **Goal:** Confirm scope and stack for 康程 CarAI Service V10 Interactive before Phase 1.
@@ -131,6 +131,72 @@
 - [ ] Release / migration / rollback steps verified
 - Approved By: `pending`
 - Signature: `pending`
+
+---
+
+## Phase 4 — WeChat Mini Program
+
+**Goal:** Ship a drop-in 微信小程序 (小程序) of the customer app under `miniprogram/`, reusing every existing backend endpoint and shipping three additive server-side diffs the user applies at their own pace.
+
+### Task 4.1 — Foundation, components, utils
+- Status: ✅ Done (2026-09-14)
+- Priority: P0
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `miniprogram/{app.js,app.json,app.wxss,project.config.json,sitemap.json,README.md}`
+  - [x] `utils/{api,auth,storage,format,icons,image,sse}.js`
+  - [x] `constants/{enums,api-paths}.js`
+  - [x] 10 reusable components under `components/`
+- Validation:
+  - [x] `app.json` references only existing paths; tabBar list matches the 5 spec'd tabs
+  - [x] `app.wxss` defines every CSS variable the components reference
+  - [x] No raw `wx.request` outside `utils/api.js` and `utils/sse.js`
+- Signature: `Lead / Orchestrator` @ 2026-09-14
+
+### Task 4.2 — Customer-facing pages (19)
+- Status: ✅ Done (2026-09-14)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `landing`, `login`, `home`, `garage`, `vehicle-detail`, `dealer-matches`, `service`, `qinao`, `videos`, `profile`, `notifications`, `support`, `team`, `history`, `requests`, `request-detail`, `ai-chat`, `ai-image`, `about`, `404`
+- Validation:
+  - [x] Each page has the `.json/.wxml/.wxss/.js` quadruple
+  - [x] All protected pages redirect to `landing` when not authenticated
+  - [x] All API calls go through `utils/api.js`
+- Signature: `Lead / Orchestrator` @ 2026-09-14
+
+### Task 4.3 — Server patch (additive, not auto-applied)
+- Status: ✅ Done (2026-09-14)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `server-patch/db/migrations/2026_09_wechat_columns.sql`
+  - [x] `server-patch/api/_lib/auth.bearer.diff.js`
+  - [x] `server-patch/api/_handlers/auth.wechat.diff.js`
+  - [x] `server-patch/README.md` (apply steps + verification + rollback)
+- Validation:
+  - [x] SQL is idempotent (`ADD COLUMN IF NOT EXISTS`, partial unique via `DO $$ … $$`)
+  - [x] Bearer diff is backwards compatible (cookie path untouched)
+  - [x] WeChat handler returns `{user, token}` matching `POST /api/auth/login` shape
+- Signature: `Lead / Orchestrator` @ 2026-09-14
+
+### Task 4.4 — Documentation sync
+- Status: ✅ Done (2026-09-14)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `docs/API.md` — add `POST /api/auth/wechat` section
+  - [x] `docs/DATABASE_SCHEMA.md` — add six wechat columns + migration row
+  - [x] `docs/SHARED_KEYS.md` — register wechat_openid, wechat_unionid, kc_mp_ namespace, six enums, env vars
+  - [x] `docs/tasks/14_WeChat_MiniProgram.md` (new task file)
+- Signature: `Lead / Orchestrator` @ 2026-09-14
+
+### Phase 4 Gate
+- [x] Drop-in 小程序 project delivered
+- [x] Server-patch documented and idempotent
+- [x] Docs synchronized
+- [ ] Independent review (next agent)
+- [ ] Server patch applied to dev DB + tested via `tests/merchant-marketing.integration.js`
+- [ ] Mini-program uploaded to 体验版 + scanned on real device
+- Approved By: `pending`
+- Signature: `pending` (waiting on reviewer)
 
 ## Active Blockers
 - None

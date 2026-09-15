@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "請求詳情",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "status-pill": "/components/status-pill/status-pill",
+    "primary-button": "/components/primary-button/primary-button",
+    "secondary-button": "/components/secondary-button/secondary-button",
+    "bottom-sheet": "/components/bottom-sheet/bottom-sheet",
+    "app-dialog": "/components/app-dialog/app-dialog"
+  }
+}

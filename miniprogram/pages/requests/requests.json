@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "服務請求",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "status-pill": "/components/status-pill/status-pill",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

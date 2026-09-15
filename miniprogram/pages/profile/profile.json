@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "我的",
+  "usingComponents": {
+    "app-dialog": "/components/app-dialog/app-dialog"
+  }
+}

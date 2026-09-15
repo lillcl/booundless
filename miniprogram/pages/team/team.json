@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "家庭車隊",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}
