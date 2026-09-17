@@ -67,8 +67,11 @@ Successful page cache: `public, max-age=0, s-maxage=60`. Publishing may take up 
 ## Workflow extension (2026-09-14; supersedes pending limitations above)
 
 - `GET/POST /api/vehicles/:id/needs`: owner-only canonical needs. POST accepts `service_key`, `state` (confirmed/dismissed/resolved), `urgency` (routine/soon/urgent). Matching merges these overrides with recorded wear; pure EVs exclude combustion-only services.
-- `POST /api/vehicles` accepts optional onboarding fields `vehicle_class` and `powertrain_type`. Creation always starts in `identity_confirmed`; canonical values are validated by the database, while `fuel_type` remains the human-readable display value.
+- `POST /api/vehicles` accepts optional onboarding fields `vehicle_class` and `powertrain_type`. Creation always starts in `identity_confirmed`; canonical values are validated by the database, while `fuel_type` remains the human-readable display value. The handler also seeds a default maintenance scope via `api/_lib/scope-template.js` (13 rows for ICE/hybrid, 10 rows for EV — `engine_oil`, `oil_filter`, `spark_plugs` are excluded for pure EVs) so the detail page never shows an empty list right after onboarding.
 - `POST /api/vehicles/:id/onboarding`: owner-only final onboarding choice. Body `{state}` must be `history_pending`, `baseline_pending`, or `ready`. It records the user-confirmed next step; it never fabricates vehicle-condition or service-history data.
+- `POST /api/vehicles/:id/scope/generate`: owner-only idempotent backfill. Returns the merged scope (existing rows + any newly inserted template rows) and the inserted service keys. The detail UI calls this whenever `/status` returns an empty `items` array, so vehicles missing scope recover without re-onboarding.
+- `GET /api/vehicles/:id/status` response now includes `vehicle: { id, model, make, year, fuel_type }` so the detail page can render the full header (brand, model, year, fuel, mileage) without an extra fetch. It also includes `data_complete: boolean` — true only when every scope row has both `last_done_km` and `last_done_at` filled in. Clients must render an unknown-state CTA (e.g. 「尚未確認車況」+ record-first-service) when `false`; never claim "正常 / 在週期內" without service evidence.
+- `GET /api/vehicles` list response rows include `scope_confirmed: boolean` — the per-vehicle aggregate of the same `data_complete` rule plus the `onboarding_state === 'ready'` gate. Until the owner explicitly completes onboarding, even rows with hand-crafted seed data read as unconfirmed. Used by the car list and home hero status to drive the same unknown-state CTA.
 - Service offerings add `compatibility_mode`: unverified (default), restricted, universal. Universal must be an explicit merchant assertion; missing rules otherwise never imply confirmed compatibility.
 - `POST /api/vehicles/:id/service-requests` additionally accepts `service_ids` (up to 30, same branch/merchant) and optional `request_key`. First creation returns 201; identical keyed retry returns 200; changed payload with same key returns 409. Items are snapshotted transactionally.
 - `GET /api/service-requests`: authenticated owner or authorized merchant list, latest 100; returns items, quotes and `can_manage`.
@@ -93,6 +96,54 @@ The WeChat Mini Program (小程序) reuses every route above via two additive ch
 2. New endpoint `POST /api/auth/wechat` (see below) exchanges a `wx.login` code for the same `kc_session` JWT and returns it in the body.
 
 These are documented separately so the web app's cookie contract is not confused with the mobile Bearer contract. See `server-patch/README.md` for the apply steps and the full handler source.
+
+## Self-service registration — 2026-09-17
+
+The web app now exposes a public `POST /api/auth/register` endpoint that creates a `users` row with `role='user'`, signs in the new account immediately, and writes an `auth.register` audit row. It complements the existing admin-create, dealer-invite, and WeChat flows.
+
+### POST /api/auth/register
+
+**Purpose:** Create a self-service account with email + password and start a session in the same response.
+
+**Auth:** None required (this is the entry point for new users).
+
+**Permission:** Anonymous. Self-registered accounts always receive `role='user'`. Existing account emails return 409.
+
+#### Request
+```json
+{
+  "email": "string, required — RFC-shaped email, lowercased server-side",
+  "password": "string, required — 8–72 bytes (bcrypt input cap)",
+  "display_name": "string, optional — up to 80 chars, trimmed"
+}
+```
+
+#### Success Response — 201
+```json
+{
+  "user": {
+    "id": "u-<uuid>",
+    "email": "you@example.com",
+    "role": "user",
+    "display_name": "..."
+  }
+}
+```
+Response also sets `Set-Cookie: kc_session=<jwt>; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800` (`Secure` in production) so the browser is signed in immediately.
+
+#### Errors
+| Code | HTTP | Meaning | Retryable |
+|---|---:|---|---|
+| `unprocessable` | 422 | Missing/invalid email or password outside the 8–72 byte range | No (client) |
+| `conflict` | 409 | Email already exists; a constant-time bcrypt run is performed before responding so timing does not betray existence | No (client) |
+| `method_not_allowed` | 405 | Non-POST | No |
+
+#### Notes
+- Idempotency: Not idempotent — repeating with the same email returns 409.
+- Side effects: Inserts one `users` row and one `audit_log` row (`auth.register`). Email-collision attempts also write `auth.register.conflict` with reason `email_taken`.
+- Password policy: 8-character minimum, 72-byte ceiling. Passwords longer than 72 bytes are silently truncated by bcrypt; the handler rejects them with 422 instead.
+- Frontend: `#/register` renders the form; success auto-redirects to `#/home`. The login page links to it via "建立新帳號".
+- Existing flows: Admin `/api/users` POST, dealer `/api/dealer/invites/register`, and `/api/auth/wechat` remain unchanged and continue to be the canonical paths for non-self-service accounts.
 
 ### POST /api/auth/wechat
 
