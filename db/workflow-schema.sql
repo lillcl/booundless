@@ -1,5 +1,11 @@
 -- Additive workflow migration, applied after merchant and marketing schemas.
 ALTER TABLE dealer_service_items ADD COLUMN IF NOT EXISTS compatibility_mode TEXT NOT NULL DEFAULT 'unverified' CHECK(compatibility_mode IN ('unverified','restricted','universal'));
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS vehicle_class TEXT;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS powertrain_type TEXT;
+ALTER TABLE vehicles DROP CONSTRAINT IF EXISTS vehicles_vehicle_class_check;
+ALTER TABLE vehicles ADD CONSTRAINT vehicles_vehicle_class_check CHECK(vehicle_class IS NULL OR vehicle_class IN ('light_passenger','light_goods','heavy_passenger','heavy_goods','light_motorcycle','heavy_motorcycle'));
+ALTER TABLE vehicles DROP CONSTRAINT IF EXISTS vehicles_powertrain_type_check;
+ALTER TABLE vehicles ADD CONSTRAINT vehicles_powertrain_type_check CHECK(powertrain_type IS NULL OR powertrain_type IN ('fuel','ev','hybrid'));
 ALTER TABLE marketing_pages DROP CONSTRAINT IF EXISTS marketing_pages_path_check;
 ALTER TABLE marketing_pages ADD CONSTRAINT marketing_pages_path_check CHECK(path IN ('/','/demo') OR path ~ '^/campaigns/[a-z0-9]+(-[a-z0-9]+)*$');
 CREATE TABLE IF NOT EXISTS marketing_integrations (

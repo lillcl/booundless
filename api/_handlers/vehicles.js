@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       const id = decodeURIComponent(idMatch[1]);
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
         [id, user.id],
       );
@@ -76,16 +76,16 @@ export default async function handler(req, res) {
       const id = randomUUID();
       const mileage = Math.max(0, Number(body.mileage_km) || 0);
       const r = await db.query(`INSERT INTO vehicles
-        (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12) RETURNING *`,
-      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
+        (id,model,make,year,fuel_type,vehicle_class,powertrain_type,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,body.powertrain_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
       return sendJSON(res, 201, r.rows[0]);
     }
 
     if (url.startsWith('/api/vehicles')) {
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, make, year, fuel_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE created_by_user_id = $1 AND archived_at IS NULL ORDER BY created_at ASC`,
         [user.id]);
       return sendJSON(res, 200, { data: r.rows, count: r.rowCount });
