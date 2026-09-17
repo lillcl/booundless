@@ -830,7 +830,7 @@ function appDialog(message, mode='notice') {
         const r = await fetch('/api/vehicles/' + encodeURIComponent(completion.dataset.vehicleId) + '/onboarding', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({state:completion.dataset.onboardingState}) });
         const d = await r.json(); if (!r.ok) throw new Error(d.error?.message || '更新失敗');
         result.textContent = completion.dataset.onboardingState === 'history_pending' ? '已標記為待補保養資料。現在可以到「我的車」查看護照。' : completion.dataset.onboardingState === 'baseline_pending' ? '已標記為待建立基準。第一次保養或檢查後再補上紀錄即可。' : '已儲存。';
-        setTimeout(() => { closeSheet(); window.location.hash = '#/garage'; }, 800);
+        setTimeout(() => { window.location.assign('/#/garage'); }, 800);
       } catch (error) { result.textContent = error.message || '更新失敗'; }
       return;
     }
