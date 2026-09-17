@@ -67,7 +67,8 @@ Successful page cache: `public, max-age=0, s-maxage=60`. Publishing may take up 
 ## Workflow extension (2026-09-14; supersedes pending limitations above)
 
 - `GET/POST /api/vehicles/:id/needs`: owner-only canonical needs. POST accepts `service_key`, `state` (confirmed/dismissed/resolved), `urgency` (routine/soon/urgent). Matching merges these overrides with recorded wear; pure EVs exclude combustion-only services.
-- `POST /api/vehicles` accepts optional onboarding fields `vehicle_class` and `powertrain_type`. Canonical values are validated by the database; the existing `fuel_type` remains the human-readable display value.
+- `POST /api/vehicles` accepts optional onboarding fields `vehicle_class` and `powertrain_type`. Creation always starts in `identity_confirmed`; canonical values are validated by the database, while `fuel_type` remains the human-readable display value.
+- `POST /api/vehicles/:id/onboarding`: owner-only final onboarding choice. Body `{state}` must be `history_pending`, `baseline_pending`, or `ready`. It records the user-confirmed next step; it never fabricates vehicle-condition or service-history data.
 - Service offerings add `compatibility_mode`: unverified (default), restricted, universal. Universal must be an explicit merchant assertion; missing rules otherwise never imply confirmed compatibility.
 - `POST /api/vehicles/:id/service-requests` additionally accepts `service_ids` (up to 30, same branch/merchant) and optional `request_key`. First creation returns 201; identical keyed retry returns 200; changed payload with same key returns 409. Items are snapshotted transactionally.
 - `GET /api/service-requests`: authenticated owner or authorized merchant list, latest 100; returns items, quotes and `can_manage`.

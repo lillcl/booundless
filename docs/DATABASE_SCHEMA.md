@@ -65,7 +65,7 @@ This additive bootstrap follows the merchant and marketing SQL files. All new ta
 | dealer_service_items | compatibility_mode required default unverified; constrained unverified/restricted/universal |
 | dealer_invites | delivery_status required default not_sent; nullable delivery_id |
 | marketing_pages | Path constraint extends to clean /campaigns/:slug; campaign copy lives in draft/published JSON and publication revisions |
-| vehicles | Onboarding adds nullable `vehicle_class` (light/heavy passenger/goods or motorcycle) and `powertrain_type` (fuel/ev/hybrid), each constrained to canonical values. Existing vehicles remain valid with null values. |
+| vehicles | Onboarding adds nullable `vehicle_class` (light/heavy passenger/goods or motorcycle) and `powertrain_type` (fuel/ev/hybrid), each constrained to canonical values. `onboarding_state` defaults to `identity_confirmed`, then moves only to `history_pending`, `baseline_pending`, or `ready` after the owner chooses a next step; `onboarding_completed_at` records that choice. Existing vehicles remain valid with null identity fields. |
 
 Quote line items use JSONB (not a quote_items table), validated by the server as descriptions and integer minor-unit amounts. Request mutation locks rows and checks version. Completion confirmation creates deterministic service-history IDs, preventing duplicate history. Conversion ingestion prunes events older than 90 days; this is ingestion-triggered rather than a scheduled deletion guarantee. Browser attribution expires after 30 days. No vehicle details are sent to advertising providers.
 

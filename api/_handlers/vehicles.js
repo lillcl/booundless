@@ -43,6 +43,23 @@ async function handleHistory(req, res, id, user) {
   sendJSON(res, 200, { data: r.rows, count: r.rowCount });
 }
 
+async function handleOnboarding(req, res, id, user) {
+  if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Only POST allowed');
+  const body = await readBody(req);
+  const next = String(body?.state || '');
+  if (!['history_pending', 'baseline_pending', 'ready'].includes(next)) return sendError(res, 422, 'unprocessable', 'Invalid onboarding state');
+  const db = await getDb();
+  const r = await db.query(
+    `UPDATE vehicles
+     SET onboarding_state=$1, onboarding_completed_at=NOW(), updated_at=NOW(), updated_by_user_id=$2
+     WHERE id=$3 AND created_by_user_id=$2 AND archived_at IS NULL
+     RETURNING id, model, onboarding_state, onboarding_completed_at`,
+    [next, user.id, id],
+  );
+  if (!r.rowCount) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
+  return sendJSON(res, 200, { vehicle: r.rows[0] });
+}
+
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, ['GET', 'POST'])) return;
   const user = await requireUser(req, res);
@@ -53,6 +70,9 @@ export default async function handler(req, res) {
     const historyMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/history\/?$/);
     if (historyMatch) return await handleHistory(req, res, decodeURIComponent(historyMatch[1]), user);
 
+    const onboardingMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/onboarding\/?$/);
+    if (onboardingMatch) return await handleOnboarding(req, res, decodeURIComponent(onboardingMatch[1]), user);
+
     const statusMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/status\/?$/);
     if (statusMatch) return await handleStatus(req, res, decodeURIComponent(statusMatch[1]), user);
 
@@ -61,7 +81,7 @@ export default async function handler(req, res) {
       const id = decodeURIComponent(idMatch[1]);
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
         [id, user.id],
       );
@@ -76,8 +96,8 @@ export default async function handler(req, res) {
       const id = randomUUID();
       const mileage = Math.max(0, Number(body.mileage_km) || 0);
       const r = await db.query(`INSERT INTO vehicles
-        (id,model,make,year,fuel_type,vehicle_class,powertrain_type,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
+        (id,model,make,year,fuel_type,vehicle_class,powertrain_type,onboarding_state,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'identity_confirmed',$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
       [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,body.powertrain_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
       return sendJSON(res, 201, r.rows[0]);
     }
@@ -85,7 +105,7 @@ export default async function handler(req, res) {
     if (url.startsWith('/api/vehicles')) {
       const db = await getDb();
       const r = await db.query(
-        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE created_by_user_id = $1 AND archived_at IS NULL ORDER BY created_at ASC`,
         [user.id]);
       return sendJSON(res, 200, { data: r.rows, count: r.rowCount });
