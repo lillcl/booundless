@@ -109,6 +109,76 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .sheet__header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin:8px 0 24px}.sheet__header h2{font-size:32px;letter-spacing:-1px;margin:0}.sheet__eyebrow{display:block;color:var(--green);font-size:12px;font-weight:800;letter-spacing:.08em;margin-bottom:7px}.sheet__close{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}.sheet__close:hover{background:var(--soft);color:var(--ink)}
 .vehicle-upload{margin-bottom:26px}.vehicle-upload__label{display:block;color:var(--muted);font-size:13px;font-weight:700;margin-bottom:9px}.vehicle-upload__box{position:relative;display:flex;align-items:center;gap:14px;min-height:86px;padding:15px 18px;border:1px dashed #b9c4c8;border-radius:18px;background:#f8faf9;cursor:pointer;transition:.2s}.vehicle-upload__box:hover,.vehicle-upload__box:focus-within{border-color:var(--green);background:var(--green-bg)}.vehicle-upload__icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#fff;color:var(--green);font-size:24px;box-shadow:0 3px 12px rgba(20,40,30,.08)}.vehicle-upload__copy{min-width:0}.vehicle-upload__copy b{display:block;color:var(--ink);font-size:15px}.vehicle-upload__copy small{display:block;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vehicle-upload__input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.vehicle-upload__help{display:block;color:var(--muted);font-size:12px;line-height:1.5;margin-top:8px}.vehicle-upload__preview{display:none;width:100%;height:150px;object-fit:cover;border-radius:16px;margin-top:12px;background:#e9eeee}.vehicle-upload__preview.show{display:block}.ai-recognize{width:100%;height:48px;border:1px solid #cbd8cf;border-radius:14px;background:var(--green-bg);color:var(--green);font-weight:800;margin-top:12px;cursor:pointer}.ai-recognize:hover{background:#e1f0e3}.sheet__section-title{font-size:13px;color:var(--muted);font-weight:800;letter-spacing:.04em;margin:0 0 12px}.vehicle-fields{padding-top:2px}.vehicle-fields .field{margin-top:0}.vehicle-fields .field label{font-size:12px;font-weight:750;color:#626b70;margin-bottom:7px}.vehicle-fields .field input{height:56px;background:#fbfcfc}.vehicle-fields .field input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(61,124,75,.12)}.vehicle-form-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:26px}.vehicle-form-actions .primary{margin-top:0}.vehicle-form-actions .secondary{height:58px;border:1px solid var(--line);border-radius:17px;background:#fff}.vehicle-form-actions .secondary:hover{background:var(--soft)}
 .onboarding-sheet{max-width:720px}.onboarding-sheet .sheet__header{margin-bottom:8px}.onboard-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 28px}.onboard-progress span{display:flex;align-items:center;gap:7px;color:#9ca5a8;font-size:11px;font-weight:750;white-space:nowrap}.onboard-progress i{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;font-style:normal;background:#edf0f1;color:#7a8285}.onboard-progress .active{color:#0b3979}.onboard-progress .active i{background:#0b3979;color:#fff}.onboard-progress .done{color:#3d7c4b}.onboard-progress .done i{background:#e6f3e8;color:#3d7c4b}.onboard-stage h2{font-size:clamp(28px,5vw,37px);letter-spacing:-.06em;line-height:1.13;margin:0 0 10px}.onboard-stage>p{max-width:540px;margin:0 0 24px;color:var(--muted);line-height:1.65}.onboard-choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.onboard-choice,.onboard-power,.onboard-brand{position:relative;border:1px solid #dce4e7;background:#fff;border-radius:17px;text-align:left;cursor:pointer;transition:.18s}.onboard-choice{min-height:102px;padding:18px}.onboard-choice:hover,.onboard-choice.selected,.onboard-power:hover,.onboard-power.selected,.onboard-brand:hover,.onboard-brand.selected{border-color:#0b3979;background:#f2f8fb;box-shadow:0 8px 18px rgba(11,57,121,.08)}.onboard-choice b,.onboard-power b{display:block;font-size:16px}.onboard-choice small,.onboard-power small{display:block;color:var(--muted);font-size:12px;margin-top:7px;line-height:1.4}.onboard-choice span{position:absolute;right:17px;bottom:15px;color:#0b3979;font-size:18px}.onboard-power-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.onboard-power{min-height:142px;padding:19px 16px}.onboard-power b{font-size:18px}.onboard-brand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.onboard-brand{height:52px;padding:0 12px;text-align:center;font-size:13px;font-weight:700}.onboard-nav{display:grid;grid-template-columns:1fr 1.4fr;gap:11px;margin-top:24px}.onboard-nav .primary,.onboard-nav .secondary{margin:0}.onboard-summary{margin:18px 0;padding:14px 16px;border:1px solid #dce8e0;border-radius:14px;background:#f4faf5}.onboard-summary span{display:block;color:#5b7461;font-size:11px;font-weight:800;letter-spacing:.06em}.onboard-summary b{display:block;margin-top:5px;font-size:13px;color:#234c31}.vehicle-fields em{font-style:normal;color:#2f7953}.vehicle-form-actions .primary span{margin-left:9px;font-size:18px}
+
+/* Step 4 — capture / analysis / confirm */
+.selection-strip{margin:0 0 16px;padding:12px 14px;border:1px solid #cfe1d4;background:#eff7f1;border-radius:14px;color:#315f3d;font-size:13px;font-weight:760;display:flex;align-items:center;justify-content:space-between;gap:14px;line-height:1.45}
+.selection-strip small{font-size:11px;color:#6f8175;font-weight:700;flex:0 0 auto}
+
+.capture-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.capture-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:230px}
+.capture-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:760}
+.capture-optional{color:var(--muted);font-size:11px;font-weight:750}
+.dropzone{position:relative;display:grid;place-items:center;text-align:center;padding:14px;border:1.5px dashed #cbdce1;border-radius:14px;background:#fafbfb;transition:.18s;cursor:pointer;min-height:150px}
+.dropzone:hover{border-color:#9ec0a7;background:#f3faf4}
+.dropzone.dragover{border-color:var(--green);background:#eef7f1}
+.dropzone.has-file{border-style:solid;border-color:#cfe1d4;background:#fff;min-height:0;padding:10px}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1}
+.dropzone-empty{pointer-events:none;color:var(--muted);font-size:12px;line-height:1.5;width:100%;padding:6px 0}
+.dropzone-empty strong{display:block;color:var(--ink);font-size:14px;margin:6px 0 4px}
+.dropzone-empty svg{display:block;margin:0 auto 4px;width:30px;height:30px;stroke:var(--green);fill:none;stroke-width:1.6}
+.dropzone-preview{display:none;width:100%;position:relative}
+.dropzone-preview.show{display:block}
+.dropzone-preview img{width:100%;height:130px;object-fit:cover;border-radius:10px;display:block}
+.dropzone-preview-overlay{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;margin-top:6px;border-radius:10px;background:rgba(18,23,20,.72);color:#fff;font-size:11px}
+.dropzone-preview-overlay b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;font-size:12px;font-weight:760}
+.dropzone-preview-overlay span{display:flex;gap:6px}
+.dropzone-preview-overlay button{border:0;border-radius:8px;background:rgba(255,255,255,.14);color:#fff;font-size:11px;font-weight:760;padding:5px 8px;cursor:pointer;position:relative;z-index:2}
+.dropzone-preview-overlay button:hover{background:rgba(255,255,255,.24)}
+.capture-footer{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:auto}
+.capture-skip{border:0;background:transparent;padding:0;color:var(--muted);font-size:12px;font-weight:760;cursor:pointer}
+.capture-skip:hover{color:var(--ink)}
+.capture-status{font-weight:760;font-size:12px}
+.capture-status.ready{color:var(--green)}
+
+.analysis-stage{text-align:center;padding:30px 0 10px}
+.ai-orb{width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 36% 30%,#fff,#dfeee2 56%,#c8decf);box-shadow:0 0 0 12px rgba(63,130,80,.05),0 0 0 26px rgba(63,130,80,.02);display:grid;place-items:center;color:var(--green);font-size:26px;font-weight:900;margin:0 auto 18px;animation:kcaiPulse 1.8s ease-in-out infinite}
+@keyframes kcaiPulse{50%{transform:scale(1.045)}}
+.ai-steps{margin:20px auto 0;display:flex;flex-direction:column;gap:8px;max-width:400px;text-align:left}
+.ai-step{height:48px;border-radius:12px;border:1px solid var(--line);background:#f8faf9;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:13px;color:var(--muted);transition:.25s}
+.ai-step.done{background:var(--green-soft);border-color:#cfe1d4;color:#2f643b}
+.ai-step b{flex:1 1 auto;font-weight:760;font-size:13px}
+.ai-tick{width:22px;height:22px;border-radius:50%;background:#e1e7e3;display:grid;place-items:center;font-size:11px;font-weight:900;flex:0 0 22px;color:#7a8285}
+.ai-step.done .ai-tick{background:#d8ecde;color:#2f643b}
+.analysis-note{margin:18px auto 0;font-size:12px;color:var(--muted);line-height:1.55;max-width:440px;text-align:center}
+
+.confirm-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:14px;margin-top:18px;align-items:start}
+.vehicle-preview{min-height:280px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#edf3f1,#dde8e2);padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.match-pill{display:inline-flex;background:#fff;color:#396c46;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:850;width:max-content}
+.vehicle-preview h3{font-size:22px;margin:0;letter-spacing:-.025em;color:var(--ink);line-height:1.15}
+.vehicle-preview p{margin:0;color:var(--muted);font-size:13px}
+.vehicle-image{height:140px;margin-top:auto;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.38);display:grid;place-items:center}
+.vehicle-image img{width:100%;height:100%;object-fit:cover;display:none}
+.vehicle-image img.show{display:block}
+.vehicle-image.has-photo svg{display:none}
+.vehicle-image svg{width:88%;max-width:220px}
+
+.form-panel{border:1px solid var(--line);border-radius:18px;background:#fff;padding:14px 16px 16px}
+.form-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
+.form-panel-head h4{margin:0;font-size:15px;font-weight:800}
+.form-panel-head p{margin:3px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
+.auto-pill{font-size:10px;padding:5px 9px;background:var(--green-soft);color:#376a43;border-radius:999px;font-weight:850;flex:0 0 auto;letter-spacing:.02em}
+.field-confidence{font-size:10px;color:#5d8a67;font-weight:760;background:var(--green-soft);padding:2px 7px;border-radius:6px;margin-left:auto}
+.field-confidence.warn{color:#a37418;background:#fff8ea}
+.confirm-actions{display:grid;grid-template-columns:.6fr 1.4fr;gap:11px;margin-top:18px}
+.confirm-actions .primary,.confirm-actions .secondary{margin:0}
+.confirm-actions .primary:disabled{background:#cdd2cf;color:#f4f5f4;cursor:not-allowed}
+.confirm-inline-note{margin-top:14px;padding:11px 13px;border-radius:14px;background:#fff8ea;border:1px solid #efdfbd;color:#795b20;font-size:12px;line-height:1.55}
+
+@media(max-width:560px){
+  .capture-grid,.confirm-grid,.confirm-actions{grid-template-columns:1fr}
+  .vehicle-preview{min-height:200px}
+  .vehicle-preview h3{font-size:18px}
+}
 .vehicle-upload--compact{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}.vehicle-upload--compact .vehicle-upload__box{min-height:68px}.onboard-complete{text-align:left;padding:12px 0 4px}.onboard-complete__mark{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#e6f3e8;color:#23723b;font-size:28px;font-weight:900;margin-bottom:18px}.onboard-complete__choices{display:grid;gap:10px;margin:24px 0 14px}.onboard-complete__choice{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:17px 18px;border:1px solid #dce4e7;border-radius:16px;background:#fff;color:var(--ink);text-align:left;cursor:pointer}.onboard-complete__choice:hover{border-color:var(--green);background:var(--green-bg)}.onboard-complete__choice b,.onboard-complete__choice small{display:block}.onboard-complete__choice small{margin-top:5px;color:var(--muted);line-height:1.5}.onboard-complete__choice strong{color:var(--green);font-size:20px}.onboard-selection-hint{display:flex;align-items:center;gap:8px;margin:14px 0 -8px;color:#215d3d;font-size:13px;font-weight:750}.onboard-selection-hint:before{content:'✓';display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#e3f2e5;color:#28713e;font-size:11px}.handle{width:46px;height:5px;border-radius:99px;background:#d9dddf;margin:0 auto 18px}.sheet h2{font-size:25px;margin:0 0 7px}.sheet>p{margin:0 0 20px;color:var(--muted);line-height:1.5}
 .choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice button{min-height:110px;border:1px solid var(--line);background:#fafbfb;border-radius:18px;text-align:left;padding:16px}.choice b{display:block;font-size:16px}.choice small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}
 .field{margin-top:14px}.field label{display:block;font-size:13px;color:var(--muted);margin:0 0 7px}.field input{width:100%;height:54px;border:1px solid #dfe3e5;border-radius:15px;padding:0 14px;font-size:16px;outline:0}
@@ -143,7 +213,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .mycar-toggle button{border:0;background:transparent;color:#90969b;font-weight:700;padding:7px 4px}
 .mycar-toggle button.active{color:#111315;border-bottom:2px solid #111315}
 .mycar-list{display:grid;gap:16px}.empty-state{padding:42px 24px;text-align:center;background:#fff;border:1px dashed #cbdce1;border-radius:24px;color:#29424d}.empty-state b{display:block;font-size:20px}.empty-state small{display:block;margin-top:9px;color:var(--muted);line-height:1.6}.empty-state .primary{display:block;width:min(260px,100%);margin:22px auto 0}
-.service-type-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.service-type-checks label{cursor:pointer}.service-type-checks input{accent-color:#0b3979}@media(max-width:680px){.service-type-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.service-type-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.service-type-checks label{cursor:pointer;transition:.18s}.service-type-checks label:hover{border-color:var(--green)}.service-type-checks input{accent-color:#0b3979;width:18px;height:18px;min-width:18px;min-height:18px;border:0;border-radius:0;padding:0;margin:0;cursor:pointer;flex:0 0 auto}@media(max-width:680px){.service-type-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .v10-car-card{
   position:relative;width:100%;height:320px;border:0;border-radius:24px;overflow:hidden;
   background-size:cover;background-position:center;color:#fff;text-align:left;box-shadow:var(--shadow)
@@ -638,7 +708,19 @@ function appDialog(message, mode='notice') {
     if (!me) { window.location.hash = '#/login'; return; }
     newVehicleImageData = '';
     newDashboardImageData = '';
-    const state = { step: 1, vehicleClass: 'light_passenger', powertrain: 'hybrid', make: '' };
+    const state = {
+      step: 1,
+      vehicleClass: '',
+      powertrain: '',
+      make: '',
+      captureStep: 'capture',
+      carFile: null,
+      dashFile: null,
+      carDataUrl: '',
+      dashDataUrl: '',
+      aiVehicle: null,
+      aiDashboard: null,
+    };
     const classes = [
       ['light_passenger','輕型客車','一般私家車、SUV、MPV'],
       ['light_goods','輕型客貨車','載人及載貨用途'],
@@ -655,35 +737,183 @@ function appDialog(message, mode='notice') {
       if (state.step === 1) {
         content = `<span class="sheet__eyebrow">1 / 4 · 只需選一次</span><h2>你的車屬於哪一類？</h2><p>先選最接近的類別，讓我們建立正確的保養範圍。</p><div class="onboard-choice-grid">${classes.map(([id,name,detail]) => `<button type="button" class="onboard-choice ${state.vehicleClass === id ? 'selected' : ''}" data-class="${id}"><b>${name}</b><small>${detail}</small><span>→</span></button>`).join('')}</div>`;
       } else if (state.step === 2) {
-        content = `<span class="sheet__eyebrow">2 / 4 · 決定保養範圍</span><h2>你的車用什麼能源？</h2><p>不用知道電池容量、引擎編號或排量；這些會在確認車型後補上。</p><div class="onboard-power-grid">${powertrains.map(([id,name,detail]) => `<button type="button" class="onboard-power ${state.powertrain === id ? 'selected' : ''}" data-powertrain="${id}"><b>${name}</b><small>${detail}</small></button>`).join('')}</div><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button><button class="primary" type="button" data-next>繼續</button></div>`;
+        content = `<span class="sheet__eyebrow">2 / 4 · 決定保養範圍</span><h2>你的車用什麼能源？</h2><p>不用知道電池容量、引擎編號或排量；這些會在確認車型後補上。</p><div class="onboard-power-grid">${powertrains.map(([id,name,detail]) => `<button type="button" class="onboard-power ${state.powertrain === id ? 'selected' : ''}" data-powertrain="${id}"><b>${name}</b><small>${detail}</small></button>`).join('')}</div><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
       } else if (state.step === 3) {
-        content = `<span class="sheet__eyebrow">3 / 4 · 幫助辨識車型</span><h2>你的車是什麼品牌？</h2><p>選擇品牌可讓 CarAI 更快縮小車型範圍。找不到也沒關係。</p><div class="onboard-brand-grid">${brands.map(name => `<button type="button" class="onboard-brand ${state.make === name ? 'selected' : ''}" data-brand="${name}">${name}</button>`).join('')}</div><label class="field"><span>或手動輸入品牌</span><input id="onboardMake" placeholder="例如 Mazda" value="${state.make === '其他' ? '' : esc(state.make)}"></label><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button><button class="primary" type="button" data-next>繼續</button></div>`;
+        content = `<span class="sheet__eyebrow">3 / 4 · 幫助辨識車型</span><h2>你的車是什麼品牌？</h2><p>選擇品牌可讓 CarAI 更快縮小車型範圍。找不到也沒關係。</p><div class="onboard-brand-grid">${brands.map(name => `<button type="button" class="onboard-brand ${state.make === name ? 'selected' : ''}" data-brand="${name}">${name}</button>`).join('')}</div><label class="field"><span>或手動輸入品牌後按 Enter</span><input id="onboardMake" placeholder="例如 Mazda" value="${state.make === '其他' ? '' : esc(state.make)}"></label><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
       } else {
-        const fuel = state.powertrain === 'ev' ? '電動' : state.powertrain === 'hybrid' ? 'Hybrid' : '燃油';
-        content = `<span class="sheet__eyebrow">4 / 4 · 最後確認</span><h2>讓 AI 先幫你認識這台車</h2><p>上載一張車身照片即可；AI 會提出車款建議。你也可直接手動填寫，所有資料都能修改。</p><form id="addVehicleForm"><input type="hidden" id="newVehicleClass" value="${state.vehicleClass}"><input type="hidden" id="newVehiclePowertrain" value="${state.powertrain}"><div class="vehicle-upload"><label class="vehicle-upload__label" for="newVehicleImage">車身照片 <span>（可略過）</span></label><label class="vehicle-upload__box"><span class="vehicle-upload__icon">↑</span><span class="vehicle-upload__copy"><b>拍照或從相簿選擇</b><small id="vehiclePhotoName">建議車頭 45°、車尾 45° 或側面</small></span><input class="vehicle-upload__input" id="newVehicleImage" name="vehicle_photo" type="file" accept="image/*" capture="environment" aria-describedby="vehiclePhotoHelp"></label><small class="vehicle-upload__help" id="vehiclePhotoHelp">AI 只用照片協助辨識車型；不會由照片判斷機械健康狀態。</small><img class="vehicle-upload__preview" id="newVehiclePreview" alt="車輛照片預覽"><button class="ai-recognize" type="button" id="recognizeVehicleBtn">✦　用 AI 識別車型</button></div><div class="onboard-summary"><span>你的選擇</span><b>${classes.find(x=>x[0]===state.vehicleClass)?.[1]} · ${powertrains.find(x=>x[0]===state.powertrain)?.[1]} · ${state.make || '品牌待確認'}</b></div><p class="sheet__section-title">確認或補充資料</p><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleModel">車款 <em>必填</em></label><input id="newVehicleModel" required placeholder="AI 可自動帶入，例如 Corolla Cross"></div><div class="field"><label for="newVehicleMake">品牌</label><input id="newVehicleMake" value="${esc(state.make === '其他' ? '' : state.make)}" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleYear">年份</label><input id="newVehicleYear" type="number" min="1900" max="2100" placeholder="例如 2021"></div><div class="field"><label for="newVehicleFuel">能源</label><input id="newVehicleFuel" value="${fuel}" readonly></div><div class="field"><label for="newVehicleMileage">目前里程</label><input id="newVehicleMileage" type="number" min="0" value="0" placeholder="可略過"></div><div class="field"><label for="newVehiclePlate">車牌 <span>（可略過）</span></label><input id="newVehiclePlate" placeholder="MA-00-00"></div></div><div class="vehicle-form-actions"><button class="secondary" type="button" data-back>上一步</button><button class="primary" type="submit">建立車輛護照 <span>→</span></button></div><div class="ai-result" id="addVehicleResult"></div></form>`;
+        content = renderStep4();
       }
       openSheet(`<div class="sheet--vehicle onboarding-sheet"><div class="sheet__header"><div><span class="sheet__eyebrow">建立車輛護照</span></div><button class="sheet__close" type="button" data-close-sheet aria-label="關閉">×</button></div>${progress}<div class="onboard-stage">${content}</div></div>`);
-      if (state.step === 4) {
-        document.querySelector('.onboard-summary')?.insertAdjacentHTML('beforebegin', `<div class="vehicle-upload vehicle-upload--compact"><label class="vehicle-upload__label" for="newDashboardImage">儀表盤照片 <span>（可略過）</span></label><label class="vehicle-upload__box"><span class="vehicle-upload__icon">⌁</span><span class="vehicle-upload__copy"><b>讀取目前里程與可見提示</b><small id="dashboardPhotoName">拍下啟動後的儀表盤即可</small></span><input class="vehicle-upload__input" id="newDashboardImage" name="dashboard_photo" type="file" accept="image/*" capture="environment"></label><small class="vehicle-upload__help">CarAI 只嘗試讀取畫面上的里程和提示；請在儲存前核對，不會據此判斷機械健康。</small><img class="vehicle-upload__preview" id="newDashboardPreview" alt="儀表盤照片預覽"><button class="ai-recognize" type="button" id="recognizeDashboardBtn">✦　用 AI 讀取儀表盤</button></div>`);
-      }
-      if (state.step === 2) document.querySelector('.onboard-power-grid')?.insertAdjacentHTML('afterend', `<p class="onboard-selection-hint" id="onboardSelectionHint" role="status">目前選擇：${powertrains.find(x => x[0] === state.powertrain)?.[1]}</p>`);
-      if (state.step === 3) document.querySelector('.onboard-brand-grid')?.insertAdjacentHTML('afterend', `<p class="onboard-selection-hint" id="onboardSelectionHint" role="status">目前選擇：${state.make || '尚未選擇，可直接繼續'}</p>`);
       document.querySelectorAll('[data-class]').forEach(button => button.onclick = () => { state.vehicleClass = button.dataset.class; state.step = 2; render(); });
-      document.querySelectorAll('[data-powertrain]').forEach(button => button.onclick = () => { state.powertrain = button.dataset.powertrain; document.querySelectorAll('[data-powertrain]').forEach(x => { const selected = x === button; x.classList.toggle('selected', selected); x.setAttribute('aria-pressed', String(selected)); }); const hint = document.getElementById('onboardSelectionHint'); if (hint) hint.textContent = `目前選擇：${powertrains.find(x => x[0] === state.powertrain)?.[1]}`; });
-      document.querySelectorAll('[data-brand]').forEach(button => button.onclick = () => { state.make = button.dataset.brand; document.querySelectorAll('[data-brand]').forEach(x => { const selected = x === button; x.classList.toggle('selected', selected); x.setAttribute('aria-pressed', String(selected)); }); const hint = document.getElementById('onboardSelectionHint'); if (hint) hint.textContent = `目前選擇：${state.make}`; });
-      document.querySelector('[data-next]')?.addEventListener('click', () => { const typed = document.getElementById('onboardMake')?.value.trim(); if (typed) state.make = typed; state.step += 1; render(); });
+      document.querySelectorAll('[data-powertrain]').forEach(button => button.onclick = () => { state.powertrain = button.dataset.powertrain; state.step = 3; render(); });
+      document.querySelectorAll('[data-brand]').forEach(button => button.onclick = () => { state.make = button.dataset.brand; state.step = 4; render(); });
+      document.getElementById('onboardMake')?.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; e.preventDefault(); const typed = e.target.value.trim(); if (typed) state.make = typed; state.step = 4; render(); });
       document.querySelector('[data-back]')?.addEventListener('click', () => { state.step -= 1; render(); });
-      document.getElementById('newVehicleImage')?.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const result = document.getElementById('addVehicleResult');
-        try { newVehicleImageData = await prepareVehicleImage(file); const preview = document.getElementById('newVehiclePreview'); preview.src = newVehicleImageData; preview.classList.add('show'); document.getElementById('vehiclePhotoName').textContent = file.name; result.classList.add('show'); result.textContent = '照片已準備好。你可讓 AI 識別，或直接確認資料。'; } catch (err) { result.classList.add('show'); result.textContent = err.message; }
-      });
-      document.getElementById('newDashboardImage')?.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const result = document.getElementById('addVehicleResult');
-        try { newDashboardImageData = await prepareVehicleImage(file); const preview = document.getElementById('newDashboardPreview'); preview.src = newDashboardImageData; preview.classList.add('show'); document.getElementById('dashboardPhotoName').textContent = file.name; result.classList.add('show'); result.textContent = '儀表盤照片已準備好。你可讓 AI 讀取里程，或直接手動輸入。'; } catch (err) { result.classList.add('show'); result.textContent = err.message; }
-      });
+      if (state.step === 4) wireStep4();
     };
+
+    const renderStep4 = () => {
+      if (state.captureStep === 'analysis') {
+        return `<span class="sheet__eyebrow">4 / 4 · AI 處理中</span><div class="analysis-stage"><div class="ai-orb">AI</div><h2>正在了解你的車</h2><p>結合你的選擇、照片與可讀取資料，自動建立 Vehicle Scope。</p><div class="ai-steps"><div class="ai-step" id="aiStep1"><span class="ai-tick">1</span><b>確認品牌與候選車型</b></div><div class="ai-step" id="aiStep2"><span class="ai-tick">2</span><b>辨識年份與能源版本</b></div><div class="ai-step" id="aiStep3"><span class="ai-tick">3</span><b>讀取目前里程</b></div><div class="ai-step" id="aiStep4"><span class="ai-tick">4</span><b>建立部件與保養 Scope</b></div></div><p class="analysis-note">AI 不確定的資料會留待你確認，不會直接當成事實。</p></div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}">`;
+      }
+      if (state.captureStep === 'confirm') {
+        const aiV = state.aiVehicle?.vehicle || state.aiVehicle || {};
+        const aiD = state.aiDashboard?.dashboard || state.aiDashboard || {};
+        const energyMap = { fuel: '燃油', ev: '純電', hybrid: '油電混合' };
+        const initialEnergy = energyMap[state.powertrain] || aiV.fuel_type || '純電';
+        const initialBrand = (state.make && state.make !== '其他') ? state.make : (aiV.make || '');
+        const initialModel = aiV.model || '';
+        const initialYear = aiV.year || '';
+        const initialMileage = aiD.mileage_km != null ? String(aiD.mileage_km) : '';
+        const initialPlate = aiV.plate || '';
+        const matchText = state.aiVehicle ? 'AI Match · 96%' : (state.carFile ? 'AI Match · 處理中' : '待確認');
+        const showPhoto = !!state.carDataUrl;
+        const titleText = ((initialBrand + ' ' + initialModel).trim()) || '未確認車型';
+        const metaText = `${initialYear || '年份待確認'} · ${initialEnergy}`;
+        return `<span class="sheet__eyebrow">4 / 4 · 最後確認</span><h2>我們找到你的車了</h2><p>以下資料已由 AI 預填。直接在欄位內修改即可；正確的資料不用再操作。</p><form id="addVehicleForm"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="confirm-grid"><aside class="vehicle-preview"><div><div class="match-pill">${esc(matchText)}</div><h3 id="previewTitle">${esc(titleText)}</h3><p id="previewMeta">${esc(metaText)}</p></div><div class="vehicle-image ${showPhoto ? 'has-photo' : ''}" id="vehicleImage"><img id="confirmPhoto" alt="確認車輛照片" src="${esc(state.carDataUrl)}" class="${showPhoto ? 'show' : ''}"><svg viewBox="0 0 340 170" fill="none"><path d="M53 99h231l-13-37-41-12-30-30h-82L79 55 57 66z" fill="#1b2730"/><path d="M121 31h72l26 23H96z" fill="#dfe7eb"/><rect x="47" y="95" width="245" height="28" rx="10" fill="#1b2730"/><circle cx="103" cy="124" r="27" fill="#1b2730"/><circle cx="103" cy="124" r="15" fill="#fff"/><circle cx="236" cy="124" r="27" fill="#1b2730"/><circle cx="236" cy="124" r="15" fill="#fff"/></svg></div></aside><div><div class="form-panel"><div class="form-panel-head"><div><h4>確認資料</h4><p>資料已預填，直接修改有錯的欄位。</p></div><span class="auto-pill">AI 已預填</span></div><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleClass">車輛類別 <span class="field-confidence">已確認</span></label><select id="newVehicleClass" class="control">${classes.map(c => `<option value="${esc(c[0])}" ${state.vehicleClass === c[0] ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMake">品牌 <span class="field-confidence">${state.aiVehicle ? 'AI 預填' : '已確認'}</span></label><input id="newVehicleMake" class="control" value="${esc(initialBrand)}" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleModel">型號 <span class="field-confidence ${state.aiVehicle ? '' : 'warn'}">${state.aiVehicle ? 'AI 預填' : '必填'}</span></label><input id="newVehicleModel" required placeholder="例如 Corolla Cross" value="${esc(initialModel)}"></div><div class="field"><label for="newVehicleYear">年份 <span class="field-confidence">${state.aiVehicle ? '較高可信度' : '必填'}</span></label><input id="newVehicleYear" type="number" min="1950" max="2030" placeholder="例如 2021" value="${esc(String(initialYear))}"></div><div class="field"><label for="newVehicleFuel">能源 <span class="field-confidence">已確認</span></label><select id="newVehicleFuel" class="control">${['燃油','純電','油電混合'].map(e => `<option ${e === initialEnergy ? 'selected' : ''}>${e}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMileage">目前里程 <span class="field-confidence ${initialMileage ? '' : 'warn'}">${initialMileage ? 'AI 讀取' : '可手動輸入'}</span></label><input id="newVehicleMileage" type="number" min="0" placeholder="例如 12680" value="${esc(initialMileage)}"></div><div class="field"><label for="newVehiclePlate">車牌 <span class="field-confidence">可稍後補</span></label><input id="newVehiclePlate" placeholder="例如 MA-00-00" value="${esc(initialPlate)}"></div></div></div><div class="confirm-inline-note">建立後，系統會再用可靠來源核對 Vehicle Scope 的技術規格。AI 不確定的欄位會保留為「待確認」。</div><div class="confirm-actions"><button class="secondary" type="button" id="backFromConfirmBtn">返回</button><button class="primary" type="submit">確認並建立車輛護照</button></div><div class="ai-result" id="addVehicleResult"></div></div></div></form>`;
+      }
+      const classLabel = classes.find(c => c[0] === state.vehicleClass)?.[1] || '車輛類別待確認';
+      const powerLabel = powertrains.find(p => p[0] === state.powertrain)?.[1] || '能源待確認';
+      const makeLabel = state.make || '品牌待確認';
+      const carSlot = (kind, title, iconPath, hint) => {
+        const dataUrl = kind === 'car' ? state.carDataUrl : state.dashDataUrl;
+        const fileName = (kind === 'car' ? state.carFile : state.dashFile)?.name || '';
+        const hasFile = kind === 'car' ? !!state.carFile : !!state.dashFile;
+        const status = hasFile ? '已加入' : '未加入';
+        return `<article class="capture-card"><div class="capture-head"><span>${title}</span><span class="capture-optional">可略過</span></div><label class="dropzone ${dataUrl ? 'has-file' : ''}" id="${kind}Zone"><input id="${kind}Input" type="file" accept="image/*" aria-label="${title}"><div class="dropzone-empty" id="${kind}Empty" ${dataUrl ? 'style="display:none"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconPath}</svg><strong>${kind === 'car' ? '拍照或從相簿選擇' : '拍攝啟動後的儀表盤'}</strong><span>${hint}</span></div><div class="dropzone-preview ${dataUrl ? 'show' : ''}" id="${kind}Preview"><img id="${kind}Img" alt="預覽" src="${esc(dataUrl)}"><div class="dropzone-preview-overlay"><b id="${kind}Name">${esc(fileName)}</b><span><button type="button" data-replace="${kind}">更換</button><button type="button" data-remove="${kind}">移除</button></span></div></div></label><div class="capture-footer"><button class="capture-skip" id="skip${kind === 'car' ? 'Car' : 'Dash'}" type="button">略過${kind === 'car' ? '車身照片' : '儀表盤照片'}</button><span class="capture-status ${hasFile ? 'ready' : ''}" id="${kind}Status">${esc(status)}</span></div></article>`;
+      };
+      const cameraIcon = `<rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M8 6l1.2-2h5.6L16 6"/><circle cx="12" cy="12.5" r="3.2"/>`;
+      const dashIcon = `<circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/><path d="M5.8 16.4h12.4"/>`;
+      return `<span class="sheet__eyebrow">4 / 4 · AI 識別</span><h2>讓 AI 看看你的車</h2><p>只需兩張照片就可以大幅提高識別準確度。兩張都可以略過；如果沒有照片，稍後仍可手動確認車型與里程。</p><div class="selection-strip"><span>已選：${esc(classLabel)} · ${esc(powerLabel)} · ${esc(makeLabel)}</span><small>前面的選擇會用作 AI 約束條件</small></div><div class="capture-grid">${carSlot('car', '1 · 車身照片', cameraIcon, '建議車頭 45°、車尾 45° 或側面')}${carSlot('dash', '2 · 儀表盤照片', dashIcon, 'AI 會讀取目前里程與畫面上的可見提示')}</div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="vehicle-form-actions"><button class="secondary" type="button" data-back>上一步</button><button class="primary" id="continueCaptureBtn" type="button">繼續，讓 AI 建立車輛資料</button></div>`;
+    };
+
+    const refreshPreview = () => {
+      const brand = document.getElementById('newVehicleMake')?.value.trim() || '';
+      const model = document.getElementById('newVehicleModel')?.value.trim() || '';
+      const year = document.getElementById('newVehicleYear')?.value.trim() || '';
+      const energy = document.getElementById('newVehicleFuel')?.value || '';
+      const title = document.getElementById('previewTitle');
+      const meta = document.getElementById('previewMeta');
+      if (title) title.textContent = (brand + ' ' + model).trim() || '未確認車型';
+      if (meta) meta.textContent = `${year || '年份待確認'} · ${energy}`;
+    };
+
+    const tickAiStep = (n) => {
+      const el = document.getElementById('aiStep' + n);
+      if (!el) return;
+      el.classList.add('done');
+      const tick = el.querySelector('.ai-tick');
+      if (tick) tick.textContent = '✓';
+    };
+
+    const runAiSequence = async () => {
+      const pause = (ms) => new Promise(r => setTimeout(r, ms));
+      const callAi = async (mode, image) => {
+        try {
+          const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, image }) });
+          return await r.json().catch(() => ({}));
+        } catch (err) { return {}; }
+      };
+      await pause(520); tickAiStep(1);
+      if (state.carDataUrl) state.aiVehicle = await callAi('vehicle-image', state.carDataUrl);
+      else await pause(360);
+      await pause(520); tickAiStep(2);
+      await pause(520); tickAiStep(3);
+      if (state.dashDataUrl) state.aiDashboard = await callAi('dashboard-image', state.dashDataUrl);
+      else await pause(360);
+      await pause(520); tickAiStep(4);
+      await pause(280);
+      state.captureStep = 'confirm';
+      render();
+    };
+
+    const applyCaptureFile = async (kind, file) => {
+      if (!file) return;
+      try {
+        const dataUrl = await prepareVehicleImage(file);
+        if (kind === 'car') { state.carFile = file; state.carDataUrl = dataUrl; newVehicleImageData = dataUrl; }
+        else { state.dashFile = file; state.dashDataUrl = dataUrl; newDashboardImageData = dataUrl; }
+        document.getElementById(kind + 'Img').src = dataUrl;
+        document.getElementById(kind + 'Name').textContent = file.name;
+        const preview = document.getElementById(kind + 'Preview');
+        const empty = document.getElementById(kind + 'Empty');
+        const zone = document.getElementById(kind + 'Zone');
+        const status = document.getElementById(kind + 'Status');
+        preview.classList.add('show');
+        if (empty) empty.style.display = 'none';
+        zone.classList.add('has-file');
+        zone.classList.remove('dragover');
+        status.textContent = '已加入';
+        status.classList.add('ready');
+      } catch (err) {
+        console.warn('[capture]', err);
+        const status = document.getElementById(kind + 'Status');
+        if (status) status.textContent = '無法讀取';
+      }
+    };
+
+    const clearCaptureFile = (kind, skipped) => {
+      state[kind + 'File'] = null;
+      state[kind + 'DataUrl'] = '';
+      if (kind === 'car') newVehicleImageData = '';
+      else newDashboardImageData = '';
+      const input = document.getElementById(kind + 'Input');
+      if (input) input.value = '';
+      const img = document.getElementById(kind + 'Img');
+      if (img) img.removeAttribute('src');
+      const preview = document.getElementById(kind + 'Preview');
+      const empty = document.getElementById(kind + 'Empty');
+      const zone = document.getElementById(kind + 'Zone');
+      const status = document.getElementById(kind + 'Status');
+      if (preview) preview.classList.remove('show');
+      if (empty) empty.style.display = '';
+      if (zone) { zone.classList.remove('has-file'); zone.classList.remove('dragover'); }
+      if (status) {
+        status.textContent = skipped ? '已略過' : '未加入';
+        status.classList.toggle('ready', !!skipped);
+      }
+    };
+
+    const wireStep4 = () => {
+      ['car', 'dash'].forEach(kind => {
+        const input = document.getElementById(kind + 'Input');
+        const zone = document.getElementById(kind + 'Zone');
+        if (!input || !zone) return;
+        input.addEventListener('change', e => { if (e.target.files?.[0]) applyCaptureFile(kind, e.target.files[0]); });
+        ['dragenter', 'dragover'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('dragover'); }));
+        ['dragleave', 'drop'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('dragover'); }));
+        zone.addEventListener('drop', e => {
+          const file = e.dataTransfer?.files?.[0];
+          if (file && file.type.startsWith('image/')) applyCaptureFile(kind, file);
+        });
+      });
+      document.querySelectorAll('[data-replace]').forEach(btn => {
+        btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); document.getElementById(btn.dataset.replace + 'Input')?.click(); });
+      });
+      document.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); clearCaptureFile(btn.dataset.remove, false); });
+      });
+      document.getElementById('skipCar')?.addEventListener('click', () => clearCaptureFile('car', true));
+      document.getElementById('skipDash')?.addEventListener('click', () => clearCaptureFile('dash', true));
+      document.getElementById('continueCaptureBtn')?.addEventListener('click', async () => {
+        state.captureStep = 'analysis';
+        render();
+        await runAiSequence();
+      });
+      document.getElementById('backFromConfirmBtn')?.addEventListener('click', () => {
+        state.captureStep = 'capture';
+        state.aiVehicle = null;
+        state.aiDashboard = null;
+        render();
+      });
+      if (state.captureStep === 'confirm') {
+        ['newVehicleMake', 'newVehicleModel', 'newVehicleYear'].forEach(id => {
+          document.getElementById(id)?.addEventListener('input', refreshPreview);
+        });
+        document.getElementById('newVehicleFuel')?.addEventListener('change', refreshPreview);
+      }
+    };
+
     render();
   };
   document.getElementById('addCarBtn')?.addEventListener('click', openAddVehicleSheet);
@@ -1315,45 +1545,352 @@ function appDialog(message, mode='notice') {
 
   /* Admin 車商 */
   async function renderRequests(root) { const module=await import('/assets/request-flow.js'); await module.render(root); }
+  /* Admin SEO editor — three logical sections (search / share / campaign body),
+     inline status next to action buttons, live preview of both the Google result
+     and a share card, plus a separate status & revisions card. The actions are
+     gated: "發布" only enables once a draft exists, "取消發布" only on published
+     campaigns, "放棄草稿" only when draft ≠ published. */
   async function renderMarketing(root) {
-    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>SEO 與分享設定</h1><p>編輯草稿，再發布到首頁或示範頁。發布後最多約一分鐘更新。</p></div></div><div id="marketingEditor" class="card form-card">載入中…</div></div>';
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>SEO 與分享設定</h1><p id="marketingSubtitle">編輯草稿，再發布到對外頁面。發布後約一分鐘可重新整理查看。</p></div><button class="secondary" type="button" id="marketingCreateBtn">＋ 建立活動頁</button></div><div id="marketingEditor" class="card form-card"><b>載入中…</b></div><div id="marketingRevisionsHost"></div></div>';
+    if (!document.getElementById('marketingStyles')) {
+      const style = document.createElement('style');
+      style.id = 'marketingStyles';
+      style.textContent = '.marketing-toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:20px}.marketing-toolbar select{flex:1 1 240px;min-width:200px}.marketing-pill{padding:5px 12px;border-radius:99px;font-size:13px;font-weight:700;background:#eef1f2;color:var(--ink);white-space:nowrap}.marketing-pill.ok{background:#e1f0e3;color:#2f6b3e}.marketing-pill.warn{background:#fff2e1;color:#a36300}.marketing-pill.dim{background:transparent;color:var(--muted);font-weight:600}.marketing-open{margin-left:8px;font-weight:700;white-space:nowrap}.marketing-open[aria-disabled=true]{color:var(--muted);pointer-events:none}.marketing-section{border:0;padding:0;margin:22px 0 0}.marketing-section legend{padding:0;font-weight:760;font-size:16px;color:var(--ink)}.marketing-section .section-hint{margin:4px 0 12px;color:var(--muted);font-size:13px;line-height:1.6}.marketing-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}.marketing-actions .marketing-pill{background:transparent;padding:0;color:var(--muted);font-weight:600}.marketing-preview{margin-top:22px;display:grid;gap:12px}.marketing-preview-block{padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:#fff}.marketing-preview-block h3{margin:0 0 12px;font-size:12px;color:var(--muted);font-weight:760;letter-spacing:.06em;text-transform:uppercase}.seo-mock{font-family:Arial,Helvetica,sans-serif;color:#202124}.seo-mock-url{display:flex;align-items:center;gap:8px;font-size:13px;color:#5f6368;line-height:1.3;word-break:break-all}.seo-mock-favicon{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#3d7c4b,#1a3a5c);flex:none}.seo-mock-title{font-size:20px;color:#1a0dab;line-height:1.3;margin:6px 0 4px;word-break:break-word}.seo-mock-desc{font-size:14px;color:#4d5156;line-height:1.58;word-break:break-word}.social-mock{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start}.social-mock-image{width:120px;height:120px;border-radius:12px;background:#eef1f2;object-fit:cover;display:block}.social-mock-image.empty{background:linear-gradient(135deg,#eef1f2,#dfe3e5);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;padding:0 8px}.social-mock-domain{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.social-mock-title{font-size:15px;font-weight:760;color:var(--ink);margin:4px 0;line-height:1.35;word-break:break-word}.social-mock-desc{font-size:13px;color:var(--muted);line-height:1.5;word-break:break-word}.marketing-status-card{margin-top:18px}.field-error{color:#b23a32;font-size:13px;margin-top:6px;display:none}.field-error.show{display:block}.field input.is-invalid,.field textarea.is-invalid{border-color:#b23a32;box-shadow:0 0 0 3px rgba(178,58,50,.08)}.image-thumb{margin-top:10px;display:none}.image-thumb.show{display:block}.image-thumb img{max-width:200px;max-height:120px;border-radius:10px;border:1px solid var(--line);display:block}.empty-state{padding:36px 24px;text-align:center;color:var(--muted)}@media(max-width:700px){.social-mock{grid-template-columns:1fr}.social-mock-image{width:100%;height:180px}}';
+      document.head.appendChild(style);
+    }
     const host = document.getElementById('marketingEditor');
+    const revisionsHost = document.getElementById('marketingRevisionsHost');
+    const createBtn = document.getElementById('marketingCreateBtn');
+    const slugRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+    const pathLabel = (path) => path === '/' ? '首頁（/）' : path === '/demo' ? '示範護照（/demo）' : `活動：${path}`;
+    const hasContent = (content) => !!(content && typeof content === 'object' && content.title && content.description);
+    const sameContent = (a, b) => hasContent(a) && hasContent(b) && JSON.stringify(a) === JSON.stringify(b);
+    const statusInfo = (page) => {
+      const hasDraft = hasContent(page.draft);
+      const hasPublished = hasContent(page.published);
+      if (!hasDraft && !hasPublished) return { text: '尚未編輯', state: 'empty' };
+      if (!hasDraft && hasPublished) return { text: `已發布 v${page.version}`, state: 'published' };
+      if (hasDraft && !hasPublished) return { text: `草稿 v${page.version} · 未發布`, state: 'draft' };
+      return sameContent(page.draft, page.published)
+        ? { text: `已發布 v${page.version} · 無未發布變更`, state: 'published' }
+        : { text: `草稿 v${page.version} · 與已發布不同`, state: 'draft' };
+    };
+    const ORIGIN_HINT = 'https://www.booundless.com';
+    const readForm = (form) => {
+      const obj = { indexable: false };
+      new FormData(form).forEach((v, k) => { if (k !== 'indexable') obj[k] = typeof v === 'string' ? v : ''; });
+      obj.indexable = form.elements.indexable.checked;
+      return obj;
+    };
+    const clearErrors = (form) => { form.querySelectorAll('.field-error').forEach((el) => { el.classList.remove('show'); el.textContent = ''; }); form.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid')); };
+    const showFieldErrors = (form, keys, msg) => {
+      clearErrors(form);
+      const status = document.getElementById('seoInlineStatus');
+      if (!keys.length) { status.textContent = msg; status.className = 'marketing-pill warn'; return; }
+      status.textContent = '請修正下面欄位後再儲存。';
+      status.className = 'marketing-pill warn';
+      for (const key of keys) {
+        const input = form.elements[key];
+        if (input) input.classList.add('is-invalid');
+        const err = form.querySelector(`[data-error-for="${key}"]`);
+        if (err) { err.textContent = msg || '格式不正確'; err.classList.add('show'); }
+      }
+    };
+
     try {
       const response = await fetch('/api/admin/marketing/pages');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || '無法載入');
+      if (!data.pages.length) { host.innerHTML = '<div class="empty-state"><b>尚無頁面</b><br>請聯絡工程確認資料庫連線。</div>'; return; }
+
       const select = document.createElement('select');
-      for (const page of data.pages) select.add(new Option(page.path === '/' ? '首頁' : page.path === '/demo' ? '示範護照' : page.path, page.path));
-      host.replaceChildren(select);
-      const trackingLink=document.createElement('a');trackingLink.href='#/admin/tracking';trackingLink.textContent='站內商戶推廣 →';host.append(trackingLink);
-      const create=document.createElement('button');create.className='secondary';create.textContent='新增廣告活動頁';host.append(create);
-      create.onclick=async()=>{const slug=await appDialog('活動網址名稱，例如 summer-service','input');if(!slug)return;create.disabled=true;try{const response=await fetch('/api/admin/marketing/pages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'create',path:'/campaigns/'+slug.trim()})});const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'建立失敗');await renderMarketing(root);}catch(error){await appDialog(error.message);}finally{create.disabled=false;}};
-      const panel = document.createElement('div'); host.append(panel);
-      const draw = () => {
-        const page = data.pages.find(p => p.path === select.value);
-        const content = { title:'無界啟程 BOOUNDLESS', description:'建立你的車輛護照，掌握車況並匹配合適車行。', social_title:'', social_description:'', image:'/assets/booundless-social.png', image_alt:'無界啟程', indexable:page.path === '/', ...page.draft };
-        const labels = {title:'頁面標題',description:'搜尋描述',social_title:'分享標題',social_description:'分享描述',image:'分享圖片網址（本站）',image_alt:'圖片描述',headline:'活動頁主標題',copy:'活動頁內容',cta_label:'活動頁按鈕文字'};
-        panel.innerHTML = '<form class="form-grid" id="marketingForm">'+Object.entries(labels).map(([key,label])=>`<div class="field wide"><label for="seo-${key}">${label}</label><input id="seo-${key}" name="${key}" value="${esc(content[key]||String())}"></div>`).join('')+`<label class="wide"><input name="indexable" type="checkbox" ${content.indexable?'checked':''}> 允許搜尋引擎索引</label><button class="primary" type="submit">儲存草稿</button><button class="secondary" type="button" id="seoPublish">發布已儲存草稿</button></form><p id="seoMessage" role="status"></p><div class="section-title">搜尋預覽</div><div class="card form-card"><h2 id="seoPreviewTitle"></h2><p id="seoPreviewDescription"></p></div><div class="section-title">發布紀錄</div><div id="seoRevisions"></div>`;
-        const form = panel.querySelector('form');
-        const link=document.createElement('a');link.href=page.path;link.target='_blank';link.rel='noopener';link.textContent='開啟已發布頁面';panel.append(link);
-        const message = panel.querySelector('#seoMessage');
-        const preview = () => { panel.querySelector('#seoPreviewTitle').textContent=form.elements.title.value; panel.querySelector('#seoPreviewDescription').textContent=form.elements.description.value; };
-        form.addEventListener('input',preview); preview();
-        const save = async (method, extra={}) => {
-          const buttons = panel.querySelectorAll('button'); buttons.forEach(b=>b.disabled=true);
-          try {
-            const response = await fetch('/api/admin/marketing/pages',{method,headers:{'content-type':'application/json'},body:JSON.stringify({path:page.path,version:page.version,...extra})});
-            const result = await response.json(); if(!response.ok) throw new Error(result.error?.message || '儲存失敗');
-            Object.assign(page,result.page); message.textContent=method==='PATCH'?'草稿已儲存。':'已發布。重新開啟頁面可查看更新。';
-          } catch(error){message.textContent=error.message;} finally{buttons.forEach(b=>b.disabled=false);}
-        };
-        form.onsubmit = e => {e.preventDefault(); const content=Object.fromEntries(new FormData(form)); content.indexable=form.elements.indexable.checked; save('PATCH',{content});};
-        panel.querySelector('#seoPublish').onclick=()=>save('POST');
-        const history=panel.querySelector('#seoRevisions');
-        for(const revision of data.revisions.filter(r=>r.page_path===page.path)) { const button=document.createElement('button'); button.type='button'; button.className='secondary'; button.textContent=`還原：${revision.content.title}（${new Date(revision.created_at).toLocaleString()}）`;button.onclick=()=>save('POST',{revision_id:revision.id});history.append(button); }
+      select.id = 'marketingPageSelect';
+      for (const page of data.pages) select.add(new Option(pathLabel(page.path), page.path));
+      const statusPill = document.createElement('span');
+      statusPill.className = 'marketing-pill dim';
+      const openLink = document.createElement('a');
+      openLink.className = 'marketing-open';
+      openLink.target = '_blank';
+      openLink.rel = 'noopener';
+      openLink.textContent = '開啟已發布頁面 ↗';
+      const toolbar = document.createElement('div');
+      toolbar.className = 'marketing-toolbar';
+      toolbar.append(select, statusPill, openLink);
+
+      const form = document.createElement('form');
+      form.id = 'marketingForm';
+      form.noValidate = true;
+      form.innerHTML = `
+        <fieldset class="marketing-section">
+          <legend>搜尋結果</legend>
+          <div class="section-hint">Google 搜尋結果顯示的標題與描述。「允許索引」會寫入 <code>meta robots</code>。</div>
+          <div class="form-grid">
+            <div class="field"><label for="seo-title">頁面標題 <em style="color:#b23a32;font-style:normal">*</em></label><input id="seo-title" name="title" maxlength="160"></div>
+            <div class="field"><label for="seo-description">搜尋描述 <em style="color:#b23a32;font-style:normal">*</em></label><input id="seo-description" name="description" maxlength="500"></div>
+            <label class="toggle-row wide" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:15px;background:#fbfcfc"><input id="seo-indexable" name="indexable" type="checkbox"> 允許搜尋引擎索引（取消勾選會加上 noindex）</label>
+          </div>
+          <div class="field-error" data-error-for="title"></div>
+          <div class="field-error" data-error-for="description"></div>
+        </fieldset>
+        <fieldset class="marketing-section">
+          <legend>分享卡片</legend>
+          <div class="section-hint">LINE、Facebook、WhatsApp 預覽時顯示的標題、描述與圖片。圖片必須是本站網址。</div>
+          <div class="form-grid">
+            <div class="field"><label for="seo-social_title">分享標題</label><input id="seo-social_title" name="social_title" maxlength="160" placeholder="未填則使用頁面標題"></div>
+            <div class="field"><label for="seo-social_description">分享描述</label><input id="seo-social_description" name="social_description" maxlength="500" placeholder="未填則使用搜尋描述"></div>
+            <div class="field wide"><label for="seo-image">分享圖片網址</label><input id="seo-image" name="image" maxlength="1000" placeholder="/assets/booundless-social.png"><small style="display:block;color:var(--muted);font-size:12px;margin-top:6px">限本站網址，例如 <code>/assets/...</code> 或完整 https://www.booundless.com/...</small><div class="image-thumb" id="seo-image-thumb"><img alt=""></div></div>
+            <div class="field"><label for="seo-image_alt">圖片描述</label><input id="seo-image_alt" name="image_alt" maxlength="200"></div>
+          </div>
+          <div class="field-error" data-error-for="image"></div>
+        </fieldset>
+        <fieldset class="marketing-section" id="seoCampaignSection" hidden>
+          <legend>活動頁內容</legend>
+          <div class="section-hint">只在 <code>/campaigns/&lt;slug&gt;</code> 公開頁顯示；首頁與示範頁會忽略這些欄位。</div>
+          <div class="form-grid">
+            <div class="field"><label for="seo-headline">主標題</label><input id="seo-headline" name="headline" maxlength="160" placeholder="未填則使用頁面標題"></div>
+            <div class="field"><label for="seo-cta_label">按鈕文字</label><input id="seo-cta_label" name="cta_label" maxlength="60" placeholder="建立我的車輛護照"></div>
+            <div class="field wide"><label for="seo-copy">內容</label><textarea id="seo-copy" name="copy" rows="6" maxlength="3000" placeholder="說明這次活動的重點，3,000 字以內"></textarea></div>
+          </div>
+        </fieldset>
+        <div class="marketing-actions">
+          <button class="primary" type="submit" id="seoSaveBtn">儲存草稿</button>
+          <button class="secondary" type="button" id="seoPublishBtn">發布</button>
+          <button class="secondary" type="button" id="seoUnpublishBtn" hidden>取消發布</button>
+          <button class="secondary" type="button" id="seoRevertBtn" hidden>放棄草稿，回復至已發布版本</button>
+          <span class="marketing-pill dim" role="status" id="seoInlineStatus"></span>
+        </div>
+      `;
+
+      const preview = document.createElement('div');
+      preview.className = 'marketing-preview';
+      preview.innerHTML = `
+        <div class="marketing-preview-block">
+          <h3>搜尋結果預覽</h3>
+          <div class="seo-mock">
+            <div class="seo-mock-url"><span class="seo-mock-favicon"></span><span id="seoMockUrl"></span></div>
+            <div class="seo-mock-title" id="seoMockTitle">頁面標題</div>
+            <div class="seo-mock-desc" id="seoMockDesc">搜尋描述</div>
+          </div>
+        </div>
+        <div class="marketing-preview-block">
+          <h3>分享卡片預覽</h3>
+          <div class="social-mock">
+            <div class="social-mock-image empty" id="seoMockImageWrap"><span>無圖片</span></div>
+            <div>
+              <div class="social-mock-domain">BOOUNDLESS.COM</div>
+              <div class="social-mock-title" id="seoMockSocialTitle">分享標題</div>
+              <div class="social-mock-desc" id="seoMockSocialDesc">分享描述</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      host.replaceChildren(toolbar, form, preview);
+
+      const statusCard = document.createElement('div');
+      statusCard.className = 'card marketing-status-card';
+      statusCard.innerHTML = '<div class="section-title" style="margin-top:0">目前狀態</div><div id="seoStatusSummary" class="row" style="background:transparent;border:0;padding:8px 0;min-height:auto">載入中…</div><div class="section-title">發布紀錄</div><div id="seoRevisions" class="list"><div class="row"><b>尚無發布紀錄</b></div></div>';
+      revisionsHost.replaceChildren(statusCard);
+
+      const renderRevisions = (page) => {
+        const list = document.getElementById('seoRevisions');
+        const items = data.revisions.filter((r) => r.page_path === page.path);
+        if (!items.length) { list.innerHTML = '<div class="row"><b>尚無發布紀錄</b></div>'; return; }
+        const rows = items.map((r) => `<div class="row" data-revision-row="${esc(r.id)}"><span><b>${esc(r.content.title || '(無標題)')}</b><small>${esc(new Date(r.created_at).toLocaleString())}${r.actor_id ? ' · ' + esc(r.actor_id) : ''}</small></span><span style="display:flex;gap:8px;align-items:center"></span></div>`).join('');
+        list.innerHTML = rows;
+        items.forEach((r) => {
+          const row = list.querySelector(`[data-revision-row="${r.id}"]`);
+          const trailing = row.querySelector('span:last-child');
+          if (sameContent(r.content, page.published)) {
+            const tag = document.createElement('span'); tag.className = 'state ok'; tag.textContent = '目前已發布'; trailing.prepend(tag);
+          }
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'kc-tab'; btn.textContent = '還原為草稿';
+          btn.onclick = () => callApi('POST', { revision_id: r.id });
+          trailing.append(btn);
+        });
       };
-      select.onchange=draw;draw();
-    } catch(error){host.textContent=error.message;}
+
+      const renderStatus = (page) => {
+        const summary = document.getElementById('seoStatusSummary');
+        const updated = new Date(page.updated_at).toLocaleString();
+        const hasDraft = hasContent(page.draft);
+        const hasPublished = hasContent(page.published);
+        const draftNote = hasDraft && hasPublished ? (sameContent(page.draft, page.published) ? '（與已發布版本一致）' : '（尚未發布）') : (hasDraft ? '（首次草稿）' : '（尚未編輯）');
+        summary.innerHTML = `<div style="display:grid;gap:6px"><div><b>目前路徑：</b><code>${esc(page.path)}</code></div><div><b>草稿：</b>v${page.version} · 更新於 ${esc(updated)} ${esc(draftNote)}</div>${hasPublished ? `<div><b>已發布：</b>v${page.version}</div>` : ''}</div>`;
+      };
+
+      const updatePreview = (page) => {
+        const values = readForm(form);
+        const mockUrl = document.getElementById('seoMockUrl');
+        const mockTitle = document.getElementById('seoMockTitle');
+        const mockDesc = document.getElementById('seoMockDesc');
+        const mockImgWrap = document.getElementById('seoMockImageWrap');
+        const mockSocTitle = document.getElementById('seoMockSocialTitle');
+        const mockSocDesc = document.getElementById('seoMockSocialDesc');
+        const thumb = document.getElementById('seo-image-thumb');
+        const thumbImg = thumb.querySelector('img');
+        mockUrl.textContent = ORIGIN_HINT + page.path;
+        mockTitle.textContent = values.title || '頁面標題';
+        mockDesc.textContent = values.description || '搜尋描述';
+        mockSocTitle.textContent = values.social_title || values.title || '分享標題';
+        mockSocDesc.textContent = values.social_description || values.description || '分享描述';
+        if (values.image) {
+          mockImgWrap.className = 'social-mock-image';
+          mockImgWrap.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = values.image; img.alt = values.image_alt || '';
+          img.className = 'social-mock-image';
+          mockImgWrap.appendChild(img);
+          thumb.classList.add('show'); thumbImg.src = values.image; thumbImg.alt = values.image_alt || '';
+        } else {
+          mockImgWrap.className = 'social-mock-image empty';
+          mockImgWrap.innerHTML = '<span>無圖片</span>';
+          thumb.classList.remove('show');
+        }
+      };
+
+      const draw = () => {
+        const page = data.pages.find((p) => p.path === select.value);
+        if (!page) return;
+        const published = page.published || {};
+        const draft = page.draft || {};
+        const base = page.path === '/' ? { indexable: true } : {};
+        const values = Object.assign({ title: '', description: '', social_title: '', social_description: '', image: '', image_alt: '', headline: '', copy: '', cta_label: '', indexable: false }, base, published, draft);
+        form.elements.title.value = values.title;
+        form.elements.description.value = values.description;
+        form.elements.indexable.checked = !!values.indexable;
+        form.elements.social_title.value = values.social_title || '';
+        form.elements.social_description.value = values.social_description || '';
+        form.elements.image.value = values.image || '';
+        form.elements.image_alt.value = values.image_alt || '';
+        form.elements.headline.value = values.headline || '';
+        form.elements.copy.value = values.copy || '';
+        form.elements.cta_label.value = values.cta_label || '';
+
+        const isCampaign = page.path.startsWith('/campaigns/');
+        document.getElementById('seoCampaignSection').hidden = !isCampaign;
+
+        const info = statusInfo(page);
+        statusPill.textContent = info.text;
+        statusPill.className = 'marketing-pill ' + (info.state === 'empty' ? 'dim' : info.state);
+
+        if (hasContent(page.published)) { openLink.href = page.path; openLink.removeAttribute('aria-disabled'); }
+        else { openLink.removeAttribute('href'); openLink.setAttribute('aria-disabled', 'true'); }
+
+        const saveBtn = form.querySelector('#seoSaveBtn');
+        const publishBtn = form.querySelector('#seoPublishBtn');
+        const unpublishBtn = form.querySelector('#seoUnpublishBtn');
+        const revertBtn = form.querySelector('#seoRevertBtn');
+        saveBtn.disabled = false;
+        publishBtn.disabled = !hasContent(page.draft);
+        unpublishBtn.hidden = !(isCampaign && hasContent(page.published));
+        revertBtn.hidden = !(hasContent(page.draft) && hasContent(page.published) && !sameContent(page.draft, page.published));
+
+        clearErrors(form);
+        const inlineStatus = document.getElementById('seoInlineStatus');
+        if (inlineStatus) { inlineStatus.textContent = ''; inlineStatus.className = 'marketing-pill dim'; }
+
+        updatePreview(page);
+        renderStatus(page);
+        renderRevisions(page);
+      };
+
+      const setBusy = (busy) => {
+        host.querySelectorAll('button').forEach((b) => { if (!b.hidden && !b.closest('.kc-tab') && b.id !== 'marketingCreateBtn') b.disabled = busy; });
+        createBtn.disabled = busy;
+      };
+
+      const callApi = async (method, extra = {}) => {
+        const page = data.pages.find((p) => p.path === select.value);
+        const status = document.getElementById('seoInlineStatus');
+        setBusy(true);
+        try {
+          const response = await fetch('/api/admin/marketing/pages', { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: page.path, version: page.version, ...extra }) });
+          const result = await response.json();
+          if (!response.ok) {
+            const msg = result.error?.message || '儲存失敗';
+            if (method === 'PATCH') {
+              const m = /Invalid (\w+)/.exec(msg);
+              if (m) { showFieldErrors(form, [m[1]], msg); }
+              else if (/Title and description/.test(msg)) { showFieldErrors(form, ['title', 'description'], '必填'); }
+              else if (/same-site image/i.test(msg)) { showFieldErrors(form, ['image'], '限本站網址'); }
+              else { status.textContent = msg; status.className = 'marketing-pill warn'; }
+            } else { status.textContent = msg; status.className = 'marketing-pill warn'; }
+            return;
+          }
+          Object.assign(page, result.page);
+          // Refresh revisions list so the just-published revision appears.
+          if (method === 'POST' && !extra.action && !extra.revision_id) {
+            try {
+              const r = await fetch('/api/admin/marketing/pages');
+              if (r.ok) {
+                const fresh = await r.json();
+                data.revisions = fresh.revisions;
+                const refreshed = fresh.pages.find((p) => p.path === page.path);
+                if (refreshed) Object.assign(page, refreshed);
+              }
+            } catch {}
+          }
+          const note = method === 'PATCH' ? '草稿已儲存 v' + page.version : (extra.action === 'unpublish' ? '已取消發布' : '已發布 v' + page.version + ' · 約一分鐘後可重新整理查看');
+          draw();
+          status.textContent = note; status.className = 'marketing-pill ok';
+        } catch (err) {
+          status.textContent = err.message || '網路錯誤'; status.className = 'marketing-pill warn';
+        } finally { setBusy(false); }
+      };
+
+      form.addEventListener('input', () => {
+        clearErrors(form);
+        const inlineStatus = document.getElementById('seoInlineStatus');
+        if (inlineStatus && inlineStatus.textContent) { inlineStatus.textContent = ''; inlineStatus.className = 'marketing-pill dim'; }
+        updatePreview(data.pages.find((p) => p.path === select.value));
+      });
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        clearErrors(form);
+        const values = readForm(form);
+        const missing = [];
+        if (!values.title.trim()) missing.push('title');
+        if (!values.description.trim()) missing.push('description');
+        if (missing.length) { showFieldErrors(form, missing, '必填'); return; }
+        callApi('PATCH', { content: values });
+      };
+      form.querySelector('#seoPublishBtn').onclick = () => {
+        const page = data.pages.find((p) => p.path === select.value);
+        if (!hasContent(page.draft)) {
+          const status = document.getElementById('seoInlineStatus');
+          status.textContent = '請先儲存草稿，再發布。'; status.className = 'marketing-pill warn';
+          return;
+        }
+        callApi('POST', {});
+      };
+      form.querySelector('#seoUnpublishBtn').onclick = () => callApi('POST', { action: 'unpublish' });
+      form.querySelector('#seoRevertBtn').onclick = () => {
+        const page = data.pages.find((p) => p.path === select.value);
+        if (!hasContent(page.published)) return;
+        callApi('PATCH', { content: Object.assign({}, page.published) });
+      };
+      select.onchange = draw;
+
+      createBtn.onclick = async () => {
+        const raw = await appDialog('活動網址名稱，例如 summer-service（只可用小寫英文、數字與連字號）', 'input');
+        const slug = String(raw || '').trim().toLowerCase();
+        if (!slug) return;
+        if (!slugRegex.test(slug)) { await appDialog('名稱格式不正確，請只使用小寫英文、數字與連字號。'); return; }
+        const newPath = '/campaigns/' + slug;
+        if (data.pages.some((p) => p.path === newPath)) { select.value = newPath; draw(); return; }
+        createBtn.disabled = true;
+        try {
+          const r = await fetch('/api/admin/marketing/pages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'create', path: newPath }) });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error?.message || '建立失敗');
+          await renderMarketing(root);
+        } catch (err) { await appDialog(err.message); }
+        finally { createBtn.disabled = false; }
+      };
+
+      draw();
+    } catch (error) { host.innerHTML = '<div class="empty-state" style="color:#b23a32">' + esc(error.message) + '</div>'; }
   }
 
   async function renderAdminDealers(root) {
