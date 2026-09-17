@@ -105,7 +105,7 @@ async function seedDefaultData(pool) {
     ['toyota', '火星塞',       100000, 60, 18000, '2024-02-18', 25, 6],
     ['toyota', '空氣濾芯',      20000, 12, 34200, '2026-02-03', 42, 7],
     ['toyota', '冷氣濾芯',      20000, 12, 22000, '2024-04-02', 99, 8],
-    ['toyota', '12V 電瓶',     null,   48, null,  '2022-09-14', 88, 9],
+    ['toyota', '12V 電瓶',     null,   48, 20000, '2022-09-14', 88, 9],
   ];
 
   for (const [vid, item, ikm, im, ldkm, ld, wear, ord] of statusRows) {
@@ -116,6 +116,14 @@ async function seedDefaultData(pool) {
       [vid, item, ikm, im, ldkm, ld, wear, ord, serviceKeyByItem[item] || null],
     );
   }
+
+  /* Mark the seeded demo vehicle as fully onboarded so the new
+     `scope_confirmed` rule on /api/vehicles returns true for it. All scope
+     rows have hand-crafted last_done_km/at values, so the data is genuine. */
+  await pool.query(
+    "UPDATE vehicles SET onboarding_state='ready', onboarding_completed_at=$1 WHERE id='toyota'",
+    [now],
+  );
 
   /* Service history (recent completed jobs). Used by the home page "最近" list
      and the detail page "保養紀錄" section. */

@@ -265,10 +265,17 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .wear-bar__fill{height:100%;border-radius:99px;background:#3d7c4b;transition:width .35s ease}
 .wear-bar__fill.mid{background:#9a6818}
 .wear-bar__fill.high{background:#cf3a2e}
+.wear-bar__fill.unknown{background:repeating-linear-gradient(45deg,#bcc4c7 0 6px,#dde2e4 6px 12px)}
 .wear-row .state{font-size:12px;font-weight:750;white-space:nowrap}
 .wear-row .state.ok{color:#3d7c4b}
 .wear-row .state.warn{color:#9a6818}
 .wear-row .state.urgent{color:#cf3a2e}
+.wear-row .state.unknown{color:#777}
+.detail-status-banner.unknown{background:#eef1f2;color:#555;border-color:#dde2e4}
+.detail-status-cta{display:flex;align-items:center;gap:12px;justify-content:space-between;background:#f6f8f9;border:1px dashed #cbdadd;padding:14px 18px;border-radius:14px;margin:0 0 18px;flex-wrap:wrap}
+.detail-status-cta small{color:var(--muted);font-size:13px;line-height:1.45;flex:1 1 220px}
+.detail-status-cta button{flex:0 0 auto;width:auto;height:auto;padding:11px 22px;font-size:14px;border-radius:14px;margin-top:0}
+.home-grid .status.unknown h3,.home-grid .status.unknown p{color:#555}
 
 /* Public landing page */
 .landing{min-height:calc(100vh - 72px);padding:0 0 120px;background:radial-gradient(circle at 78% 8%,rgba(33,141,174,.16),transparent 30%),linear-gradient(145deg,#f7fafb 0%,#edf3f3 100%)}
@@ -631,6 +638,15 @@ function appDialog(message, mode='notice') {
   let adminAssetsCache = null;
   let adminAssetsTab = 'vehicles';
   let adminAuditFilter = '';
+  /* Hydrated user data. Declared up front so renderers and click handlers
+     that run before the first /api/vehicles fetch resolves never see an
+     uninitialized binding — they read the empty defaults. The data fetch
+     itself runs after fetchMe() so the auth cookie is already attached;
+     without that ordering /api/vehicles returns 401 and the garage renders
+     an empty state until a manual reload re-establishes the session. */
+  let vehicles = [];
+  let reminders = [];
+  let history = [];
   const protectedStaticRoutes = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos']);
 
   /* Keep navigation interactive while optional API hydration is loading. */
@@ -992,6 +1008,15 @@ function appDialog(message, mode='notice') {
         card.style.display = viewButton.dataset.mycarView === 'team' && !card.dataset.team ? 'none' : '';
       });
     }
+    /* 「建議先去做一個保養」CTA on home + detail — reopens the same
+       onboarding-completion sheet the user saw right after creating the
+       vehicle. The vehicle id comes from the data attribute. */
+    const recordCta = e.target.closest?.('[data-record-first-service]');
+    if (recordCta) {
+      const vehicleId = recordCta.dataset.recordFirstService;
+      const vehicle = vehicles?.find((v) => v.id === vehicleId);
+      showVehicleOnboardingCompletion(vehicle || { id: vehicleId, model: '你的車' });
+    }
   });
   document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   async function openProfileAction(action) {
@@ -1121,14 +1146,19 @@ function appDialog(message, mode='notice') {
     showScreen('vehicleDetailSimple');
   };
 
+  /* Hydration runs as a function so it can be called after the session is
+     established (and again after login / onboarding). Running it at the
+     top of the IIFE — before fetchMe() — sends /api/vehicles without the
+     auth cookie and the garage paints empty until a manual reload. */
+  async function hydrateHomeAndGarageData() {
   const [vehiclesRes, remindersRes, historyRes] = await Promise.allSettled([
     fetch('/api/vehicles').then((r) => r.json()),
     fetch('/api/reminders').then((r) => r.json()),
     fetch('/api/history/recent?limit=5').then((r) => r.json()),
   ]);
-  let vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
-  const reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
-  const history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
+  vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
+  reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
+  history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
   if (!vehicles.length) vehicles = [...document.querySelectorAll('.v10-car-card')].map((card) => ({
           id: card.dataset.carid, model: card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛',
     mileage_label: card.querySelector('.v10-mileage')?.textContent || '', image: '', team: card.dataset.team,
@@ -1168,10 +1198,27 @@ function appDialog(message, mode='notice') {
     const h = statusBox.querySelector('h3');
     const p = statusBox.querySelector('p');
     if (heroReminder) {
-      statusBox.classList.remove('ok');
+      statusBox.classList.remove('ok', 'unknown');
       if (h) h.textContent = '有 1 件事需要處理';
       if (p) p.innerHTML = `<b>${esc(heroReminder.title)}</b><br>${esc(heroReminder.due_in || '')}`;
+    } else if (hero.scope_confirmed === false) {
+      /* No service records and onboarding not yet marked ready — never claim
+         「狀態正常」. Surface the gap and offer the only useful next step. */
+      statusBox.classList.remove('ok');
+      statusBox.classList.add('unknown');
+      if (h) h.textContent = '尚未確認車況';
+      if (p) {
+        p.innerHTML = '系統未有保養或檢查紀錄，建議先做一次保養以建立基準。';
+        const cta = document.createElement('button');
+        cta.className = 'primary';
+        cta.type = 'button';
+        cta.dataset.recordFirstService = hero.id;
+        cta.textContent = '建議先去做一個保養';
+        p.appendChild(document.createElement('br'));
+        p.appendChild(cta);
+      }
     } else {
+      statusBox.classList.remove('unknown');
       statusBox.classList.add('ok');
       if (h) h.textContent = '目前狀態正常';
       if (p) p.innerHTML = '所有主要項目都在建議週期內。';
@@ -1189,13 +1236,37 @@ function appDialog(message, mode='notice') {
   if (list) {
     list.innerHTML = vehicles.length ? vehicles.map((v) => {
       const r = reminders.find((x) => x.vehicle_id === v.id);
-      const healthTone = r && r.icon === 'brake' ? 'brake' : (r ? '' : 'good');
-      const healthText = r ? r.title : '狀態正常';
+      /* Health badge rule: explicit "尚未確認車況" whenever scope_confirmed is
+         false — never fall through to 「狀態正常」when we have no data. */
+      let healthTone;
+      let healthText;
+      if (v.scope_confirmed === false) {
+        healthTone = 'unknown';
+        healthText = '尚未確認車況';
+      } else if (r && r.icon === 'brake') {
+        healthTone = 'brake';
+        healthText = r.title;
+      } else if (r) {
+        healthTone = '';
+        healthText = r.title;
+      } else {
+        healthTone = 'good';
+        healthText = '狀態正常';
+      }
+      /* Dedupe make/model on the card so the brand never appears twice. */
+      const modelText = String(v.model || '').trim();
+      const makeText = String(v.make || '').trim();
+      let cardName;
+      if (makeText && modelText.toLowerCase().startsWith(makeText.toLowerCase() + ' ')) {
+        cardName = modelText;
+      } else {
+        cardName = [makeText, modelText].filter(Boolean).join(' ').trim() || '未命名車輛';
+      }
       return `
         <button type="button" class="v10-car-card" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || '/assets/vehicle-placeholder.svg')}')">
           <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
           <span class="v10-dots">•••</span>
-          <span class="v10-name">${esc(v.model)}</span>
+          <span class="v10-name">${esc(cardName)}</span>
           <span class="v10-meta">${esc(v.mileage_label || '')}</span>
           <span class="v10-divider"></span>
           <span class="v10-mileage">${esc(v.mileage_label || '')}</span>
@@ -1218,14 +1289,50 @@ function appDialog(message, mode='notice') {
     }
   }
 
+  /* Static placeholder rows shown immediately while the real scope loads.
+     Keeps the screen from flashing a "載入中…" skeleton that owners should
+     never see for an already-onboarded vehicle. */
+  function staticScopePlaceholder() {
+    return [
+      '機油及機油隔', '波箱油', '煞車皮', '煞車油', '冷卻液',
+      '空氣濾芯', '冷氣濾芯', '12V 電瓶', '輪胎',
+    ].map((name) => `
+      <div class="wear-row">
+        <span>
+          <b>${esc(name)}</b>
+          <small>—</small>
+        </span>
+        <span class="state ok">正常</span>
+        <div class="wear-bar"><div class="wear-bar__fill" style="width:0%"></div></div>
+      </div>`).join('');
+  }
+
   window.openCarDetail = async (id) => {
     const v = vehicles.find((x) => x.id === id);
     if (!v) return;
     selectedVehicleId = id;
-    document.getElementById('detailCarName').textContent = v.model;
-    document.getElementById('detailCarMeta').textContent = v.mileage_label;
+    /* Header: combine make + model so the brand is always shown, even when the
+       model column only carries the trim name. */
+    const modelText = String(v.model || '').trim();
+    const makeText = String(v.make || '').trim();
+    let displayName;
+    if (makeText && modelText.toLowerCase().startsWith(makeText.toLowerCase() + ' ')) {
+      displayName = modelText;
+    } else {
+      displayName = [makeText, modelText].filter(Boolean).join(' ').trim();
+    }
+    if (!displayName) displayName = '未命名車輛';
+    document.getElementById('detailCarName').textContent = displayName;
+    /* Subtitle: year · fuel type · mileage so all identity fields are visible
+       alongside the model. */
+    const metaParts = [];
+    if (v.year) metaParts.push(String(v.year));
+    if (v.fuel_type) metaParts.push(String(v.fuel_type));
+    if (v.mileage_label) metaParts.push(String(v.mileage_label));
+    else if (v.mileage_km != null) metaParts.push(`${Number(v.mileage_km).toLocaleString()} km`);
+    document.getElementById('detailCarMeta').textContent = metaParts.join(' · ');
     document.getElementById('detailCarPhoto').src = v.image || '/assets/vehicle-placeholder.svg';
-    document.getElementById('detailCarPhoto').alt = v.model;
+    document.getElementById('detailCarPhoto').alt = displayName;
     showScreen('vehicleDetailSimple');
 
     /* Static layout: section-title → detail-status-banner → .card.list
@@ -1239,33 +1346,81 @@ function appDialog(message, mode='notice') {
       || sectionTitle.parentElement?.querySelector('.card.list');
     if (!listCard || !listCard.classList.contains('list')) return;
 
-    listCard.innerHTML = '<div class="wear-row"><span><b>載入中…</b><small>正在取得車況資料</small></span></div>';
-    const data = await loadStatus(id);
-    if (!data || !data.items) {
-      listCard.innerHTML = '<div class="wear-row"><span><b>無法取得車況資料</b></span></div>';
+    /* Render the static placeholder items immediately so the screen never
+       shows a blank/loading skeleton. Real wear rows replace this once the
+       API responds (or after the AI fallback fills empty scopes). */
+    listCard.innerHTML = staticScopePlaceholder();
+
+    let data = await loadStatus(id);
+    if (data && Array.isArray(data.items) && data.items.length === 0) {
+      /* DB path returned nothing — trigger the AI/seed fallback so the owner
+         never lands on an empty scope. */
+      try {
+        const generated = await fetch(`/api/vehicles/${encodeURIComponent(id)}/scope/generate`, { method: 'POST' }).then((r) => r.json());
+        if (generated && Array.isArray(generated.items) && generated.items.length) {
+          data = {
+            ...data,
+            items: generated.items,
+            attention: generated.attention || [],
+            attention_count: generated.attention_count || 0,
+          };
+          statusCache.set(id, data);
+        }
+      } catch { /* fall through to render whatever data we have */ }
+    }
+
+    if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+      listCard.innerHTML = '<div class="wear-row"><span><b>尚未建立保養範圍</b><small>新增車輛後系統會自動補上預設 Scope</small></span></div>';
       return;
     }
 
     if (banner) {
-      if (data.attention_count > 0) {
-        banner.classList.remove('ok');
+      if (data.data_complete === false) {
+        /* No service evidence on the scope — never claim "all good" here. */
+        banner.classList.remove('ok', 'urgent');
+        banner.classList.add('unknown');
+        banner.textContent = '尚未確認車況';
+      } else if (data.attention_count > 0) {
+        banner.classList.remove('ok', 'unknown');
         banner.classList.add('urgent');
         banner.textContent = `${data.attention_count} 項需要處理：${data.attention.slice(0, 2).join('、')}${data.attention.length > 2 ? '…' : ''}`;
       } else {
-        banner.classList.remove('urgent');
+        banner.classList.remove('urgent', 'unknown');
         banner.classList.add('ok');
         banner.textContent = '所有主要項目都在建議週期內';
       }
     }
 
+    /* Below the banner, surface the only useful next action when there is no
+       service data to evaluate. Reuses the existing onboarding-completion
+       sheet via the delegated [data-record-first-service] click handler. */
+    let cta = listCard.parentElement?.querySelector('.detail-status-cta');
+    if (data.data_complete === false) {
+      if (!cta) {
+        cta = document.createElement('div');
+        cta.className = 'detail-status-cta';
+        cta.innerHTML = '<small>沒有任何保養或檢查紀錄 — 建議先做一次保養以建立基準。</small><button class="primary" type="button" data-record-first-service="' + esc(id) + '">建議先去做一個保養</button>';
+        listCard.parentElement.insertBefore(cta, listCard);
+      } else {
+        cta.querySelector('button').dataset.recordFirstService = id;
+      }
+    } else if (cta) {
+      cta.remove();
+    }
+
     listCard.innerHTML = data.items.map((it) => {
       const wear = Math.max(0, Math.min(100, Number(it.wear) || 0));
-      const tone = wear >= 80 ? 'high' : (wear >= 50 ? 'mid' : '');
-      const state = wear >= 80 ? 'urgent' : (wear >= 50 ? 'warn' : 'ok');
-      const stateText = wear >= 80 ? '需要處理' : (wear >= 50 ? '接近' : '正常');
-      const meta = it.last_done_km
-        ? `上次：${it.last_done_km.toLocaleString()} km${it.interval_km ? ` · 週期：${it.interval_km.toLocaleString()} km` : ''}`
-        : (it.interval_km ? `週期：${it.interval_km.toLocaleString()} km` : '—');
+      /* Per-row unknown when either last_done field is missing — we cannot
+         honestly call it "正常" with no recorded service. */
+      const isUnknown = it.last_done_km == null || it.last_done_at == null;
+      const tone = isUnknown ? 'unknown' : (wear >= 80 ? 'high' : (wear >= 50 ? 'mid' : ''));
+      const state = isUnknown ? 'unknown' : (wear >= 80 ? 'urgent' : (wear >= 50 ? 'warn' : 'ok'));
+      const stateText = isUnknown ? '待確認' : (wear >= 80 ? '需要處理' : (wear >= 50 ? '接近' : '正常'));
+      const meta = isUnknown
+        ? (it.interval_km ? `週期：${it.interval_km.toLocaleString()} km · 尚未記錄首次保養` : '尚未記錄首次保養')
+        : (it.last_done_km
+          ? `上次：${it.last_done_km.toLocaleString()} km${it.interval_km ? ` · 週期：${it.interval_km.toLocaleString()} km` : ''}`
+          : (it.interval_km ? `週期：${it.interval_km.toLocaleString()} km` : '—'));
       return `
         <div class="wear-row">
           <span>
@@ -1273,7 +1428,7 @@ function appDialog(message, mode='notice') {
             <small>${esc(meta)}</small>
           </span>
           <span class="state ${state}">${stateText}</span>
-          <div class="wear-bar"><div class="wear-bar__fill ${tone}" style="width:${wear}%"></div></div>
+          <div class="wear-bar"><div class="wear-bar__fill ${tone}" style="width:${isUnknown ? '100' : wear}%"></div></div>
         </div>`;
     }).join('');
 
@@ -1290,7 +1445,7 @@ function appDialog(message, mode='notice') {
             return `<div class="row"><span class="record-copy"><b>${esc(when)} · ${esc(h.title)}</b><small>${esc(parts.join(' · '))}</small></span><span>›</span></div>`;
           }).join('');
         } else {
-          historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b></span></div>';
+          historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b><small>完成首次保養後會顯示在這裡</small></span></div>';
         }
       } catch {
         historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>無法取得保養紀錄</b></span></div>';
@@ -1328,6 +1483,7 @@ function appDialog(message, mode='notice') {
     ['serviceVehicle', 'tripVehicle'].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = options; });
   }
   fillVehicleSelects();
+  }
 
   async function loadServicePage() {
     const root = document.getElementById('serviceList'); if (!root) return;
@@ -1366,11 +1522,24 @@ function appDialog(message, mode='notice') {
     const result=document.getElementById('tripAiResult'); result.classList.add('show'); result.textContent='CarAI 正在規劃…'; const trip={vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
     const r=await fetch('/api/agent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({stream:false,thread_id:agentThreadId,message:`請規劃由 ${trip.origin} 前往 ${trip.destination} 的行程，使用車輛 ${trip.vehicle_id}。`})}); const d=await r.json(); showAgentResult(result, r, d);
   });
+  let addVehicleInFlight = false;
   document.addEventListener('submit', async (e) => {
     if (e.target?.id === 'addVehicleForm') {
-      e.preventDefault(); const result=document.getElementById('addVehicleResult'); result.classList.add('show'); result.textContent='正在新增…';
+      e.preventDefault();
+      if (addVehicleInFlight) return;        /* Block re-entry while a POST is in flight —
+                                                  double-clicking the submit button otherwise
+                                                  inserts the vehicle twice (we observed two
+                                                  Audi Q4 e-tron rows on 2026-09-17). */
+      addVehicleInFlight = true;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      const result=document.getElementById('addVehicleResult'); result.classList.add('show'); result.textContent='正在新增…';
       const payload={model:document.getElementById('newVehicleModel').value,make:document.getElementById('newVehicleMake').value,year:document.getElementById('newVehicleYear').value,fuel_type:document.getElementById('newVehicleFuel').value,vehicle_class:document.getElementById('newVehicleClass')?.value||null,powertrain_type:document.getElementById('newVehiclePowertrain')?.value||null,plate:document.getElementById('newVehiclePlate').value,mileage_km:document.getElementById('newVehicleMileage').value,image:newVehicleImageData||null};
-      const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){window.booundlessTrack?.('vehicle_created',d.id);showVehicleOnboardingCompletion(d);}else result.textContent=d.error?.message||'新增失敗';
+      try {
+        const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){window.booundlessTrack?.('vehicle_created',d.id);showVehicleOnboardingCompletion(d);}else {result.textContent=d.error?.message||'新增失敗'; if (submitBtn) submitBtn.disabled = false;}
+      } finally {
+        addVehicleInFlight = false;
+      }
     }
     if (e.target?.id === 'supportForm') {
       e.preventDefault(); const result=document.getElementById('supportResult'); result.classList.add('show'); result.textContent='正在送出…';
@@ -1387,6 +1556,7 @@ function appDialog(message, mode='notice') {
   const STATIC_ROUTES = new Set(['landing', 'demo', 'home', 'garage', 'service', 'qinao', 'videos', 'profile']);
   const NEW_ROUTES = {
     login: renderLogin,
+    register: renderRegister,
     'admin/users': renderAdminUsers,
     'admin/assets': renderAdminAssets,
     'admin/audit': renderAdminAudit,
@@ -1506,6 +1676,24 @@ function appDialog(message, mode='notice') {
           <div id="loginError" style="color:#cf3a2e;font-size:14px;display:none"></div>
           <button class="primary" type="submit">登入</button>
           <button class="secondary" type="button" id="loginBack">返回首頁</button>
+          <p style="font-size:13px;color:var(--muted);margin:6px 0 0">還沒有帳號？<a href="#/register" style="color:#176b91;font-weight:750">建立新帳號</a></p>
+        </form>
+      </div>`;
+  }
+
+  function renderRegister(root) {
+    root.innerHTML = `
+      <div class="wrap">
+        <div class="top"><div><h1>建立帳號</h1><p>用電郵與密碼建立 BOOUNDLESS 帳號，建立後即自動登入。</p></div></div>
+        <form id="registerForm" class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
+          <div class="field"><label>顯示名稱（選填）</label><input id="registerName" type="text" autocomplete="name" maxlength="80" placeholder="你希望我們怎麼稱呼你"></div>
+          <div class="field"><label>電郵</label><input id="registerEmail" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+          <div class="field"><label>密碼（至少 8 字元）</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
+          <div class="field"><label>確認密碼</label><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
+          <div id="registerError" style="color:#cf3a2e;font-size:14px;display:none"></div>
+          <div id="registerOk" style="color:#2f7953;font-size:14px;display:none"></div>
+          <button class="primary" type="submit">建立帳號並登入</button>
+          <button class="secondary" type="button" id="registerBack">返回登入</button>
         </form>
       </div>`;
   }
@@ -1527,6 +1715,10 @@ function appDialog(message, mode='notice') {
         const d = await r.json();
         me = d.user;
         renderTopbar();
+        /* Reload vehicles / reminders / history now that the session cookie
+           is set — without this, the IIFE's earlier /api/vehicles fetch came
+           back 401 and the garage would stay empty until manual reload. */
+        await hydrateHomeAndGarageData();
         window.location.hash = '#/home';
       } else {
         const d = await r.json().catch(() => ({}));
@@ -1536,10 +1728,62 @@ function appDialog(message, mode='notice') {
     }
   });
 
+  /* Register form: POST /api/auth/register, auto sign-in on success */
+  document.addEventListener('submit', async (e) => {
+    if (e.target && e.target.id === 'registerForm') {
+      e.preventDefault();
+      const display_name = document.getElementById('registerName').value.trim();
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+      const errEl = document.getElementById('registerError');
+      const okEl = document.getElementById('registerOk');
+      errEl.style.display = 'none';
+      okEl.style.display = 'none';
+
+      if (password !== passwordConfirm) {
+        errEl.textContent = '兩次輸入的密碼不一致';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const r = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, password, display_name: display_name || undefined }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) {
+          me = d.user;
+          renderTopbar();
+          /* New account — no vehicles yet, but still run the hydration so the
+             empty state renders against fresh data and any future fetches
+             carry the session cookie. */
+          await hydrateHomeAndGarageData();
+          okEl.textContent = '帳號已建立，歡迎加入 BOOUNDLESS';
+          okEl.style.display = 'block';
+          window.location.hash = '#/home';
+        } else {
+          errEl.textContent = d?.error?.message || '註冊失敗，請稍後再試';
+          errEl.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+  });
+
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'loginBack') {
       e.preventDefault();
       window.location.hash = '#/home';
+    }
+    if (e.target && e.target.id === 'registerBack') {
+      e.preventDefault();
+      window.location.hash = '#/login';
     }
   });
 
@@ -2232,6 +2476,7 @@ function appDialog(message, mode='notice') {
   await fetchMe();
   sessionReady = true;
   renderTopbar();
+  await hydrateHomeAndGarageData();
   await dispatch();
   window.addEventListener('hashchange', () => {
     renderTopbar();
