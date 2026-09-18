@@ -66,7 +66,7 @@ This additive bootstrap follows the merchant and marketing SQL files. All new ta
 | dealer_invites | delivery_status required default not_sent; nullable delivery_id |
 | marketing_pages | Path constraint extends to clean /campaigns/:slug; campaign copy lives in draft/published JSON and publication revisions |
 | vehicles | Onboarding adds nullable `vehicle_class` (light/heavy passenger/goods or motorcycle) and `powertrain_type` (fuel/ev/hybrid), each constrained to canonical values. `onboarding_state` defaults to `identity_confirmed`, then moves only to `history_pending`, `baseline_pending`, or `ready` after the owner chooses a next step; `onboarding_completed_at` records that choice. Existing vehicles remain valid with null identity fields. |
-| vehicle_status | Default scope seeded by `api/_handlers/vehicles.js` `POST /api/vehicles` based on `powertrain_type` via `api/_lib/scope-template.js`: ICE/hybrid → 13 rows, EV → 10 rows (no `engine_oil`, `oil_filter`, `spark_plugs`). The detail page never reads an empty list: a fresh onboarding always seeds it; the `POST /api/vehicles/:id/scope/generate` endpoint backfills any missing rows on demand. |
+| vehicle_status | Default scope seeded by `api/_handlers/vehicles.js` `POST /api/vehicles` based on `powertrain_type` via `api/_lib/scope-template.js`: ICE/hybrid → 13 rows, EV → 10 rows (no `engine_oil`, `oil_filter`, `spark_plugs`). The detail page never reads an empty list: a fresh onboarding always seeds it; the `POST /api/vehicles/:id/scope/generate` endpoint backfills any missing rows on demand. The `source` column added by `db/scope-ai-schema.sql` (2026-09-18) tags each row as `template` (baseline seed) or `ai` (model-specific extras from `api/_lib/scope-ai.js`); see the AI scope extension section below. |
 
 Quote line items use JSONB (not a quote_items table), validated by the server as descriptions and integer minor-unit amounts. Request mutation locks rows and checks version. Completion confirmation creates deterministic service-history IDs, preventing duplicate history. Conversion ingestion prunes events older than 90 days; this is ingestion-triggered rather than a scheduled deletion guarantee. Browser attribution expires after 30 days. No vehicle details are sent to advertising providers.
 
@@ -92,6 +92,20 @@ Source migration: `server-patch/db/migrations/2026_09_wechat_columns.sql`. Addit
 Existing `users.email` retains its UNIQUE constraint and remains required; the WeChat handler stores a synthetic email (`wx_<openid>@wechat.local`) on insert so the legacy schema accepts the row without dropping the NOT NULL constraint. Synthetic emails are stable per openid and never collide.
 
 Rollback: drop the six columns. No data loss; existing rows have NULL in the new fields. Drop the partial indexes if you also drop the columns.
+
+## AI scope extension — db/scope-ai-schema.sql (2026-09-18)
+
+Additive; applied after `db/workflow-schema.sql` by the same `getDb()` bootstrap in `api/_lib/db.js`. Non-destructive; idempotent (`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`).
+
+| Table / extension | Keys, data and constraints |
+|---|---|
+| vehicle_status | Adds required `source` text column with default `'template'`, constrained to `('template','ai')`. The default backfills every existing row so legacy template-seeded rows keep their provenance without a one-off UPDATE. New AI-suggested rows are inserted with `source='ai'`; existing template seed code is unchanged. Adds supporting index `idx_vehicle_status_source` so admin queries can filter by provenance. |
+
+The AI helper lives at [`api/_lib/scope-ai.js`](../api/_lib/scope-ai.js) (`suggestExtraScope(vehicle)`); it is invoked automatically by both `POST /api/vehicles` and `POST /api/vehicles/:id/scope/generate` after the template seed. It validates each AI row (item length 1-40, `interval_km` ∈ [1000, 500000], `interval_months` ∈ [1, 240], at least one interval present, no duplicate of any template label), coerces unknown `service_item_type_key` values to NULL to avoid FK violations against `service_item_types`, caps the response at 8 rows, and never throws — failures are logged with prefix `[scope-ai]` and the vehicle row is still returned. Re-running the same endpoint is idempotent because the dedupe set in `handleScopeGenerate` now tracks both keys and labels.
+
+Rollback: drop the `source` column and `idx_vehicle_status_source` index. No data loss; existing template rows become indistinguishable from AI rows only because both labels would be gone. No consumer reads `source` today; the column is for future analytics and admin tooling.
+
+Not created: a separate `vehicle_status_ai` table, a per-vehicle `ai_runs` audit table, or any AI response cache. AI provenance is captured by the `source` column alone; debugging lives in server logs.
 
 ## Internal-only correction
 
@@ -121,6 +135,7 @@ marketing_integrations.config stores enabled and promotions (dealer_id, starts_a
 | 002 | Merchant v2 + Marketing (`db/merchant-v2-schema.sql`, `db/marketing-schema.sql`) | Applied | unassigned |
 | 003 | Workflow extension (`db/workflow-schema.sql`) | Applied | unassigned |
 | 004 | WeChat Mini Program columns (`server-patch/db/migrations/2026_09_wechat_columns.sql`) | Pending | Lead / Orchestrator |
+| 005 | AI scope extension (`db/scope-ai-schema.sql`) | Applied | Lead / Orchestrator |
 
 ## Data Integrity / Security
 - Ownership:

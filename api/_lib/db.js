@@ -11,12 +11,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 let _pool = null;
 
 function resolveDatabaseUrl() {
-  /* Supabase is the configured cloud database for this deployment. Keep
-     KC_DATABASE_URL as an explicit fallback for local Postgres. */
-  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
-  if (process.env.KC_DATABASE_URL) return process.env.KC_DATABASE_URL;
-  /* Local Postgres defaults — matches the database created in the README. */
-  return 'postgresql://kc_app:kc_dev_password@127.0.0.1:5432/kc_carai';
+  /* No hardcoded fallback: SUPABASE_DB_URL (cloud) or KC_DATABASE_URL (local)
+     must be set explicitly. Throwing here surfaces the misconfiguration at
+     boot instead of silently pointing at a Postgres that may not exist. */
+  const url = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      'Database not configured: set SUPABASE_DB_URL (cloud) or KC_DATABASE_URL (local).'
+    );
+  }
+  return url;
 }
 
 function resolveSchemaPath() {
@@ -31,6 +35,7 @@ async function applySchema(pool) {
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
+    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
   } finally {
     client.release();
   }

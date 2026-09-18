@@ -12,6 +12,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# macOS
+.DS_Store
+
 # Env / Secrets
 .env
 .env.*

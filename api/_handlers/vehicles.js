@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { requireUser } from '../_lib/auth.js';
 import { readBody, sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 import { defaultScopeRows } from '../_lib/scope-template.js';
+import { suggestExtraScope, fingerprint as scopeFingerprint } from '../_lib/scope-ai.js';
 
 async function handleStatus(req, res, id, user) {
   const db = await getDb();
@@ -19,7 +20,7 @@ async function handleStatus(req, res, id, user) {
 
   const r = await db.query(
     `SELECT id, item, service_item_type_key, interval_km, interval_months, last_done_km,
-            last_done_at, wear, display_order
+            last_done_at, wear, display_order, source
      FROM vehicle_status
      WHERE vehicle_id = $1
      ORDER BY display_order ASC, id ASC`,
@@ -60,11 +61,23 @@ async function handleScopeGenerate(req, res, id, user) {
   const vehicle = v.rows[0];
 
   const existing = await db.query(
-    `SELECT service_item_type_key FROM vehicle_status WHERE vehicle_id = $1`,
+    `SELECT service_item_type_key, item FROM vehicle_status WHERE vehicle_id = $1`,
     [id],
   );
   const existingKeys = new Set(
     existing.rows.map((r) => r.service_item_type_key).filter(Boolean),
+  );
+  /* Label-keyed dedupe tracks both the raw label and its fingerprint so
+     re-runs reject synonymous AI rephrasings (DPF 檢查 vs DPF 強制再生,
+     燃油濾清器 vs 燃油濾芯). Fingerprint=... entries catch the cases where
+     the AI varies word order or swaps near-synonym tokens. */
+  const existingLabelKeys = new Set(
+    existing.rows.flatMap((r) => {
+      const label = String(r.item || '').trim().toLowerCase();
+      if (!label) return [];
+      const fp = scopeFingerprint(r.item);
+      return fp ? [`label:${label}`, `fp:${fp}`] : [`label:${label}`];
+    }),
   );
 
   const orderRow = (await db.query(
@@ -88,12 +101,43 @@ async function handleScopeGenerate(req, res, id, user) {
        row.interval_months, row.last_done_km, row.last_done_at, row.wear,
        row.display_order + nextOrder - 1],
     );
+    existingKeys.add(row.service_item_type_key);
+    if (row.item) {
+      const label = String(row.item).trim().toLowerCase();
+      existingLabelKeys.add(`label:${label}`);
+      const fp = scopeFingerprint(row.item);
+      if (fp) existingLabelKeys.add(`fp:${fp}`);
+    }
     inserted.push(row.service_item_type_key);
+  }
+
+  /* AI extension: model-specific items beyond the template (DPF, timing
+     belt, transfer case, AdBlue, EV battery thermal checks, etc.). Failures
+     never block — the helper returns [] on any error and logs the reason. */
+  const aiRows = await suggestExtraScope(vehicle);
+  for (const row of aiRows) {
+    const labelKey = `label:${String(row.item || '').trim().toLowerCase()}`;
+    const fpKey = `fp:${scopeFingerprint(row.item)}`;
+    if (row.service_item_type_key && existingKeys.has(row.service_item_type_key)) continue;
+    if (!row.service_item_type_key && (existingLabelKeys.has(labelKey) || existingLabelKeys.has(fpKey))) continue;
+    nextOrder += 1;
+    await db.query(
+      `INSERT INTO vehicle_status
+         (vehicle_id, item, service_item_type_key, interval_km, interval_months,
+          last_done_km, last_done_at, wear, display_order, source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ai')`,
+      [id, row.item, row.service_item_type_key, row.interval_km,
+       row.interval_months, null, null, 0, nextOrder],
+    );
+    if (row.service_item_type_key) existingKeys.add(row.service_item_type_key);
+    existingLabelKeys.add(labelKey);
+    if (fpKey) existingLabelKeys.add(fpKey);
+    inserted.push(`ai:${row.service_item_type_key || row.item}`);
   }
 
   const refreshed = await db.query(
     `SELECT id, item, service_item_type_key, interval_km, interval_months,
-            last_done_km, last_done_at, wear, display_order
+            last_done_km, last_done_at, wear, display_order, source
      FROM vehicle_status WHERE vehicle_id = $1
      ORDER BY display_order ASC, id ASC`,
     [id],
@@ -201,6 +245,27 @@ export default async function handler(req, res) {
            row.interval_months, row.last_done_km, row.last_done_at, row.wear,
            row.display_order],
         );
+      }
+
+      /* AI extension: model-specific items beyond the template. Failures are
+         absorbed by suggestExtraScope itself; the defensive try/catch here
+         protects against any DB-level failure so the vehicle row is always
+         returned to the client. */
+      try {
+        const aiRows = await suggestExtraScope({ ...vehicle, mileage_km: mileage });
+        for (let i = 0; i < aiRows.length; i += 1) {
+          const row = aiRows[i];
+          await db.query(
+            `INSERT INTO vehicle_status
+               (vehicle_id, item, service_item_type_key, interval_km, interval_months,
+                last_done_km, last_done_at, wear, display_order, source)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ai')`,
+            [vehicle.id, row.item, row.service_item_type_key, row.interval_km,
+             row.interval_months, null, null, 0, scopeTemplate.length + i + 1],
+          );
+        }
+      } catch (e) {
+        console.warn('[scope-ai] vehicle create insert skipped for', vehicle.id, e && e.message);
       }
 
       return sendJSON(res, 201, vehicle);
