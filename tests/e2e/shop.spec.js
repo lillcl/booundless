@@ -16,7 +16,10 @@ test.describe('shop customer experience', () => {
     const payload = await response.json();
 
     await expect(page).toHaveTitle(/訂購/);
-    await expect(page.getByRole('heading', { name: /不是猜你要甚麼/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '汽車用品' })).toBeVisible();
+    await expect(page.locator('.shop-head')).toHaveCSS('min-height', '190px');
+    await expect(page.locator('.shop-chip')).toHaveCount(0);
+    await expect(page.locator('[data-compatible-wrap]')).toBeHidden();
     await expect(page.locator('.shop-product')).toHaveCount(payload.products.length);
     expect(payload.products.length).toBe(SHOP_CATALOG.length);
 
@@ -24,6 +27,9 @@ test.describe('shop customer experience', () => {
     await expect(visual).toBeVisible();
     await expect(visual).toHaveCSS('background-image', /shop-(fluids-filters|mechanical|care-interior|safety-ev-moto)-v1\.png/);
     await expect(page.locator('[data-shop-cart]')).toContainText('登入後即可儲存購物車');
+    await page.locator('[data-shop-categories]').selectOption('機油與引擎保養');
+    await expect(page.locator('.shop-product')).toHaveCount(payload.products.filter((item) => item.category === '機油與引擎保養').length);
+    await page.locator('[data-shop-categories]').selectOption('全部');
     await page.locator('[data-product-search]').fill('過江龍');
     await expect(page.locator('.shop-product')).toHaveCount(2);
     await expect(page.locator('.shop-product')).toContainText(['Jump Starter','搭電線']);

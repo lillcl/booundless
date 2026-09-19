@@ -17,7 +17,7 @@ function productCard(product, cart) {
   const stock = variant?.stock_quantity || 0;
   const compatibility = product.compatibility;
   const incompatible = compatibility?.status === 'incompatible';
-  const specs = (product.specifications || []).slice(0, 3);
+  const specs = (product.specifications || []).slice(0, 2);
   return `<article class="shop-product" data-category="${esc(product.category)}">
     <div class="shop-product__visual" role="img" aria-label="${esc(product.primary_image_alt)}" style="${imageStyle(product)}">${compatibility ? `<span class="shop-fit ${esc(compatibility.status)}">${esc(compatibility.label)}</span>` : ''}</div>
     <div class="shop-product__body">
@@ -40,7 +40,20 @@ function cartMarkup(cart, signedIn) {
 }
 
 function shopShell(root) {
-  root.innerHTML = `<div class="wrap shop-page"><section class="shop-hero"><div class="shop-hero__copy"><span class="sheet__eyebrow">VEHICLE PASSPORT SHOP</span><h1>不是猜你要甚麼，<br>是知道甚麼適合你的車。</h1><p>超過一百種保養、應急、EV、摩托車與日常用品，按 Vehicle Passport 的車種和動力系統先做相容性篩選。</p></div><div class="shop-hero__art" role="img" aria-label="機油、機油隔、冷卻液與汽車護理用品"></div></section><section class="shop-passport" data-shop-passport></section><div class="shop-discovery"><label class="shop-search"><span>搜尋商品、規格或俗稱</span><input type="search" data-product-search placeholder="例如：機油隔、DOT4、Type 2、過江龍"></label><label class="shop-compatible-toggle" data-compatible-wrap hidden><input type="checkbox" data-compatible-only checked> 只顯示適合此車</label><strong data-result-count></strong></div><div class="shop-toolbar"><div><h2>全部汽車用品</h2><p>涉及尺寸、黏度或原廠認證時，請以車主手冊指定規格為準。</p></div><div class="shop-categories" data-shop-categories></div></div><div class="shop-layout"><div class="shop-grid" data-shop-products><div class="shop-loading">正在載入商品…</div></div><aside class="shop-cart"><div class="shop-cart__head"><h2>購物車</h2><span class="shop-count" data-shop-count>0</span></div><div class="shop-cart__body" data-shop-cart></div></aside></div></div>`;
+  root.innerHTML = `<div class="wrap shop-page">
+    <header class="shop-head"><div class="shop-head__copy"><span class="sheet__eyebrow">BOOUNDLESS SHOP</span><h1>汽車用品</h1><p>選擇你的車，快速找到合適商品。</p></div><div class="shop-head__art" role="img" aria-label="精選汽車保養用品"></div></header>
+    <section class="shop-controls">
+      <div class="shop-passport" data-shop-passport></div>
+      <div class="shop-discovery">
+        <label class="shop-search"><span class="sr-only">搜尋商品</span><input type="search" data-product-search placeholder="搜尋商品，例如：機油、Type 2、過江龍"></label>
+        <label class="shop-category-select"><span>分類</span><select data-shop-categories aria-label="商品分類"><option>全部</option></select></label>
+        <label class="shop-compatible-toggle" data-compatible-wrap hidden><input type="checkbox" data-compatible-only checked> 適合此車</label>
+        <strong data-result-count></strong>
+      </div>
+    </section>
+    <div class="shop-toolbar"><div><h2 data-shop-heading>全部商品</h2><p>涉及尺寸、黏度或原廠認證時，請以車主手冊為準。</p></div></div>
+    <div class="shop-layout"><div class="shop-grid" data-shop-products><div class="shop-loading">正在載入商品…</div></div><aside class="shop-cart"><div class="shop-cart__head"><h2>購物車</h2><span class="shop-count" data-shop-count>0</span></div><div class="shop-cart__body" data-shop-cart></div></aside></div>
+  </div>`;
 }
 
 function checkoutMarkup(cart) {
@@ -61,6 +74,7 @@ export async function renderShop(root, context = {}) {
   const cartHost = root.querySelector('[data-shop-cart]');
   const countHost = root.querySelector('[data-shop-count]');
   const categoriesHost = root.querySelector('[data-shop-categories]');
+  const headingHost = root.querySelector('[data-shop-heading]');
   const passportHost = root.querySelector('[data-shop-passport]');
   const resultCount = root.querySelector('[data-result-count]');
   const compatibleWrap = root.querySelector('[data-compatible-wrap]');
@@ -78,13 +92,14 @@ export async function renderShop(root, context = {}) {
     cartHost.innerHTML = cartMarkup(cart, signedIn);
     countHost.textContent = cart.item_count || 0;
     const categories = ['全部', ...new Set(products.map((item) => item.category))];
-    categoriesHost.innerHTML = categories.map((item) => `<button type="button" class="shop-chip ${item === activeCategory ? 'active' : ''}" data-shop-category="${esc(item)}">${esc(item)}</button>`).join('');
+    categoriesHost.innerHTML = categories.map((item) => `<option value="${esc(item)}" ${item === activeCategory ? 'selected' : ''}>${esc(item)}</option>`).join('');
+    headingHost.textContent = activeCategory === '全部' ? '全部商品' : activeCategory;
     compatibleWrap.hidden = !selectedVehicleId;
     if (vehicles.length) {
       const selected = vehicles.find((item) => item.id === selectedVehicleId) || vehicles[0];
-      passportHost.innerHTML = `<div><span class="sheet__eyebrow">適合你的 VEHICLE PASSPORT</span><h2>${esc([selected.make,selected.model].filter(Boolean).join(' '))}</h2><p>${esc([selected.year,selected.fuel_type,selected.mileage_label].filter(Boolean).join(' · '))} · 已自動排除不適用的動力系統商品</p></div><label>切換車輛<select data-shop-vehicle>${vehicles.map((vehicle) => `<option value="${esc(vehicle.id)}" ${vehicle.id===selectedVehicleId?'selected':''}>${esc([vehicle.make,vehicle.model].filter(Boolean).join(' '))}</option>`).join('')}</select></label>`;
+      passportHost.innerHTML = `<div class="shop-passport__summary"><span>正在為你的車篩選</span><b>${esc([selected.make,selected.model].filter(Boolean).join(' '))}</b><small>${esc([selected.year,selected.fuel_type,selected.mileage_label].filter(Boolean).join(' · '))}</small></div><label><span>切換車輛</span><select data-shop-vehicle>${vehicles.map((vehicle) => `<option value="${esc(vehicle.id)}" ${vehicle.id===selectedVehicleId?'selected':''}>${esc([vehicle.make,vehicle.model].filter(Boolean).join(' '))}</option>`).join('')}</select></label>`;
     } else {
-      passportHost.innerHTML = signedIn ? '<div><span class="sheet__eyebrow">VEHICLE PASSPORT</span><h2>先建立車輛護照</h2><p>建立後，商店會自動隱藏不適合你車輛動力系統的商品。</p></div><a href="#/garage">建立車輛護照 →</a>' : '<div><span class="sheet__eyebrow">VEHICLE PASSPORT</span><h2>登入後查看「適合你的車」</h2><p>商品仍可自由搜尋；登入並建立車輛護照後會開啟自動相容性篩選。</p></div><a href="#/login">登入或建立帳號 →</a>';
+      passportHost.innerHTML = signedIn ? '<div class="shop-passport__summary"><span>車輛配對</span><b>建立車輛護照，查看合適商品</b></div><a href="#/garage">建立護照 →</a>' : '<div class="shop-passport__summary"><span>車輛配對</span><b>登入後只看適合你的商品</b></div><a href="#/login">登入 →</a>';
     }
   };
   const loadProducts = async (vehicleId = selectedVehicleId) => {
@@ -101,8 +116,6 @@ export async function renderShop(root, context = {}) {
   } catch (error) { productsHost.innerHTML = `<div class="shop-error">${esc(error.message)}</div>`; cartHost.innerHTML = cartMarkup(cart, signedIn); }
 
   root.onclick = async (event) => {
-    const category = event.target.closest('[data-shop-category]');
-    if (category) { activeCategory = category.dataset.shopCategory; draw(); return; }
     const add = event.target.closest('[data-shop-add]');
     if (add) {
       if (!signedIn) { window.location.hash = '#/login'; return; }
@@ -126,6 +139,11 @@ export async function renderShop(root, context = {}) {
     if (event.target.matches('[data-compatible-only]')) { compatibleOnly = event.target.checked; draw(); }
   });
   root.addEventListener('change', async (event) => {
+    if (event.target.matches('[data-shop-categories]')) {
+      activeCategory = event.target.value;
+      draw();
+      return;
+    }
     if (!event.target.matches('[data-shop-vehicle]')) return;
     event.target.disabled = true;
     try { await loadProducts(event.target.value); draw(); }
