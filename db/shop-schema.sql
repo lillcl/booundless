@@ -16,10 +16,27 @@ CREATE TABLE IF NOT EXISTS shop_products (
   image_position        TEXT NOT NULL DEFAULT '0% 0%',
   is_active             BOOLEAN NOT NULL DEFAULT TRUE,
   is_featured           BOOLEAN NOT NULL DEFAULT FALSE,
+  tags                  TEXT[] NOT NULL DEFAULT '{}',
+  vehicle_types         TEXT[] NOT NULL DEFAULT '{}',
+  powertrains           TEXT[] NOT NULL DEFAULT '{}',
+  compatible_makes      TEXT[] NOT NULL DEFAULT '{}',
+  compatible_models     TEXT[] NOT NULL DEFAULT '{}',
+  compatible_years      INTEGER[] NOT NULL DEFAULT '{}',
+  specifications        TEXT[] NOT NULL DEFAULT '{}',
+  use_cases             TEXT[] NOT NULL DEFAULT '{}',
   version               INTEGER NOT NULL DEFAULT 1,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS vehicle_types TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS powertrains TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS compatible_makes TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS compatible_models TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS compatible_years INTEGER[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS specifications TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE shop_products ADD COLUMN IF NOT EXISTS use_cases TEXT[] NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS shop_product_variants (
   id                  TEXT PRIMARY KEY,
@@ -37,6 +54,9 @@ CREATE TABLE IF NOT EXISTS shop_product_variants (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_shop_products_active_category ON shop_products(is_active, category);
+CREATE INDEX IF NOT EXISTS idx_shop_products_tags_gin ON shop_products USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_shop_products_powertrains_gin ON shop_products USING GIN(powertrains);
+CREATE INDEX IF NOT EXISTS idx_shop_products_specs_gin ON shop_products USING GIN(specifications);
 CREATE INDEX IF NOT EXISTS idx_shop_variants_product_active ON shop_product_variants(product_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_shop_variants_low_stock ON shop_product_variants(stock_quantity, low_stock_threshold);
 

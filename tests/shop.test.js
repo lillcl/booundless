@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { calculateCheckoutTotals, ORDER_TRANSITIONS } from '../api/_handlers/shop.js';
+import { calculateCheckoutTotals, compatibilityFor, ORDER_TRANSITIONS } from '../api/_handlers/shop.js';
 import { resolveHandler } from '../api/index.js';
+import { SHOP_CATALOG } from '../db/shop-catalog.js';
 
 test('shop checkout totals use integer minor units', () => {
   assert.deepEqual(calculateCheckoutTotals([
@@ -35,4 +36,20 @@ test('shop tables enable RLS and revoke browser-facing roles', () => {
   assert.match(schema, /ENABLE ROW LEVEL SECURITY/);
   assert.match(schema, /REVOKE ALL ON TABLE %I FROM anon/);
   assert.match(schema, /REVOKE ALL ON TABLE %I FROM authenticated/);
+});
+
+test('full catalogue contains every requested product family with structured metadata', () => {
+  assert.equal(SHOP_CATALOG.length, 101);
+  for (const name of ['全合成機油','OBD-II Scanner','Type 2 充電線','摩托車輪胎','長途 / 北上應急套裝']) {
+    assert.ok(SHOP_CATALOG.some((product) => product.name === name), `missing ${name}`);
+  }
+  assert.ok(SHOP_CATALOG.every((product) => product.tags.length && product.vehicle_types.length && product.powertrains.length));
+});
+
+test('Vehicle Passport compatibility excludes combustion products from EVs', () => {
+  const oil = SHOP_CATALOG.find((product) => product.slug === 'full-synthetic-engine-oil');
+  const type2 = SHOP_CATALOG.find((product) => product.slug === 'type2-charging-cable');
+  const ev = { make: 'Audi', model: 'Q4 e-tron', year: 2023, fuel_type: 'EV', vehicle_class: 'passenger' };
+  assert.equal(compatibilityFor(oil, ev).status, 'incompatible');
+  assert.notEqual(compatibilityFor(type2, ev).status, 'incompatible');
 });

@@ -5,6 +5,7 @@ import pg from 'pg';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seedShopCatalog } from '../../db/shop-catalog.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -162,6 +163,7 @@ export async function getDb() {
 
   try {
     await applySchema(_pool);
+    await seedShopCatalog(_pool);
     const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
     const count = await rowCount(_pool, 'vehicles');
     if (seeded.rowCount === 0 && count === 0) await seedDefaultData(_pool);

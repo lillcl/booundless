@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { getDb, closeDb } from '../../api/_lib/db.js';
 import { hashPassword } from '../../api/_lib/auth.js';
+import { SHOP_CATALOG } from '../../db/shop-catalog.js';
 
 test.describe('shop customer experience', () => {
   test('renders the database catalogue and generated product visuals', async ({ page }) => {
@@ -15,14 +16,17 @@ test.describe('shop customer experience', () => {
     const payload = await response.json();
 
     await expect(page).toHaveTitle(/訂購/);
-    await expect(page.getByRole('heading', { name: /適合你的車/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /不是猜你要甚麼/ })).toBeVisible();
     await expect(page.locator('.shop-product')).toHaveCount(payload.products.length);
-    expect(payload.products.length).toBeGreaterThanOrEqual(5);
+    expect(payload.products.length).toBe(SHOP_CATALOG.length);
 
     const visual = page.locator('.shop-product__visual').first();
     await expect(visual).toBeVisible();
-    await expect(visual).toHaveCSS('background-image', /shop-product-collection-v1\.png/);
+    await expect(visual).toHaveCSS('background-image', /shop-(fluids-filters|mechanical|care-interior|safety-ev-moto)-v1\.png/);
     await expect(page.locator('[data-shop-cart]')).toContainText('登入後即可儲存購物車');
+    await page.locator('[data-product-search]').fill('過江龍');
+    await expect(page.locator('.shop-product')).toHaveCount(2);
+    await expect(page.locator('.shop-product')).toContainText(['Jump Starter','搭電線']);
   });
 
   test('requires authentication before adding an item', async ({ page }) => {
@@ -35,7 +39,7 @@ test.describe('shop customer experience', () => {
   test('has no horizontal overflow on a mobile viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/#/shop');
-    await expect(page.locator('.shop-product')).toHaveCount(5);
+    await expect(page.locator('.shop-product')).toHaveCount(SHOP_CATALOG.length);
 
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -68,6 +72,7 @@ test.describe('complete order and administration workflow', () => {
     const db = await getDb();
     let customerId = null;
     let orderId = null;
+    let vehicleId = null;
 
     await db.query(
       `INSERT INTO users(id,email,password_hash,role,display_name)
@@ -92,7 +97,22 @@ test.describe('complete order and administration workflow', () => {
       customerId = (await db.query('SELECT id FROM users WHERE email=$1', [customerEmail])).rows[0]?.id;
       expect(customerId).toBeTruthy();
 
+      const vehicle = await customerPage.evaluate(async () => {
+        const response = await fetch('/api/vehicles', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({
+          make:'Audi', model:'Q4 e-tron', year:2023, fuel_type:'EV', vehicle_class:'light_passenger', powertrain_type:'ev', mileage_km:12000,
+        }) });
+        return { ok:response.ok, body:await response.json() };
+      });
+      expect(vehicle.ok, JSON.stringify(vehicle.body)).toBe(true);
+      vehicleId = vehicle.body.id;
+
       await customerPage.goto('/#/shop');
+      await expect(customerPage.locator('[data-shop-passport]')).toContainText('Audi Q4 e-tron');
+      await customerPage.locator('[data-product-search]').fill('全合成機油');
+      await expect(customerPage.locator('.shop-product')).toHaveCount(0);
+      await customerPage.locator('[data-product-search]').fill('Type 2');
+      await expect(customerPage.locator('.shop-product').filter({ hasText:'Type 2 充電線' })).toHaveCount(1);
+      await customerPage.locator('[data-product-search]').fill('');
       const firstProduct = customerPage.locator('.shop-product').first();
       const productName = (await firstProduct.locator('h3').textContent()).trim();
       const initialVariant = (await db.query(
@@ -179,6 +199,7 @@ test.describe('complete order and administration workflow', () => {
         }
       }
       if (customerId) await db.query('DELETE FROM shop_carts WHERE user_id=$1', [customerId]);
+      if (vehicleId) await db.query('DELETE FROM vehicles WHERE id=$1', [vehicleId]);
       await db.query('DELETE FROM audit_log WHERE actor_email IN ($1,$2)', [customerEmail, adminEmail]);
       await db.query('DELETE FROM users WHERE email IN ($1,$2)', [customerEmail, adminEmail]);
       await closeDb();

@@ -14,6 +14,43 @@ const ORDER_TRANSITIONS = {
 
 const clean = (value, max = 500) => String(value ?? '').trim().slice(0, max);
 const money = (value) => Number.isInteger(Number(value)) && Number(value) >= 0 ? Number(value) : null;
+const list = (value, max = 30) => (Array.isArray(value) ? value : String(value || '').split(','))
+  .map((item) => clean(item, 100)).filter(Boolean).slice(0, max);
+
+function vehicleProfile(vehicle) {
+  const fuel = `${vehicle?.fuel_type || ''} ${vehicle?.powertrain_type || ''}`.toLowerCase();
+  let powertrain = 'ICE';
+  if (/motorcycle|電單車|摩托/.test(`${vehicle?.vehicle_class || ''} ${vehicle?.model || ''}`.toLowerCase())) powertrain = 'MOTORCYCLE';
+  else if (/phev|插電/.test(fuel)) powertrain = 'PHEV';
+  else if (/hybrid|混能|油電/.test(fuel)) powertrain = 'Hybrid';
+  else if (/electric|純電|\bev\b/.test(fuel)) powertrain = 'EV';
+  return {
+    type: powertrain === 'MOTORCYCLE' ? 'motorcycle' : 'passenger', powertrain,
+    make: String(vehicle?.make || '').toLowerCase(), model: String(vehicle?.model || '').toLowerCase(),
+    year: Number(vehicle?.year) || null,
+  };
+}
+
+export function compatibilityFor(product, vehicle) {
+  if (!vehicle) return { status: 'unfiltered', label: '選擇車輛查看相容性' };
+  const profile = vehicleProfile(vehicle);
+  const vehicleTypes = product.vehicle_types || [];
+  const powertrains = product.powertrains || [];
+  if (vehicleTypes.length && !vehicleTypes.includes(profile.type)) return { status: 'incompatible', label: '不適用此車種' };
+  if (powertrains.length && !powertrains.includes('ALL') && !powertrains.includes(profile.powertrain)) {
+    return { status: 'incompatible', label: `不適用 ${profile.powertrain}` };
+  }
+  const makes = (product.compatible_makes || []).map((x) => String(x).toLowerCase());
+  const models = (product.compatible_models || []).map((x) => String(x).toLowerCase());
+  const years = (product.compatible_years || []).map(Number);
+  if (makes.length && !makes.includes(profile.make)) return { status: 'incompatible', label: '品牌不相符' };
+  if (models.length && !models.some((model) => profile.model.includes(model))) return { status: 'incompatible', label: '車型不相符' };
+  if (years.length && !years.includes(profile.year)) return { status: 'incompatible', label: '年份不相符' };
+  if ((product.specifications || []).length && !makes.length && !models.length && !years.length) {
+    return { status: 'check_spec', label: '動力相符 · 請核對規格' };
+  }
+  return { status: 'compatible', label: '適合你的車' };
+}
 
 export function calculateCheckoutTotals(items, fulfillmentMethod = 'pickup') {
   const subtotalMinor = items.reduce((sum, item) => {
@@ -102,13 +139,24 @@ async function ordersFor(db, { userId = null, admin = false, status = null } = {
 
 async function handleProducts(req, res, db, path) {
   if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET allowed');
-  const products = await listProducts(db);
+  let products = await listProducts(db);
+  const user = await readSession(req);
+  let vehicles = [];
+  let selectedVehicle = null;
+  if (user) {
+    vehicles = (await db.query(`SELECT id,make,model,year,fuel_type,vehicle_class,powertrain_type,mileage_label
+      FROM vehicles WHERE created_by_user_id=$1 AND archived_at IS NULL ORDER BY created_at`, [user.id])).rows;
+    const url = new URL(req.url || '/', 'http://localhost');
+    selectedVehicle = vehicles.find((item) => item.id === url.searchParams.get('vehicle_id')) || vehicles[0] || null;
+    products = products.map((product) => ({ ...product, compatibility: compatibilityFor(product, selectedVehicle) }));
+    if (url.searchParams.get('compatible') === '1') products = products.filter((product) => product.compatibility.status !== 'incompatible');
+  }
   const slug = decodeURIComponent(path.split('/').pop() || '');
   if (path !== '/api/shop/products') {
     const product = products.find((item) => item.slug === slug);
     return product ? sendJSON(res, 200, { product }) : sendError(res, 404, 'not_found', 'Product not found');
   }
-  return sendJSON(res, 200, { products });
+  return sendJSON(res, 200, { products, vehicles, selected_vehicle_id: selectedVehicle?.id || null });
 }
 
 async function handleCart(req, res, db, path) {
@@ -221,8 +269,8 @@ async function handleAdmin(req, res, db, path) {
     const productId=`prod-${randomUUID()}`; const variantId=`var-${randomUUID()}`; const sku=clean(body.sku,80)||`SKU-${randomUUID().slice(0,8).toUpperCase()}`;
     const client=await db.connect();
     try { await client.query('BEGIN');
-      await client.query(`INSERT INTO shop_products(id,slug,name,short_description,description,category,primary_image_url,primary_image_alt,image_position,is_active,is_featured)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,TRUE,$10)`,[productId,slug,name,clean(body.short_description,240),clean(body.description,2000),clean(body.category,80)||'其他',clean(body.primary_image_url,500)||'/assets/shop-product-collection-v1.png',clean(body.primary_image_alt,240)||name,clean(body.image_position,30)||'0% 0%',Boolean(body.is_featured)]);
+      await client.query(`INSERT INTO shop_products(id,slug,name,short_description,description,category,primary_image_url,primary_image_alt,image_position,is_active,is_featured,tags,vehicle_types,powertrains,specifications,use_cases)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,TRUE,$10,$11,$12,$13,$14,$15)`,[productId,slug,name,clean(body.short_description,240),clean(body.description,2000),clean(body.category,80)||'其他',clean(body.primary_image_url,500)||'/assets/shop-product-collection-v1.png',clean(body.primary_image_alt,240)||name,clean(body.image_position,30)||'0% 0%',Boolean(body.is_featured),list(body.tags),list(body.vehicle_types).length?list(body.vehicle_types):['passenger','van'],list(body.powertrains).length?list(body.powertrains):['ALL'],list(body.specifications),list(body.use_cases)]);
       await client.query(`INSERT INTO shop_product_variants(id,product_id,sku,variant_name,price_minor,stock_quantity) VALUES($1,$2,$3,$4,$5,$6)`,[variantId,productId,sku,clean(body.variant_name,100)||'標準款',price,stock]);
       await client.query('COMMIT');
     } catch(error){await client.query('ROLLBACK');return sendError(res,409,'product_create_failed',error.message);} finally{client.release();}
