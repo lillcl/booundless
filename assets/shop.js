@@ -26,7 +26,7 @@ function productCard(product, cart) {
       <p>${esc(product.short_description)}</p>
       ${specs.length ? `<div class="shop-specs">${specs.map((item) => `<span>${esc(item)}</span>`).join('')}</div>` : ''}
       <div class="shop-product__meta"><span class="shop-price">${variant ? money(variant.price_minor, variant.currency) : '暫未供應'} <small>${esc(variant?.variant_name || '')}</small></span><span class="shop-stock ${stock <= (variant?.low_stock_threshold || 0) ? 'low' : ''}">${stock ? `尚餘 ${stock}` : '售罄'}</span></div>
-      <button class="shop-add" type="button" data-shop-add="${esc(variant?.id || '')}" ${!variant || !stock || incompatible ? 'disabled' : ''}>${incompatible ? '不適用此車' : (inCart ? `購物車已有 ${inCart} 件` : '加入購物車')}</button>
+      ${inCart && !incompatible ? `<div class="shop-qty" aria-label="${esc(product.name)} 購物車數量"><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="-1" aria-label="減少 ${esc(product.name)}">−</button><b>${inCart}</b><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="1" aria-label="增加 ${esc(product.name)}" ${inCart >= stock ? 'disabled' : ''}>＋</button></div>` : `<button class="shop-add" type="button" data-shop-add="${esc(variant?.id || '')}" ${!variant || !stock || incompatible ? 'disabled' : ''}>${incompatible ? '不適用此車' : '加入購物車'}</button>`}
     </div>
   </article>`;
 }
@@ -116,6 +116,24 @@ export async function renderShop(root, context = {}) {
   } catch (error) { productsHost.innerHTML = `<div class="shop-error">${esc(error.message)}</div>`; cartHost.innerHTML = cartMarkup(cart, signedIn); }
 
   root.onclick = async (event) => {
+    const quantityButton = event.target.closest('[data-shop-qty]');
+    if (quantityButton) {
+      const variantId = quantityButton.dataset.shopQty;
+      const current = cart.items?.find((item) => item.variant_id === variantId)?.quantity || 0;
+      const next = Math.max(0, current + Number(quantityButton.dataset.delta || 0));
+      quantityButton.disabled = true;
+      try {
+        const options = next === 0
+          ? { method: 'DELETE' }
+          : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ variant_id: variantId, quantity: next }) };
+        cart = (await api(next === 0 ? `/api/shop/cart/items/${encodeURIComponent(variantId)}` : '/api/shop/cart/items', options)).cart;
+        draw();
+      } catch (error) {
+        quantityButton.disabled = false;
+        window.alert(error.message);
+      }
+      return;
+    }
     const add = event.target.closest('[data-shop-add]');
     if (add) {
       if (!signedIn) { window.location.hash = '#/login'; return; }

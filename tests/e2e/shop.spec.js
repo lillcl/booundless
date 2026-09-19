@@ -132,6 +132,13 @@ test.describe('complete order and administration workflow', () => {
       await expect(addButton).toBeEnabled();
       await addButton.click();
       await expect(customerPage.locator('[data-shop-count]')).toHaveText('1');
+      const quantity = firstProduct.locator('.shop-qty');
+      await expect(quantity).toContainText('1');
+      await quantity.getByRole('button', { name: `增加 ${productName}` }).click();
+      await expect(customerPage.locator('[data-shop-count]')).toHaveText('2');
+      await expect(firstProduct.locator('.shop-qty')).toContainText('2');
+      await firstProduct.getByRole('button', { name: `減少 ${productName}` }).click();
+      await expect(customerPage.locator('[data-shop-count]')).toHaveText('1');
       await customerPage.locator('[data-shop-checkout]').click();
       await customerPage.getByLabel('姓名').fill('Playwright Customer');
       await customerPage.getByLabel('電話').fill('6888 1234');
