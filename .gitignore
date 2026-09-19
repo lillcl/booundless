@@ -35,3 +35,7 @@ keys/*
 .vercel
 .env*
 production
+
+# Playwright output
+test-results/
+playwright-report/

@@ -4,9 +4,9 @@
   const publishedRobots = document.querySelector('meta[name="robots"]').content;
   const titles = {
     landing: '建立你的車輛護照', demo: '示範車輛護照', home: '首頁', garage: '我的車', profile: '我的', service: '保養與服務',
-    qinao: '琴澳行程', videos: '保養影片', login: '登入', dealer: '車商後台',
+    qinao: '琴澳行程', videos: '保養影片', login: '登入', dealer: '車商後台', shop: '訂購', orders: '我的訂單',
     'admin/users': '用戶管理', 'admin/assets': '所有資產',
-    'admin/audit': '稽核紀錄', 'admin/dealers': '車商管理', 'admin/marketing': 'SEO 與分享設定',
+    'admin/audit': '稽核紀錄', 'admin/dealers': '車商管理', 'admin/marketing': 'SEO 與分享設定', 'admin/shop': '訂購管理',
     requests:'服務請求與報價','admin/tracking':'站內商戶推廣',
   };
   function update() {

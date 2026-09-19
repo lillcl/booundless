@@ -36,6 +36,7 @@ async function applySchema(pool) {
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
     await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
+    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'shop-schema.sql'), 'utf8'));
   } finally {
     client.release();
   }

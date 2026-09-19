@@ -26,6 +26,7 @@ import agentHandler from '../api/agent.js';
 import dealersHandler from '../api/_handlers/dealers.js';
 import marketingHandler, { publicPage } from '../api/_handlers/marketing.js';
 import requestsHandler from '../api/_handlers/requests.js';
+import shopHandler from '../api/_handlers/shop.js';
 import trackingHandler from '../api/_handlers/tracking.js';
 import { closeDb } from '../api/_lib/db.js';
 
@@ -116,6 +117,8 @@ app.all('/api/marketing/config',adapt(trackingHandler));
 app.all('/api/marketing/conversions',adapt(trackingHandler));
 app.all('/api/service-requests',adapt(requestsHandler));
 app.all('/api/service-requests/:id',adapt(requestsHandler));
+app.all('/api/shop/*',adapt(shopHandler));
+app.all('/api/admin/shop/*',adapt(shopHandler));
 app.get(['/', '/demo'], adapt(publicPage));
 app.get('/campaigns/:slug',adapt(publicPage));
 app.get('/sitemap.xml',adapt(publicPage));

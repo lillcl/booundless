@@ -7,8 +7,8 @@
 <meta name="description" content="無界啟程 BOOUNDLESS：管理車輛、查看保養提醒、規劃琴澳行程，透過 CarAI 協助整理車況與服務需求。">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#073568">
-<link rel="icon" type="image/png" href="/assets/icons/booundless-car.png">
-<link rel="apple-touch-icon" href="/assets/booundless-social.png">
+<link rel="icon" type="image/png" href="assets/icons/booundless-car.png">
+<link rel="apple-touch-icon" href="assets/booundless-social.png">
 <link rel="canonical" href="https://www.booundless.com/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="zh_HK">
@@ -30,8 +30,11 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"CarAI","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"車輛管理、保養提醒與琴澳行程規劃。"}
 </script>
-<script src="/assets/site-metadata.js" defer></script>
-<script src="/assets/marketing-tracking.js" defer></script>
+<script src="assets/site-metadata.js" defer></script>
+<script src="assets/marketing-tracking.js" defer></script>
+<script src="assets/vendor/gsap.min.js" defer></script>
+<script src="assets/vendor/ScrollTrigger.min.js" defer></script>
+<link rel="stylesheet" href="assets/shop.css">
 <style>
 :root{
   --bg:#f5f6f7;--card:#fff;--ink:#131516;--muted:#747b80;--line:#e5e8ea;
@@ -62,6 +65,9 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .passport-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.passport-head h2{margin:0;font-size:25px}.passport-head button{border:0;background:var(--soft);padding:10px 13px;border-radius:12px;font-weight:700}
 .records .row{min-height:68px}
 .profile-card{padding:22px}.profile-card h2{margin:0 0 5px}.profile-card p{margin:0;color:var(--muted)}
+.profile-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,380px);align-items:center;gap:24px;min-height:250px;padding:28px 30px;overflow:hidden;background:radial-gradient(circle at 82% 28%,rgba(71,185,216,.13),transparent 42%),#fff}
+.profile-hero__copy{position:relative;z-index:2}.profile-hero__eyebrow{display:block;margin-bottom:10px;color:#438f72;font-size:11px;font-weight:800;letter-spacing:.12em}.profile-hero h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.04em}.profile-hero p{max-width:460px;line-height:1.7}.profile-hero__art{display:block;width:100%;height:220px;object-fit:contain;filter:drop-shadow(0 18px 25px rgba(26,70,100,.12))}
+@media(max-width:700px){.profile-hero{grid-template-columns:1fr;padding:24px}.profile-hero__art{height:170px}.profile-hero__visual{order:-1}}
 .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(520px,calc(100% - 24px));height:66px;padding:6px;background:rgba(255,255,255,.95);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 35px rgba(20,25,30,.12);display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
 .kc-bottom-nav{grid-template-columns:repeat(3,1fr) !important}
 
@@ -182,6 +188,18 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .vehicle-upload--compact{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}.vehicle-upload--compact .vehicle-upload__box{min-height:68px}.onboard-complete{text-align:left;padding:12px 0 4px}.onboard-complete__mark{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#e6f3e8;color:#23723b;font-size:28px;font-weight:900;margin-bottom:18px}.onboard-complete__choices{display:grid;gap:10px;margin:24px 0 14px}.onboard-complete__choice{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:17px 18px;border:1px solid #dce4e7;border-radius:16px;background:#fff;color:var(--ink);text-align:left;cursor:pointer}.onboard-complete__choice:hover{border-color:var(--green);background:var(--green-bg)}.onboard-complete__choice b,.onboard-complete__choice small{display:block}.onboard-complete__choice small{margin-top:5px;color:var(--muted);line-height:1.5}.onboard-complete__choice strong{color:var(--green);font-size:20px}.onboard-selection-hint{display:flex;align-items:center;gap:8px;margin:14px 0 -8px;color:#215d3d;font-size:13px;font-weight:750}.onboard-selection-hint:before{content:'✓';display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#e3f2e5;color:#28713e;font-size:11px}.handle{width:46px;height:5px;border-radius:99px;background:#d9dddf;margin:0 auto 18px}.sheet h2{font-size:25px;margin:0 0 7px}.sheet>p{margin:0 0 20px;color:var(--muted);line-height:1.5}
 .choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice button{min-height:110px;border:1px solid var(--line);background:#fafbfb;border-radius:18px;text-align:left;padding:16px}.choice b{display:block;font-size:16px}.choice small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}
 .field{margin-top:14px}.field label{display:block;font-size:13px;color:var(--muted);margin:0 0 7px}.field input{width:100%;height:54px;border:1px solid #dfe3e5;border-radius:15px;padding:0 14px;font-size:16px;outline:0}
+.auth-wrap{width:min(980px,calc(100% - 32px));margin:0 auto;padding:clamp(40px,8vh,72px) 0 110px;display:grid;grid-template-columns:minmax(0,428px) minmax(320px,1fr);align-items:center;gap:clamp(42px,7vw,92px)}
+.auth-panel{min-width:0}
+.auth-wrap .top{margin-bottom:28px}
+.auth-card{width:100%;padding:28px;display:flex;flex-direction:column;gap:14px}
+.auth-card .field{margin-top:0}
+.auth-visual{position:relative;display:grid;place-items:center;min-height:510px}
+.auth-visual:before{content:"";position:absolute;inset:14% 4% 9%;z-index:-1;border-radius:50%;background:radial-gradient(circle,rgba(71,185,216,.16),rgba(11,57,121,.04) 54%,transparent 72%);filter:blur(15px)}
+.auth-visual__art{display:block;width:min(100%,430px);max-height:500px;object-fit:contain;filter:drop-shadow(0 24px 30px rgba(20,60,90,.13));animation:authArtFloat 7s ease-in-out infinite}
+.auth-visual__note{position:absolute;right:2%;bottom:7%;max-width:260px;padding:13px 16px;border:1px solid rgba(205,224,231,.9);border-radius:15px;background:rgba(255,255,255,.85);box-shadow:0 12px 28px rgba(35,81,111,.09);backdrop-filter:blur(14px);color:#49616d;font-size:12px;line-height:1.55}.auth-visual__note b{display:block;margin-bottom:3px;color:#173047;font-size:14px}
+@keyframes authArtFloat{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-8px) rotate(.5deg)}}
+@media(max-width:800px){.auth-wrap{width:min(428px,calc(100% - 32px));display:block}.auth-visual{display:none}}
+@media(max-width:520px){.auth-wrap{padding-top:34px}.auth-card{padding:24px}.auth-wrap .top h1{font-size:32px}}
 .scanbox{display:none;margin-top:14px;border:1px dashed #cfd6d9;border-radius:18px;padding:18px;background:#fafbfb}.scanbox.show{display:block}.scanbox input{width:100%}
 .ai-match{display:none;margin-top:18px;padding:18px;border-radius:18px;background:#f4f7f5;border:1px solid #dfe8e1}.ai-match.show{display:block}.ai-match small{color:var(--green);font-weight:750}.ai-match h3{margin:6px 0 4px}.ai-match p{margin:0;color:var(--muted);font-size:13px}
 .sheet-actions{margin-top:18px}.sheet-actions .primary{margin-top:0}
@@ -220,7 +238,8 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .mycar-toggle{display:flex;align-items:center;gap:10px;color:#a0a5a9;font-size:14px}
 .mycar-toggle button{border:0;background:transparent;color:#90969b;font-weight:700;padding:7px 4px}
 .mycar-toggle button.active{color:#111315;border-bottom:2px solid #111315}
-.mycar-list{display:grid;gap:16px}.empty-state{padding:42px 24px;text-align:center;background:#fff;border:1px dashed #cbdce1;border-radius:24px;color:#29424d}.empty-state b{display:block;font-size:20px}.empty-state small{display:block;margin-top:9px;color:var(--muted);line-height:1.6}.empty-state .primary{display:block;width:min(260px,100%);margin:22px auto 0}
+.mycar-list{display:grid;gap:16px}.empty-state{padding:42px 24px;text-align:center;background:#fff;border:1px dashed #cbdce1;border-radius:24px;color:#29424d}.empty-state b{display:block;font-size:20px}.empty-state small{display:block;margin-top:9px;color:var(--muted);line-height:1.6}.empty-state .primary{display:block;width:min(260px,100%);margin:22px auto 0}.empty-state--garage{padding-top:24px;background:radial-gradient(circle at 50% 20%,rgba(71,185,216,.09),transparent 48%),#fff}.empty-state__visual{display:block;width:min(500px,100%);height:230px;margin:0 auto 4px;object-fit:contain;filter:drop-shadow(0 18px 28px rgba(20,60,90,.12))}
+@media(max-width:560px){.empty-state__visual{height:185px}.empty-state--garage{padding:18px 18px 30px}}
 .service-type-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.service-type-checks label{cursor:pointer;transition:.18s}.service-type-checks label:hover{border-color:var(--green)}.service-type-checks input{accent-color:#0b3979;width:18px;height:18px;min-width:18px;min-height:18px;border:0;border-radius:0;padding:0;margin:0;cursor:pointer;flex:0 0 auto}@media(max-width:680px){.service-type-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .v10-car-card{
   position:relative;width:100%;height:320px;border:0;border-radius:24px;overflow:hidden;
@@ -293,56 +312,51 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .landing h1{font-size:clamp(42px,6vw,76px);line-height:1.04;letter-spacing:-3px;max-width:700px;margin:22px 0 22px}.landing h1 em{font-style:normal;color:#176b91}.landing__lead{max-width:540px;color:#5e6b70;font-size:clamp(17px,2vw,21px);line-height:1.7;margin:0}.landing__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}.landing__actions a{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 22px;border-radius:16px;text-decoration:none;font-weight:800}.landing__primary{background:#111;color:#fff}.landing__secondary{background:#fff;color:#263237;border:1px solid #dbe3e4}.landing__note{font-size:12px;color:#788488;margin-top:13px}
 .landing__passport{position:relative;display:block;width:min(780px,100%);margin:36px auto 0;font:inherit;text-align:left;color:inherit;background:#fff;border:1px solid #d4e2e5;border-radius:30px;padding:24px;box-shadow:0 24px 60px rgba(24,57,65,.12);transform:rotate(1.2deg);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}.landing__passport:hover{transform:rotate(0deg) translateY(-3px);box-shadow:0 28px 68px rgba(24,57,65,.16)}.landing__passport:focus-visible{outline:3px solid #1999be;outline-offset:4px}.landing__passport:after{content:"DEMO";position:absolute;right:24px;top:22px;color:#3d7c4b;font-size:11px;font-weight:900;letter-spacing:.14em;border:1px solid #cfe1d3;border-radius:99px;padding:6px 9px}.landing__passport-head{display:flex;align-items:center;gap:13px;padding-bottom:18px;border-bottom:1px solid var(--line)}.landing__passport-mark{width:48px;height:48px;border-radius:15px;object-fit:cover}.landing__passport-head b{display:block;font-size:18px}.landing__passport-head small{display:block;color:var(--muted);margin-top:3px}.landing__passport-car{width:100%;height:230px;object-fit:cover;border-radius:20px;margin:20px 0 18px}.landing__passport-model{display:flex;justify-content:space-between;gap:12px;align-items:end}.landing__passport-model h2{font-size:27px;letter-spacing:-.05em;margin:0}.landing__passport-model small{color:var(--muted)}.landing__status{display:flex;align-items:center;gap:8px;color:#9a6818;background:#fff7e9;border:1px solid #f1dfbb;border-radius:13px;padding:12px 14px;margin-top:18px;font-size:13px;font-weight:750}.landing__status i{width:8px;height:8px;border-radius:50%;background:#e3a42d}.landing__passport-link{display:flex;justify-content:space-between;align-items:center;margin-top:19px;color:#176b91;font-size:13px;font-weight:850}.landing__passport-link span{font-size:21px;line-height:1}
 .landing__terms{position:relative;max-width:1080px;margin:0 auto;padding:96px 0 26px}.landing__terms:before{content:"";position:absolute;left:50%;top:20px;width:1px;height:46px;background:linear-gradient(#82c9dd,transparent)}.landing__terms-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}.landing__terms h2{font-size:clamp(28px,4vw,42px);letter-spacing:-.07em;margin:0;color:#132d40}.landing__terms p{color:#71828d;margin:9px 0 0;font-size:15px}.landing__terms .sheet__eyebrow{margin:0;color:#438f72}.landing__terms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.landing__term{position:relative;min-height:104px;padding:20px 18px;background:rgba(255,255,255,.82);border:1px solid #d6e4e8;border-radius:20px;color:#244150;font-weight:800;box-shadow:0 10px 24px rgba(29,77,103,.055);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.landing__term:hover{transform:translateY(-4px);border-color:#8dc8db;box-shadow:0 16px 30px rgba(29,77,103,.11)}.landing__term:after{content:"↗";position:absolute;right:17px;bottom:15px;color:#8ab5c4;font-size:18px;font-weight:500}.landing__term span{display:block;color:#91a5ad;font-size:11px;font-weight:700;letter-spacing:.12em;margin-bottom:13px}.landing__terms-cta{display:flex;justify-content:center;margin-top:25px}.landing__terms-cta a{color:#176b91;font-weight:850;text-decoration:none;padding:11px 18px;border:1px solid #b9dce8;border-radius:99px;background:#f7fcfe}.landing__terms-cta a:after{content:"  →"}
-/* Landing data-flow redesign */
-.landing__flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative}.landing__term-group{position:relative;padding:18px 14px 14px;border:1px solid #d7e5e9;border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(244,250,250,.76));box-shadow:0 16px 34px rgba(29,77,103,.06)}.landing__term-group:nth-child(2){background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(239,249,247,.8))}.landing__term-group:nth-child(3){background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(240,247,252,.8))}.landing__term-group:nth-child(4){background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(250,248,239,.8))}.landing__term-group:not(:last-child):after{content:"→";position:absolute;right:-22px;top:50%;z-index:2;color:#8ab9c8;font-size:19px;font-weight:700}.landing__term-group-head{display:flex;align-items:flex-start;gap:10px;padding:2px 5px 15px}.landing__term-group-index{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#e2f2f6;color:#217391;font-size:11px;font-weight:850}.landing__term-group:nth-child(2) .landing__term-group-index{background:#e2f3ec;color:#3b876e}.landing__term-group:nth-child(3) .landing__term-group-index{background:#e5eff8;color:#426e9b}.landing__term-group:nth-child(4) .landing__term-group-index{background:#f8efd9;color:#a37a32}.landing__term-group-head small{display:block;color:#82959e;font-size:10px;font-weight:750;letter-spacing:.12em}.landing__term-group-head b{display:block;margin-top:3px;color:#183747;font-size:15px;letter-spacing:-.04em}.landing__term-list{display:grid;gap:8px}.landing__term-group .landing__term{display:grid;grid-template-columns:25px 1fr;align-items:center;min-height:67px;padding:11px 10px;background:rgba(255,255,255,.73);border:1px solid rgba(210,226,230,.9);border-radius:15px;box-shadow:none}.landing__term-group .landing__term:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(29,77,103,.08)}.landing__term-group .landing__term:after{content:"↗";right:10px;bottom:auto;top:50%;transform:translateY(-50%);font-size:15px}.landing__term-group .landing__term-index{color:#9aadb5;font-size:10px;font-weight:800;letter-spacing:.08em}.landing__term-group .landing__term-label{color:#274552;font-size:14px;font-weight:800;letter-spacing:-.03em}.landing__terms-cta{justify-content:space-between;align-items:center;margin-top:22px;padding:11px 16px 11px 19px;border:1px solid #d5e7eb;border-radius:99px;background:rgba(255,255,255,.68)}.landing__terms-cta>span{color:#77919a;font-size:12px;font-weight:750;letter-spacing:.05em}.landing__terms-cta a{padding:0;border:0;background:transparent;font-size:14px}.landing__terms-cta a:after{content:none}.landing__terms-cta a span{margin-left:8px;font-size:18px}
-@media(max-width:960px){.landing__flow{grid-template-columns:repeat(2,1fr)}.landing__term-group:not(:last-child):after{display:none}}
-@media(max-width:760px){.landing h1{letter-spacing:-2px}.landing__passport{max-width:520px;margin:26px auto 0}.landing__terms{padding-top:70px}.landing__terms-grid{grid-template-columns:repeat(2,1fr);gap:9px}.landing__term{min-height:94px;padding:15px 13px;font-size:13px}.landing__terms-head{display:block}.landing__terms-cta{border-radius:20px;display:flex;gap:8px;align-items:flex-start;flex-direction:column}.landing__terms-cta a{padding:0}}
-@media(max-width:520px){.landing__flow{grid-template-columns:1fr}.landing__term-group{padding:15px 12px 12px}}
+/* Connected vehicle journey flow */
+.journey-flow{--flow-accent:#2c86a7;position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;padding-top:8px;margin-top:34px}
+.journey-flow__rail{position:absolute;left:10%;right:10%;top:37px;height:2px;background:#cfdee4;overflow:visible;z-index:0}
+.journey-flow__fill{position:absolute;inset:0;background:linear-gradient(90deg,#2c96b6,#4aa68a 45%,#547ea6 72%,#c49438);transform-origin:left center}
+.journey-flow__pulse{position:absolute;top:50%;left:0;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #2c96b6;box-shadow:0 0 0 6px rgba(44,150,182,.13),0 0 18px rgba(44,150,182,.42);transform:translate(-50%,-50%)}
+.journey-stage{--stage:#2c86a7;--stage-soft:#e3f3f7;position:relative;z-index:1;min-width:0}
+.journey-stage:nth-child(3){--stage:#3d8c72;--stage-soft:#e2f3ec}.journey-stage:nth-child(4){--stage:#4c76a1;--stage-soft:#e5eff8}.journey-stage:nth-child(5){--stage:#a7792a;--stage-soft:#fbf0d7}
+.journey-stage__node{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 18px;border:7px solid #f2f7f8;border-radius:50%;background:var(--stage);color:#fff;box-shadow:0 0 0 1px rgba(170,202,213,.55),0 9px 23px rgba(35,81,111,.18);font-size:13px;font-weight:800;letter-spacing:.08em}
+.journey-stage__card{min-height:294px;padding:20px 17px 18px;border:1px solid #d6e5e9;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.98),rgba(244,249,250,.9));box-shadow:0 15px 34px rgba(29,77,103,.07);transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease}
+.journey-stage:hover .journey-stage__card{transform:translateY(-6px);border-color:color-mix(in srgb,var(--stage) 38%,#d6e5e9);box-shadow:0 22px 42px rgba(29,77,103,.12)}
+.journey-stage__eyebrow{display:block;color:var(--stage);font-size:10px;font-weight:800;letter-spacing:.12em}.journey-stage h3{min-height:52px;margin:8px 0 16px;color:#183747;font-size:19px;line-height:1.35;font-weight:650}
+.journey-stage__steps{display:grid;gap:8px}.journey-step{display:grid;grid-template-columns:25px 1fr;align-items:center;min-height:52px;padding:10px 11px;border:1px solid rgba(207,225,231,.92);border-radius:14px;background:rgba(255,255,255,.78);color:#274552}.journey-step span{color:#9aadb5;font-size:10px;font-weight:800;letter-spacing:.06em}.journey-step b{font-size:13px;font-weight:650}
+.journey-stage__card p{margin:16px 2px 0;color:#607784;font-size:12px;line-height:1.7}
+.landing__terms-cta{justify-content:space-between;align-items:center;margin-top:22px;padding:11px 16px 11px 19px;border:1px solid #d5e7eb;border-radius:99px;background:rgba(255,255,255,.68)}.landing__terms-cta>span{color:#77919a;font-size:12px;font-weight:750;letter-spacing:.05em}.landing__terms-cta a{padding:0;border:0;background:transparent;font-size:14px}.landing__terms-cta a:after{content:none}.landing__terms-cta a span{margin-left:8px;font-size:18px}
+@media(max-width:760px){.landing h1{letter-spacing:-2px}.landing__passport{max-width:520px;margin:26px auto 0}.landing__terms{padding-top:70px}.landing__terms-head{display:block}.journey-flow{display:grid;grid-template-columns:1fr;gap:18px;margin-top:28px;padding:0 0 0 54px}.journey-flow__rail{left:20px;right:auto;top:28px;bottom:28px;width:2px;height:auto}.journey-flow__fill{transform-origin:center top;background:linear-gradient(180deg,#2c96b6,#4aa68a 45%,#547ea6 72%,#c49438)}.journey-flow__pulse{top:0;left:50%}.journey-stage__node{position:absolute;left:-54px;top:17px;width:42px;height:42px;margin:0;border-width:5px;font-size:10px}.journey-stage__card{min-height:0;padding:18px}.journey-stage h3{min-height:0;margin-bottom:14px}.landing__terms-cta{border-radius:20px;display:flex;gap:8px;align-items:flex-start;flex-direction:column}.landing__terms-cta a{padding:0}}
 @media(max-width:420px){.landing__terms-grid{grid-template-columns:1fr 1fr;gap:8px}.landing__term{padding:14px 12px;font-size:13px}.landing__passport{padding:17px}.landing__passport-car{height:185px}.landing__passport-model h2{font-size:22px}}
 
 /* Vehicle-passport landing hero — adapted from the approved 1440×700 concept. */
-.passport-hero{position:relative;display:grid;grid-template-columns:minmax(320px,.78fr) minmax(620px,1.22fr);align-items:center;gap:clamp(18px,3vw,60px);overflow:hidden;min-height:650px;padding:58px clamp(24px,6vw,92px);background:radial-gradient(circle at 76% 45%,rgba(52,142,255,.09),transparent 30%),linear-gradient(135deg,#fff 0%,#f8fbfc 100%);color:#14283e}
+.passport-hero{position:relative;display:grid;grid-template-columns:minmax(320px,.82fr) minmax(520px,1.18fr);align-items:center;gap:clamp(18px,3vw,58px);overflow:hidden;min-height:650px;padding:58px clamp(24px,6vw,92px);background:radial-gradient(circle at 76% 45%,rgba(52,142,255,.09),transparent 30%),linear-gradient(135deg,#fff 0%,#f8fbfc 100%);color:#14283e}
 .passport-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(23,107,145,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(23,107,145,.028) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.5),transparent 88%);pointer-events:none}
 .passport-hero:after{content:"";position:absolute;width:52vw;height:52vw;min-width:620px;min-height:620px;border:1px solid rgba(23,107,145,.08);border-radius:50%;right:-20vw;bottom:-38vw;box-shadow:0 0 0 28px rgba(23,107,145,.025),0 0 0 58px rgba(23,107,145,.018),0 0 0 96px rgba(23,107,145,.012);pointer-events:none}
 .passport-hero__copy{position:relative;z-index:8;max-width:520px}.passport-hero__copy .landing__eyebrow{font-size:13px}.passport-hero__copy h1{font-size:clamp(44px,5.2vw,76px);line-height:1.04;letter-spacing:-.06em;margin:20px 0 22px}.passport-hero__copy h1 em{font-style:normal;color:#176b91}.passport-hero__copy .landing__lead{max-width:500px}.passport-hero__copy .landing__actions{margin-top:30px}.passport-hero__copy .landing__primary,.passport-hero__copy .landing__secondary{min-height:52px;width:auto}
-.passport-hero__fitbox{position:relative;width:100%;max-width:900px;height:700px;margin:0 auto;overflow:visible;z-index:4}
-.passport-hero__stage{position:absolute;left:0;top:0;width:1440px;height:700px;transform-origin:top left}
-.passport-hero__brand{position:absolute;top:26px;left:50%;transform:translateX(-50%);text-align:center;z-index:6}
-.passport-hero__brand strong{display:block;font-size:17px;letter-spacing:.42em;font-weight:700;color:#176b91}
-.passport-hero__brand span{display:block;margin-top:11px;font-size:10px;letter-spacing:.5em;color:#7890a3}
-.passport-hero__sources{position:absolute;left:40px;top:145px;width:300px;display:grid;gap:15px;z-index:5}
-.passport-source{position:relative;height:108px;display:flex;align-items:center;gap:18px;padding:16px 18px;border-radius:20px;border:1px solid #dce7ed;background:rgba(255,255,255,.9);box-shadow:0 14px 32px rgba(35,81,111,.1);backdrop-filter:blur(12px);transition:transform .25s ease,border-color .25s ease}
-.passport-source:hover{transform:translateX(6px);border-color:#83c9e7}
-.passport-source__icon{flex:0 0 62px;height:62px;border-radius:18px;display:grid;place-items:center;background:#edf7fc;border:1px solid #d5eaf3}
-.passport-source__icon svg{width:31px;height:31px;stroke:#2476a0}
-.passport-source__copy b{display:block;font-size:22px;letter-spacing:.01em;color:#173047}.passport-source__copy small{display:block;margin-top:7px;color:#71879a;font-size:13px;letter-spacing:.04em}
-.passport-hero__passport{position:absolute;left:720px;top:145px;transform:translateX(-50%);width:305px;height:420px;border-radius:46px;background:linear-gradient(180deg,#fbfdff 0%,#eef5fb 100%);border:2px solid #66c3ff;box-shadow:0 0 0 1px rgba(255,255,255,.4) inset,0 0 22px rgba(67,166,255,.72),0 0 90px rgba(45,140,255,.22);z-index:6;color:#10203b;overflow:hidden;will-change:transform}
-.passport-hero__passport:before{content:"";position:absolute;left:50%;top:-1px;transform:translateX(-50%);width:86px;height:6px;border-radius:0 0 7px 7px;background:#0a75a9}
-.passport-hero__passport-inner{height:100%;display:flex;flex-direction:column;align-items:center;padding:52px 25px 24px}
-.passport-hero__car-orb{width:176px;height:176px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 45% 35%,#f7fbff 0%,#eaf4fb 65%,#dfeef8 100%);box-shadow:0 12px 35px rgba(22,66,116,.09) inset}.passport-hero__car-orb svg{width:122px;height:122px}
-.passport-hero__passport h2{margin:22px 0 0;font-size:38px;letter-spacing:.04em}.passport-hero__rule{width:52px;height:2px;background:#a8c6dd;margin:19px 0}.passport-hero__passport small{color:#63809e;font-size:13px;letter-spacing:.16em}.passport-hero__passport small b{color:#0a1d3b;letter-spacing:.3em}
-.passport-hero__pulse{position:absolute;inset:-14px;border-radius:58px;border:1px solid rgba(88,188,255,.22);animation:passportPulse 2.8s ease-out infinite;pointer-events:none}
-@keyframes passportPulse{0%{transform:scale(.97);opacity:0}35%{opacity:.55}100%{transform:scale(1.08);opacity:0}}
-.passport-hero__service{position:absolute;left:1160px;top:245px;width:230px;height:265px;border-radius:27px;background:linear-gradient(180deg,#f8fdfc 0%,#eef9f6 100%);box-shadow:0 16px 45px rgba(0,0,0,.18),0 0 65px rgba(61,215,187,.12);border:1px solid rgba(163,228,213,.52);z-index:6;color:#1e3d38;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.passport-hero__service-icon{width:116px;height:116px;border-radius:34px;display:grid;place-items:center;background:#dff2ec;margin-bottom:18px}.passport-hero__service-icon svg{width:62px;height:62px;stroke:#397d6a}.passport-hero__service b{font-size:28px}.passport-hero__service span{margin-top:10px;color:#728985;font-size:16px;font-weight:650}
-.passport-hero__flow{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}.passport-hero__flow .base{fill:none;stroke:rgba(95,134,176,.16);stroke-width:1.4}.passport-hero__flow .beam{fill:none;stroke:url(#passportBeamGradient);stroke-width:2.3;stroke-linecap:round;filter:url(#passportSoftGlow);stroke-dasharray:11 16;animation:passportDash 2.8s linear infinite}.passport-hero__flow .beam.alt{stroke-width:1.35;opacity:.42;stroke-dasharray:5 14;animation-duration:4.2s}.passport-hero__flow .beam.out{stroke:url(#passportOutGradient);animation-duration:2.2s}.passport-hero__particle{filter:url(#passportParticleGlow)}
-@keyframes passportDash{to{stroke-dashoffset:-108}}
-.passport-hero__arrow{position:absolute;left:1086px;top:346px;width:38px;height:38px;z-index:5;opacity:.98;animation:passportArrowPulse 1.7s ease-in-out infinite}.passport-hero__arrow svg{width:100%;height:100%;stroke:#397d6a;filter:drop-shadow(0 0 11px rgba(87,226,211,.35))}
-@keyframes passportArrowPulse{0%,100%{transform:translateX(0);opacity:.65}50%{transform:translateX(8px);opacity:1}}
-.passport-hero__caption{position:absolute;left:720px;bottom:35px;transform:translateX(-50%);width:720px;text-align:center;z-index:6}.passport-hero__caption strong{display:block;font-size:17px;letter-spacing:.32em;font-weight:600;color:#29445e}.passport-hero__caption span{display:block;margin-top:13px;font-size:10px;letter-spacing:.55em;color:#7890a3}
+.passport-hero__visual{position:relative;z-index:4;width:100%;max-width:900px;aspect-ratio:3/2;margin:0 auto;isolation:isolate}
+.passport-hero__visual:before{content:"";position:absolute;z-index:-1;left:11%;right:4%;top:12%;bottom:4%;border-radius:50%;background:radial-gradient(circle,rgba(61,181,221,.16),rgba(31,112,166,.05) 48%,transparent 72%);filter:blur(16px)}
+.passport-hero__art{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 24px 32px rgba(19,55,86,.14));animation:passportArtFloat 7s ease-in-out infinite}
+.passport-hero__signals{position:absolute;left:4%;right:5%;bottom:1%;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;z-index:2}
+.passport-signal{display:flex;align-items:center;gap:9px;min-height:48px;padding:10px 13px;border:1px solid rgba(195,218,228,.9);border-radius:15px;background:rgba(255,255,255,.82);box-shadow:0 12px 26px rgba(35,81,111,.09);backdrop-filter:blur(14px);color:#29445e;font-size:12px;font-weight:650}
+.passport-signal:before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#36a5c7;box-shadow:0 0 0 4px rgba(54,165,199,.12)}
+.passport-signal:nth-child(2):before{background:#438f72;box-shadow:0 0 0 4px rgba(67,143,114,.12)}
+.passport-signal:nth-child(3):before{background:#d59b32;box-shadow:0 0 0 4px rgba(213,155,50,.12)}
+@keyframes passportArtFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .landing__intro{display:flex;align-items:end;justify-content:space-between;gap:32px;padding-top:58px}.landing__intro-copy{max-width:690px}.landing__intro h1{font-size:clamp(38px,5vw,68px);line-height:1.05;letter-spacing:-2.5px;margin:16px 0}.landing__intro h1 em{font-style:normal;color:#176b91}.landing__intro .landing__lead{max-width:650px}.landing__intro .landing__actions{flex:0 0 auto;margin:0 0 8px}
-@media(max-width:1100px){.passport-hero{grid-template-columns:minmax(280px,.75fr) minmax(520px,1.25fr);gap:10px;padding-left:28px;padding-right:28px}.passport-hero__copy h1{font-size:clamp(40px,5vw,62px)}}
-@media(max-width:760px){.passport-hero{display:block;min-height:0;padding:42px 18px 18px}.passport-hero__copy{max-width:none}.passport-hero__copy h1{font-size:clamp(42px,13vw,62px);letter-spacing:-.05em}.passport-hero__fitbox{margin:24px -18px 0;width:calc(100% + 36px);max-width:none}.passport-hero__copy .landing__actions{margin-top:24px}.passport-hero__copy .landing__primary,.passport-hero__copy .landing__secondary{width:100%}}
-@media(prefers-reduced-motion:reduce){.passport-hero__flow .beam,.passport-hero__pulse,.passport-hero__arrow{animation:none}.passport-source{transition:none}}
+@media(max-width:1100px){.passport-hero{grid-template-columns:minmax(280px,.85fr) minmax(480px,1.15fr);gap:10px;padding-left:28px;padding-right:28px}.passport-hero__copy h1{font-size:clamp(40px,5vw,62px)}.passport-hero__signals{left:0;right:0}}
+@media(max-width:760px){.passport-hero{display:block;min-height:0;padding:42px 18px 30px}.passport-hero__copy{max-width:none}.passport-hero__copy h1{font-size:clamp(42px,13vw,62px);letter-spacing:-.05em}.passport-hero__visual{margin:25px -8px 0;width:calc(100% + 16px)}.passport-hero__signals{position:relative;left:auto;right:auto;bottom:auto;margin:-4px 8px 0}.passport-hero__copy .landing__actions{margin-top:24px}.passport-hero__copy .landing__primary,.passport-hero__copy .landing__secondary{width:100%}}
+@media(max-width:520px){.passport-hero__signals{grid-template-columns:1fr}.passport-signal{min-height:42px}.passport-hero__visual{aspect-ratio:auto}.passport-hero__art{height:auto}}
+@media(prefers-reduced-motion:reduce){.passport-hero__art,.auth-visual__art{animation:none}}
 
-.landing__terms h2{margin-top:14px;font-weight:650;letter-spacing:-.035em;line-height:1.3}.landing__section-note{font-size:12px;color:#637d89;white-space:nowrap}.landing__term-group-head h3{margin:4px 0 0;color:#183747;font-size:16px;font-weight:650;line-height:1.5}.landing__term-group .landing__term-index{margin:0}.landing__term-group .landing__term:after{content:none}.landing__term-group .landing__term:hover{transform:none;box-shadow:none;border-color:#d2e2e6}.landing__term-group>p{font-size:12px;line-height:1.8;margin:16px 4px 2px;color:#607784}.landing__terms-cta a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:99px;background:#173c4d;color:white}.landing__terms-cta a:focus-visible{outline:3px solid #329dbc;outline-offset:4px}.landing__passport{transform:none}.landing__passport-head{padding-right:65px}.landing__passport:hover{transform:translateY(-3px)}
+.landing__terms h2{margin-top:14px;font-weight:650;letter-spacing:-.035em;line-height:1.3}.landing__section-note{font-size:12px;color:#637d89;white-space:nowrap}.landing__terms-cta a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:99px;background:#173c4d;color:white}.landing__terms-cta a:focus-visible{outline:3px solid #329dbc;outline-offset:4px}.landing__passport{transform:none}.landing__passport-head{padding-right:65px}.landing__passport:hover{transform:translateY(-3px)}
 @media(max-width:760px){.landing__section-note{display:none}.landing__terms-cta{align-items:stretch;padding:16px;gap:14px}.landing__terms-cta a{justify-content:center}.landing__terms h2{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.landing__passport{transition:none}.landing__passport:hover{transform:none}}
 /* Airier Traditional Chinese typography, including native form controls. */
 button,input,select,textarea{font-family:inherit}
 .passport-hero__copy h1{font-weight:600;letter-spacing:-.025em;line-height:1.2}
 .landing__terms h2{font-weight:600;letter-spacing:0;line-height:1.4}
-.landing__term-group-head h3,.landing__term-group .landing__term-label{font-weight:600;letter-spacing:0}
+.journey-stage h3,.journey-step b{font-weight:600;letter-spacing:0}
 .landing__lead,.landing__terms p{font-weight:400;line-height:1.85}
 .landing__actions a,.landing__terms-cta a,.landing__passport-head b,.landing__passport-link{font-weight:600}
 </style>
@@ -351,9 +365,10 @@ button,input,select,textarea{font-family:inherit}
 <div class="app">
 
 <header class="kc-topbar">
-  <a class="kc-topbar__brand" href="/" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="/assets/icons/booundless-car.png" width="36" height="34" alt=""><b>BOOUNDLESS</b></a>
+  <a class="kc-topbar__brand" href="#/landing" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="assets/icons/booundless-car.png" width="36" height="34" alt=""><b>BOOUNDLESS</b></a>
   <nav class="kc-topbar__nav">
-    <a href="/" data-nav="landing">首頁</a>
+    <a href="#/landing" data-nav="landing">首頁</a>
+    <a href="#/shop" data-nav="shop">訂購</a>
     <a href="#/garage" data-nav="garage">我的車</a>
     <a href="#/profile" data-nav="profile">我的</a>
   </nav>
@@ -371,58 +386,30 @@ button,input,select,textarea{font-family:inherit}
         <h1>建立你的<br><em>車輛護照</em></h1>
         <p class="landing__lead">把車況、保養紀錄和下一步，放進一張清楚易懂的車輛護照。再幫你匹配合適的車行，讓每次保養都有方向。</p>
         <p class="landing__note">由照片辨識或手動輸入開始，幾分鐘內整理好你的車。</p>
-        <div class="landing__actions"><a class="landing__primary" href="/demo">查看示範車輛護照</a><a class="landing__secondary" href="#/home">探索 CarAI</a></div>
+        <div class="landing__actions"><a class="landing__primary" href="#/demo">查看示範車輛護照</a><a class="landing__secondary" href="#/home">探索 CarAI</a></div>
       </div>
-      <div class="passport-hero__fitbox" id="passportHeroFitbox">
-        <div class="passport-hero__stage" id="passportHeroStage">
-          <div class="passport-hero__brand"><strong>BOOUNDLESS</strong><span>DRIVE A SMARTER TOMORROW</span></div>
-
-          <div class="passport-hero__sources">
-            <div class="passport-source"><div class="passport-source__icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M4 14l1.4-4.3A3 3 0 0 1 8.2 7.6h7.6a3 3 0 0 1 2.8 2.1L20 14"/><path d="M3.5 14h17v4.2H3.5z"/><circle cx="7" cy="18.2" r="1.3"/><circle cx="17" cy="18.2" r="1.3"/></svg></div><div class="passport-source__copy"><b>車款</b><small>品牌 · 型號 · 年份</small></div></div>
-            <div class="passport-source"><div class="passport-source__icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4M5.7 16.5h12.6"/></svg></div><div class="passport-source__copy"><b>目前里程</b><small>即時里程數據</small></div></div>
-            <div class="passport-source"><div class="passport-source__icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><div class="passport-source__copy"><b>保養紀錄</b><small>維修 · 保養 · 檢測</small></div></div>
-            <div class="passport-source"><div class="passport-source__icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M8 6l1.2-2h5.6L16 6"/><circle cx="12" cy="12.5" r="3.2"/></svg></div><div class="passport-source__copy"><b>AI 照片辨識</b><small>上傳照片 · 自動解析</small></div></div>
-          </div>
-
-          <svg class="passport-hero__flow" viewBox="0 0 1440 700" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="passportBeamGradient" x1="0" x2="1"><stop offset="0" stop-color="#2f89ff"/><stop offset=".55" stop-color="#63c8ff"/><stop offset="1" stop-color="#55b9ff"/></linearGradient>
-              <linearGradient id="passportOutGradient" x1="0" x2="1"><stop offset="0" stop-color="#55b9ff"/><stop offset=".7" stop-color="#57e1d4"/><stop offset="1" stop-color="#65d7b9"/></linearGradient>
-              <filter id="passportSoftGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-              <filter id="passportParticleGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            </defs>
-            <path class="base" d="M302 205 C420 205 450 270 530 270 S540 270 568 270"/><path id="passportPath1" class="beam" d="M302 205 C420 205 450 270 530 270 S540 270 568 270"/>
-            <path class="base" d="M302 328 C415 328 455 342 535 342 S540 342 568 342"/><path id="passportPath2" class="beam" d="M302 328 C415 328 455 342 535 342 S540 342 568 342"/>
-            <path class="base" d="M302 450 C410 450 455 416 535 416 S540 416 568 416"/><path id="passportPath3" class="beam" d="M302 450 C410 450 455 416 535 416 S540 416 568 416"/>
-            <path class="base" d="M302 572 C420 572 455 492 535 492 S540 492 568 492"/><path id="passportPath4" class="beam" d="M302 572 C420 572 455 492 535 492 S540 492 568 492"/>
-            <path class="beam alt" d="M303 219 C418 219 452 286 536 286 S542 286 568 286"/><path class="beam alt" d="M303 558 C420 558 455 475 537 475 S542 475 568 475"/>
-            <path class="base" d="M872 332 C980 332 1045 365 1105 365 S1135 365 1160 365"/><path id="passportPath5" class="beam out" d="M872 332 C980 332 1045 365 1105 365 S1135 365 1160 365"/>
-            <path class="beam alt out" d="M872 360 C980 360 1045 392 1105 392 S1135 392 1160 392"/><path class="beam alt out" d="M872 390 C980 390 1045 418 1105 418 S1135 418 1160 418"/>
-          </svg>
-
-          <div class="passport-hero__passport">
-            <div class="passport-hero__pulse"></div>
-            <div class="passport-hero__passport-inner"><div class="passport-hero__car-orb"><svg viewBox="0 0 200 120" fill="none" aria-hidden="true"><path d="M28 70h144l-7-22-24-8-18-20H78L55 43 36 48z" fill="#0b3979"/><path d="M80 25h40l15 16H65z" fill="#e9f3ff"/><rect x="24" y="67" width="151" height="20" rx="8" fill="#0b3979"/><circle cx="61" cy="86" r="18" fill="#0b3979"/><circle cx="61" cy="86" r="11" fill="#fff"/><circle cx="145" cy="86" r="18" fill="#0b3979"/><circle cx="145" cy="86" r="11" fill="#fff"/></svg></div><h2>車輛護照</h2><div class="passport-hero__rule"></div><small>via <b>BOOUNDLESS</b></small></div>
-          </div>
-
-          <div class="passport-hero__arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M5 12h13M14 7l5 5-5 5"/></svg></div>
-          <div class="passport-hero__service"><div class="passport-hero__service-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20H4z"/><path d="M10 20v-5h4v5M16.8 8.8l-2.5 2.5M14.2 8.2l2.6 2.6"/></svg></div><b>合適車行</b><span>服務匹配</span></div>
-          <div class="passport-hero__caption"><strong>讓 每 一 台 車，都 被 更 好 地 照 顧</strong><span>MORE INSIGHTS · A SMOOTHER JOURNEY</span></div>
+      <div class="passport-hero__visual" aria-label="車輛資料建立數碼護照，並連接合適車行的示意圖">
+        <img class="passport-hero__art" src="assets/vehicle-passport-hero-v2.png" width="1536" height="1024" alt="深藍色汽車、數碼車輛護照與服務車行">
+        <div class="passport-hero__signals" aria-hidden="true">
+          <span class="passport-signal">AI 車況辨識</span>
+          <span class="passport-signal">保養紀錄已整理</span>
+          <span class="passport-signal">匹配合適車行</span>
         </div>
       </div>
     </section>
     <div class="wrap">
       <section class="landing__terms" aria-labelledby="landingTermsTitle">
         <div class="landing__terms-head"><div><span class="sheet__eyebrow">YOUR CAR, IN CONTEXT</span><h2 id="landingTermsTitle">關於你的車，<br>都在一本護照裡。</h2><p>從認識愛車，到找到合適車行。8 個關鍵詞，串起每一步。</p></div><span class="landing__section-note">01 — 04 / 用車旅程</span></div>
-        <div class="landing__flow">
-          <div class="landing__term-group"><div class="landing__term-group-head"><span class="landing__term-group-index">01</span><div><small>建立資料</small><h3>先認識你的車</h3></div></div><div class="landing__term-list"><div class="landing__term"><span class="landing__term-index">01</span><b class="landing__term-label">車款識別</b></div><div class="landing__term"><span class="landing__term-index">02</span><b class="landing__term-label">保養紀錄</b></div></div><p>車輛身份與過往紀錄，集中保存。</p></div>
-          <div class="landing__term-group"><div class="landing__term-group-head"><span class="landing__term-group-index">02</span><div><small>掌握車況</small><h3>知道何時該保養</h3></div></div><div class="landing__term-list"><div class="landing__term"><span class="landing__term-index">03</span><b class="landing__term-label">目前里程</b></div><div class="landing__term"><span class="landing__term-index">04</span><b class="landing__term-label">車況提醒</b></div></div><p>從里程到保養項目，清楚掌握。</p></div>
-          <div class="landing__term-group"><div class="landing__term-group-head"><span class="landing__term-group-index">03</span><div><small>輕鬆整理</small><h3>用你習慣的方式</h3></div></div><div class="landing__term-list"><div class="landing__term"><span class="landing__term-index">05</span><b class="landing__term-label">AI 辨識</b></div><div class="landing__term"><span class="landing__term-index">06</span><b class="landing__term-label">手動填寫</b></div></div><p>上傳照片，或親手補上車輛資料。</p></div>
-          <div class="landing__term-group"><div class="landing__term-group-head"><span class="landing__term-group-index">04</span><div><small>連接服務</small><h3>找到合適的車行</h3></div></div><div class="landing__term-list"><div class="landing__term"><span class="landing__term-index">07</span><b class="landing__term-label">匹配車行</b></div><div class="landing__term"><span class="landing__term-index">08</span><b class="landing__term-label">服務請求</b></div></div><p>由車輛需要，連接相應服務。</p></div>
+        <div class="journey-flow" id="journeyFlow" aria-label="由建立車輛資料到連接服務的四步流程">
+          <div class="journey-flow__rail" aria-hidden="true"><span class="journey-flow__fill"></span><i class="journey-flow__pulse"></i></div>
+          <article class="journey-stage"><div class="journey-stage__node">01</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">建立資料</span><h3>先認識你的車</h3><div class="journey-stage__steps"><div class="journey-step"><span>01</span><b>車款識別</b></div><div class="journey-step"><span>02</span><b>保養紀錄</b></div></div><p>車輛身份與過往紀錄，集中保存。</p></div></article>
+          <article class="journey-stage"><div class="journey-stage__node">02</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">掌握車況</span><h3>知道何時該保養</h3><div class="journey-stage__steps"><div class="journey-step"><span>03</span><b>目前里程</b></div><div class="journey-step"><span>04</span><b>車況提醒</b></div></div><p>從里程到保養項目，清楚掌握。</p></div></article>
+          <article class="journey-stage"><div class="journey-stage__node">03</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">輕鬆整理</span><h3>用你習慣的方式</h3><div class="journey-stage__steps"><div class="journey-step"><span>05</span><b>AI 辨識</b></div><div class="journey-step"><span>06</span><b>手動填寫</b></div></div><p>上傳照片，或親手補上車輛資料。</p></div></article>
+          <article class="journey-stage"><div class="journey-stage__node">04</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">連接服務</span><h3>找到合適的車行</h3><div class="journey-stage__steps"><div class="journey-step"><span>07</span><b>匹配車行</b></div><div class="journey-step"><span>08</span><b>服務請求</b></div></div><p>由車輛需要，連接相應服務。</p></div></article>
         </div>
-        <div class="landing__terms-cta"><span>8 個資料點，匯成 1 張車輛護照</span><a href="/demo">探索示範護照 <span aria-hidden="true">→</span></a></div>
+        <div class="landing__terms-cta"><span>8 個資料點，匯成 1 張車輛護照</span><a href="#/demo">探索示範護照 <span aria-hidden="true">→</span></a></div>
       </section>
-      <button class="landing__passport" type="button" onclick="window.location.href='/demo'" aria-label="開啟 Toyota Corolla Cross 示範車輛護照"><div class="landing__passport-head"><img class="landing__passport-mark" src="/assets/icons/booundless-car.png" alt=""><div><b>示範車輛護照</b><small>由現有 Toyota Corolla Cross 展示</small></div></div><img class="landing__passport-car" src="/assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>機油及機油隔 · 接近建議保養時間</div><span class="landing__passport-link">查看車輛護照 <span aria-hidden="true">→</span></span></button>
+      <button class="landing__passport" type="button" onclick="window.location.hash='#/demo'" aria-label="開啟 Toyota Corolla Cross 示範車輛護照"><div class="landing__passport-head"><img class="landing__passport-mark" src="assets/icons/booundless-car.png" alt=""><div><b>示範車輛護照</b><small>由現有 Toyota Corolla Cross 展示</small></div></div><img class="landing__passport-car" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>機油及機油隔 · 接近建議保養時間</div><span class="landing__passport-link">查看車輛護照 <span aria-hidden="true">→</span></span></button>
     </div>
   </main>
 </section>
@@ -456,7 +443,7 @@ button,input,select,textarea{font-family:inherit}
 
     <div class="home-grid">
       <div class="card vehicle">
-        <div class="vehicle-photo"><img src="/assets/vehicle-placeholder.svg" alt="你的車輛照片"></div>
+        <div class="vehicle-photo"><img src="assets/vehicle-placeholder.svg" alt="你的車輛照片"></div>
         <div class="vehicle-body">
           <div class="eyebrow">YOUR CAR PASSPORT</div>
           <h2>尚未建立車輛</h2>
@@ -504,7 +491,7 @@ button,input,select,textarea{font-family:inherit}
     </div>
 
     <div class="mycar-list" id="mycarList">
-      <div class="empty-state"><b>你還未建立車輛護照</b><small>登入後新增你的第一台車，開始整理車況與保養紀錄。</small></div>
+      <div class="empty-state empty-state--garage"><img class="empty-state__visual" src="assets/garage-empty-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="白色車輛與數碼車輛護照"><b>你還未建立車輛護照</b><small>登入後新增你的第一台車，開始整理車況與保養紀錄。</small></div>
     </div>
   </div>
 </section>
@@ -514,7 +501,7 @@ button,input,select,textarea{font-family:inherit}
     <div class="top">
       <div><button class="back-simple" id="backToCars">←</button><h1 id="detailCarName">Toyota Corolla Cross</h1><p id="detailCarMeta">2021 · Hybrid · 42,680 km</p></div>
     </div>
-    <div class="card vehicle-detail-photo"><img id="detailCarPhoto" src="/assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 車輛照片"></div>
+    <div class="card vehicle-detail-photo"><img id="detailCarPhoto" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 車輛照片"></div>
     <div class="section-title">目前狀態</div><div class="detail-status-banner" id="detailMainStatus">機油及機油隔需要處理</div>
     <div class="card list">
       <div class="row"><span><b>機油及機油隔</b><small>已接近建議時間</small></span><span class="state warn">需要處理</span></div>
@@ -566,8 +553,9 @@ button,input,select,textarea{font-family:inherit}
 <section class="screen" id="profile">
   <div class="wrap">
     <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
-    <div class="card profile-card"><h2 id="profileDisplayName">你的帳戶</h2><p id="profileVehicleSummary">登入後查看你的車輛護照</p></div>
+    <div class="card profile-card profile-hero"><div class="profile-hero__copy"><span class="profile-hero__eyebrow">YOUR VEHICLE INFORMATION</span><h2 id="profileDisplayName">你的帳戶</h2><p id="profileVehicleSummary">登入後查看你的車輛護照</p></div><div class="profile-hero__visual"><img class="profile-hero__art" src="assets/account-info-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="帳戶、車輛資訊與保養提醒"></div></div>
     <a class="row card" href="#/requests">服務請求、報價與預約 →</a>
+    <a class="row card" href="#/orders">我的訂單 →</a>
     <div class="section-title">設定</div>
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
@@ -578,14 +566,9 @@ button,input,select,textarea{font-family:inherit}
 </section>
 
 <section class="screen" id="login" style="display:none">
-  <div class="wrap">
-    <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
-    <form class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
-      <div class="field"><label>電郵</label><input type="email" autocomplete="email" placeholder="admin@example.com"></div>
-      <div class="field"><label>密碼</label><input type="password" autocomplete="current-password"></div>
-      <button class="primary">登入</button>
-      <button class="secondary">返回首頁</button>
-    </form>
+  <div class="auth-wrap">
+    <div class="auth-panel"><div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div><form class="card auth-card"><div class="field"><label>電郵</label><input type="email" autocomplete="email" placeholder="admin@example.com"></div><div class="field"><label>密碼</label><input type="password" autocomplete="current-password"></div><button class="primary">登入</button><button class="secondary">返回首頁</button></form></div>
+    <aside class="auth-visual" aria-hidden="true"><img class="auth-visual__art" src="assets/auth-secure-access-v1.png" width="1145" height="1374" alt=""><div class="auth-visual__note"><b>安全連接你的車輛資料</b>登入後，車況、保養紀錄和服務進度都在同一個帳戶裡。</div></aside>
   </div>
 </section>
 
@@ -657,7 +640,7 @@ function appDialog(message, mode='notice') {
   let vehicles = [];
   let reminders = [];
   let history = [];
-  const protectedStaticRoutes = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos']);
+  const protectedStaticRoutes = new Set(['home', 'garage', 'profile', 'service', 'qinao', 'videos', 'orders']);
 
   /* Keep navigation interactive while optional API hydration is loading. */
   const staticRoute = (route) => ({ landing: 'landing', demo: 'vehicleDetailSimple', home: 'home', garage: 'car', profile: 'profile', service: 'service', qinao: 'qinao', videos: 'videos' }[route] || null);
@@ -994,14 +977,13 @@ function appDialog(message, mode='notice') {
     closeSheet();
     const onDemo = window.location.pathname.replace(/\/+$/, '') === '/demo' && !window.location.hash;
     if (onDemo || window.location.hash === '#/demo') {
-      window.location.href = '/';
+      window.location.hash = '#/landing';
       return;
     }
     showScreen('car');
     if (window.location.hash !== '#/garage') window.location.hash = '#/garage';
     syncTopbarNav();
   };
-  document.getElementById('backToCars')?.addEventListener('click', goBackToCars);
   document.addEventListener('click', (e) => {
     if (e.target.closest?.('#backToCars')) {
       e.preventDefault();
@@ -1287,7 +1269,7 @@ function appDialog(message, mode='notice') {
       const subtitle = [v.year, v.fuel_type].filter(Boolean).join(' · ');
       const isPlaceholder = !v.image || /vehicle-placeholder\.svg$/.test(v.image);
       return `
-        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || '/assets/vehicle-placeholder.svg')}')">
+        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder.svg')}')">
           <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
           ${isPlaceholder ? '<span class="v10-photo-tag">尚未上傳照片</span>' : ''}
           <span class="v10-dots">•••</span>
@@ -1297,7 +1279,7 @@ function appDialog(message, mode='notice') {
           <span class="v10-mileage">${esc(v.mileage_label || '')}</span>
           <span class="v10-health ${healthTone}"><b>●</b> ${esc(healthText)}</span>
         </button>`;
-    }).join('') : '<div class="empty-state"><b>你還未建立車輛護照</b><small>由照片辨識或手動填寫開始，建立你的第一台車。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
+    }).join('') : '<div class="empty-state empty-state--garage"><img class="empty-state__visual" src="assets/garage-empty-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="白色車輛與數碼車輛護照"><b>你還未建立車輛護照</b><small>由照片辨識或手動填寫開始，建立你的第一台車。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
     document.getElementById('emptyAddVehicleBtn')?.addEventListener('click', openAddVehicleSheet);
   }
 
@@ -1356,7 +1338,7 @@ function appDialog(message, mode='notice') {
     if (v.mileage_label) metaParts.push(String(v.mileage_label));
     else if (v.mileage_km != null) metaParts.push(`${Number(v.mileage_km).toLocaleString()} km`);
     document.getElementById('detailCarMeta').textContent = metaParts.join(' · ');
-    document.getElementById('detailCarPhoto').src = v.image || '/assets/vehicle-placeholder.svg';
+    document.getElementById('detailCarPhoto').src = v.image || 'assets/vehicle-placeholder.svg';
     document.getElementById('detailCarPhoto').alt = displayName;
     showScreen('vehicleDetailSimple');
 
@@ -1587,8 +1569,11 @@ function appDialog(message, mode='notice') {
     'admin/audit': renderAdminAudit,
     'admin/dealers': renderAdminDealers,
     'admin/marketing': renderMarketing,
+    shop: async root => (await import('./assets/shop.js')).renderShop(root, { me }),
+    orders: async root => (await import('./assets/shop.js')).renderOrders(root, { me }),
+    'admin/shop': async root => (await import('./assets/shop.js')).renderAdminShop(root, { me }),
     'requests': renderRequests,
-    'admin/tracking': async root => (await import('/assets/tracking-admin.js')).render(root),
+    'admin/tracking': async root => (await import('./assets/tracking-admin.js')).render(root),
     dealer: renderDealerPortal,
   };
 
@@ -1639,7 +1624,7 @@ function appDialog(message, mode='notice') {
     if (handler && view) {
       await handler(view);
     } else if (view) {
-      view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="/">返回首頁</a></div></div>';
+      view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
     }
   }
   async function fetchMe() {
@@ -1663,7 +1648,7 @@ function appDialog(message, mode='notice') {
     } else {
       anonLinks.forEach((a) => a.style.display = 'none');
       const workspaceLink = me.role === 'admin'
-        ? '<a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/marketing" data-nav="admin-marketing">SEO</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
+        ? '<a href="#/admin/shop" data-nav="admin-shop">訂購管理</a><a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/marketing" data-nav="admin-marketing">SEO</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
         : '<a href="#/dealer" data-nav="dealer">車商後台</a>';
       userEl.innerHTML = workspaceLink +
         '<span class="who">' + esc(me.display_name || me.email) +
@@ -1697,33 +1682,39 @@ function appDialog(message, mode='notice') {
     /* Render directly into #view, not by copying the hidden <section> (which
        has display:none and would shadow the inputs). */
     root.innerHTML = `
-      <div class="wrap">
-        <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
-        <form id="loginForm" class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
-          <div class="field"><label>電郵</label><input id="loginEmail" type="email" autocomplete="email" placeholder="admin@example.com" required></div>
-          <div class="field"><label>密碼</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
-          <div id="loginError" style="color:#cf3a2e;font-size:14px;display:none"></div>
-          <button class="primary" type="submit">登入</button>
-          <button class="secondary" type="button" id="loginBack">返回首頁</button>
-          <p style="font-size:13px;color:var(--muted);margin:6px 0 0">還沒有帳號？<a href="#/register" style="color:#176b91;font-weight:750">建立新帳號</a></p>
-        </form>
+      <div class="auth-wrap">
+        <div class="auth-panel">
+          <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
+          <form id="loginForm" class="card auth-card">
+            <div class="field"><label>電郵</label><input id="loginEmail" type="email" autocomplete="email" placeholder="admin@example.com" required></div>
+            <div class="field"><label>密碼</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+            <div id="loginError" style="color:#cf3a2e;font-size:14px;display:none"></div>
+            <button class="primary" type="submit">登入</button>
+            <button class="secondary" type="button" id="loginBack">返回首頁</button>
+            <p style="font-size:13px;color:var(--muted);margin:6px 0 0">還沒有帳號？<a href="#/register" style="color:#176b91;font-weight:750">建立新帳號</a></p>
+          </form>
+        </div>
+        <aside class="auth-visual" aria-hidden="true"><img class="auth-visual__art" src="assets/auth-secure-access-v1.png" width="1145" height="1374" alt=""><div class="auth-visual__note"><b>安全連接你的車輛資料</b>登入後，車況、保養紀錄和服務進度都在同一個帳戶裡。</div></aside>
       </div>`;
   }
 
   function renderRegister(root) {
     root.innerHTML = `
-      <div class="wrap">
-        <div class="top"><div><h1>建立帳號</h1><p>用電郵與密碼建立 BOOUNDLESS 帳號，建立後即自動登入。</p></div></div>
-        <form id="registerForm" class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:380px">
-          <div class="field"><label>顯示名稱（選填）</label><input id="registerName" type="text" autocomplete="name" maxlength="80" placeholder="你希望我們怎麼稱呼你"></div>
-          <div class="field"><label>電郵</label><input id="registerEmail" type="email" autocomplete="email" placeholder="you@example.com" required></div>
-          <div class="field"><label>密碼（至少 8 字元）</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
-          <div class="field"><label>確認密碼</label><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
-          <div id="registerError" style="color:#cf3a2e;font-size:14px;display:none"></div>
-          <div id="registerOk" style="color:#2f7953;font-size:14px;display:none"></div>
-          <button class="primary" type="submit">建立帳號並登入</button>
-          <button class="secondary" type="button" id="registerBack">返回登入</button>
-        </form>
+      <div class="auth-wrap">
+        <div class="auth-panel">
+          <div class="top"><div><h1>建立帳號</h1><p>用電郵與密碼建立 BOOUNDLESS 帳號，建立後即自動登入。</p></div></div>
+          <form id="registerForm" class="card auth-card">
+            <div class="field"><label>顯示名稱（選填）</label><input id="registerName" type="text" autocomplete="name" maxlength="80" placeholder="你希望我們怎麼稱呼你"></div>
+            <div class="field"><label>電郵</label><input id="registerEmail" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+            <div class="field"><label>密碼（至少 8 字元）</label><input id="registerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
+            <div class="field"><label>確認密碼</label><input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div>
+            <div id="registerError" style="color:#cf3a2e;font-size:14px;display:none"></div>
+            <div id="registerOk" style="color:#2f7953;font-size:14px;display:none"></div>
+            <button class="primary" type="submit">建立帳號並登入</button>
+            <button class="secondary" type="button" id="registerBack">返回登入</button>
+          </form>
+        </div>
+        <aside class="auth-visual" aria-hidden="true"><img class="auth-visual__art" src="assets/auth-secure-access-v1.png" width="1145" height="1374" alt=""><div class="auth-visual__note"><b>由第一台車開始</b>建立帳號後，即可整理車輛資料與保養進度。</div></aside>
       </div>`;
   }
 
@@ -1817,7 +1808,7 @@ function appDialog(message, mode='notice') {
   });
 
   /* Admin 車商 */
-  async function renderRequests(root) { const module=await import('/assets/request-flow.js'); await module.render(root); }
+  async function renderRequests(root) { const module=await import('./assets/request-flow.js'); await module.render(root); }
   /* Admin SEO editor — three logical sections (search / share / campaign body),
      inline status next to action buttons, live preview of both the Google result
      and a share card, plus a separate status & revisions card. The actions are
@@ -2514,7 +2505,7 @@ function appDialog(message, mode='notice') {
       console.error('Route rendering failed', error);
       if (getRoute() !== requestedRoute) return;
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="/">返回首頁</a></div></div>';
+      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
     });
   });
 
@@ -2522,75 +2513,52 @@ function appDialog(message, mode='notice') {
 </script>
 
 <script>
-(() => {
-  const fitbox = document.getElementById('passportHeroFitbox');
-  const stage = document.getElementById('passportHeroStage');
-  if (!fitbox || !stage) return;
+window.addEventListener('DOMContentLoaded', () => {
+  const flow = document.getElementById('journeyFlow');
+  if (!flow || !window.gsap || !window.ScrollTrigger) return;
 
-  const ARTBOARD_WIDTH = 1440;
-  const ARTBOARD_HEIGHT = 700;
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion) return;
 
-  function fitPassportHero() {
-    const available = fitbox.getBoundingClientRect().width || ARTBOARD_WIDTH;
-    const scale = Math.min(1, available / ARTBOARD_WIDTH);
-    stage.style.transform = `scale(${scale})`;
-    fitbox.style.height = `${ARTBOARD_HEIGHT * scale}px`;
-  }
+  gsap.registerPlugin(ScrollTrigger);
+  const stages = flow.querySelectorAll('.journey-stage');
+  const nodes = flow.querySelectorAll('.journey-stage__node');
+  const steps = flow.querySelectorAll('.journey-step');
+  const fill = flow.querySelector('.journey-flow__fill');
+  const pulse = flow.querySelector('.journey-flow__pulse');
+  const mobile = window.matchMedia('(max-width: 760px)').matches;
 
-  requestAnimationFrame(fitPassportHero);
-  addEventListener('resize', fitPassportHero, { passive: true });
-  if ('ResizeObserver' in window) new ResizeObserver(fitPassportHero).observe(fitbox.parentElement);
+  gsap.set(stages, { autoAlpha: 0, y: 36 });
+  gsap.set(nodes, { scale: .55 });
+  gsap.set(steps, { autoAlpha: 0, x: -10 });
+  gsap.set(fill, { clipPath: mobile ? 'inset(0 0 100% 0)' : 'inset(0 100% 0 0)' });
 
-  const passport = stage.querySelector('.passport-hero__passport');
-  if (passport && !reducedMotion.matches) {
-    stage.addEventListener('pointermove', (event) => {
-      const rect = stage.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - .5;
-      const y = (event.clientY - rect.top) / rect.height - .5;
-      passport.style.transform = `translateX(-50%) perspective(900px) rotateY(${x * 3.2}deg) rotateX(${-y * 2.4}deg)`;
+  const reveal = gsap.timeline({
+    defaults: { ease: 'power3.out' },
+    scrollTrigger: { trigger: flow, start: 'top 78%', once: true }
+  });
+  reveal
+    .to(fill, { clipPath: 'inset(0 0 0 0)', duration: 1.05 }, 0)
+    .to(stages, { autoAlpha: 1, y: 0, duration: .72, stagger: .16 }, .08)
+    .to(nodes, { scale: 1, duration: .55, stagger: .16, ease: 'back.out(1.8)' }, .14)
+    .to(steps, { autoAlpha: 1, x: 0, duration: .42, stagger: .07 }, .42);
+
+  const responsiveMotion = gsap.matchMedia();
+  responsiveMotion.add('(min-width: 761px)', () => {
+    gsap.fromTo(pulse, { left: '0%', top: '50%' }, {
+      left: '100%', duration: 3.8, ease: 'none', repeat: -1,
+      scrollTrigger: { trigger: flow, start: 'top bottom', end: 'bottom top', toggleActions: 'play pause resume pause' }
     });
-    stage.addEventListener('pointerleave', () => {
-      passport.style.transform = 'translateX(-50%) perspective(900px) rotateY(0deg) rotateX(0deg)';
+  });
+  responsiveMotion.add('(max-width: 760px)', () => {
+    gsap.fromTo(pulse, { left: '50%', top: '0%' }, {
+      top: '100%', duration: 4.2, ease: 'none', repeat: -1,
+      scrollTrigger: { trigger: flow, start: 'top bottom', end: 'bottom top', toggleActions: 'play pause resume pause' }
     });
-  }
+  });
 
-  const flow = stage.querySelector('.passport-hero__flow');
-  if (!flow || reducedMotion.matches) return;
-  const namespace = 'http://www.w3.org/2000/svg';
-  const definitions = [
-    ['#passportPath1', '#bfe7ff', .00013, .02],
-    ['#passportPath2', '#bfe7ff', .00016, .38],
-    ['#passportPath3', '#bfe7ff', .00014, .62],
-    ['#passportPath4', '#bfe7ff', .00012, .77],
-    ['#passportPath5', '#d5fff7', .00016, .12],
-    ['#passportPath5', '#8af0df', .00012, .58]
-  ];
-  const particles = definitions.map(([selector, color, speed, delay], index) => {
-    const path = flow.querySelector(selector);
-    if (!path) return null;
-    const circle = document.createElementNS(namespace, 'circle');
-    circle.setAttribute('r', index < 4 ? '4.1' : '4.5');
-    circle.setAttribute('fill', color);
-    circle.setAttribute('class', 'passport-hero__particle');
-    flow.appendChild(circle);
-    return { path, circle, length: path.getTotalLength(), speed, delay };
-  }).filter(Boolean);
-  const startedAt = performance.now();
-
-  function animateParticles(now) {
-    const elapsed = now - startedAt;
-    for (const particle of particles) {
-      const phase = (elapsed * particle.speed + particle.delay) % 1;
-      const point = particle.path.getPointAtLength(phase * particle.length);
-      particle.circle.setAttribute('cx', point.x);
-      particle.circle.setAttribute('cy', point.y);
-      particle.circle.style.opacity = Math.max(0, Math.min(phase / .08, (1 - phase) / .08, 1));
-    }
-    requestAnimationFrame(animateParticles);
-  }
-  requestAnimationFrame(animateParticles);
-})();
+  window.addEventListener('hashchange', () => ScrollTrigger.refresh(), { passive: true });
+});
 </script>
 
 </body>
