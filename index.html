@@ -1314,6 +1314,46 @@ function appDialog(message, mode='notice') {
       </div>`).join('');
   }
 
+  function historyRowsMarkup(items) {
+    if (!items.length) {
+      return '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b><small>完成首次保養後會顯示在這裡</small></span></div>';
+    }
+    return items.map((h) => {
+      const when = h.performed_at ? new Date(h.performed_at).toISOString().slice(0, 10) : '';
+      const parts = [when, h.cost, h.mileage_km ? `${Number(h.mileage_km).toLocaleString()} km` : ''].filter(Boolean);
+      return `<div class="row"><span class="record-copy"><b>${esc(when)} · ${esc(h.title)}</b><small>${esc(parts.join(' · '))}</small></span><span>›</span></div>`;
+    }).join('');
+  }
+
+  async function renderVehicleHistory(id) {
+    const historyEl = document.getElementById('detailRecords');
+    if (!historyEl) return;
+    historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>載入中…</b><small>正在取得保養紀錄</small></span></div>';
+    try {
+      const response = await fetch(`/api/vehicles/${encodeURIComponent(id)}/history`);
+      if (!response.ok) throw new Error(`History request failed with ${response.status}`);
+      const payload = await response.json();
+      if (selectedVehicleId !== id) return;
+      const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      historyEl.innerHTML = historyRowsMarkup(items);
+    } catch (error) {
+      if (selectedVehicleId !== id) return;
+      console.error('[vehicle-history] failed', { vehicleId: id, error: String(error) });
+      historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>無法取得保養紀錄</b><small>請稍後再試</small></span></div>';
+    }
+  }
+
+  window.renderDemoVehicleHistory = function renderDemoVehicleHistory() {
+    const historyEl = document.getElementById('detailRecords');
+    if (!historyEl) return;
+    selectedVehicleId = 'toyota';
+    historyEl.innerHTML = historyRowsMarkup([
+      { performed_at: '2026-06-12T10:00:00Z', title: '機油及機油隔', cost: 'MOP 980', mileage_km: 38420 },
+      { performed_at: '2026-02-03T14:30:00Z', title: '塵格', cost: 'MOP 230', mileage_km: 34200 },
+      { performed_at: '2025-08-19T09:00:00Z', title: '輪胎調位', cost: 'MOP 280', mileage_km: 28800 },
+    ]);
+  };
+
   window.openCarDetail = async (id) => {
     const v = vehicles.find((x) => x.id === id);
     if (!v) return;
@@ -1341,6 +1381,11 @@ function appDialog(message, mode='notice') {
     document.getElementById('detailCarPhoto').src = v.image || 'assets/vehicle-placeholder.svg';
     document.getElementById('detailCarPhoto').alt = displayName;
     showScreen('vehicleDetailSimple');
+
+    /* History is independent from the maintenance-scope request. Start it
+       immediately so an empty/failed status response can never leave this
+       card stuck on its initial loading state. */
+    void renderVehicleHistory(id);
 
     /* Static layout: section-title → detail-status-banner → .card.list
        (the maintenance rows). The banner is preserved and updated; the
@@ -1439,25 +1484,6 @@ function appDialog(message, mode='notice') {
         </div>`;
     }).join('');
 
-    /* Render the "保養紀錄" section from /api/vehicles/:id/history */
-    const historyEl = document.getElementById('detailRecords');
-    if (historyEl) {
-      try {
-        const hRes = await fetch(`/api/vehicles/${encodeURIComponent(id)}/history`).then((r) => r.json());
-        const items = Array.isArray(hRes) ? hRes : (Array.isArray(hRes?.data) ? hRes.data : []);
-        if (items.length) {
-          historyEl.innerHTML = items.map((h) => {
-            const when = h.performed_at ? new Date(h.performed_at).toISOString().slice(0, 10) : '';
-            const parts = [when, h.cost, h.mileage_km ? `${h.mileage_km.toLocaleString()} km` : ''].filter(Boolean);
-            return `<div class="row"><span class="record-copy"><b>${esc(when)} · ${esc(h.title)}</b><small>${esc(parts.join(' · '))}</small></span><span>›</span></div>`;
-          }).join('');
-        } else {
-          historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b><small>完成首次保養後會顯示在這裡</small></span></div>';
-        }
-      } catch {
-        historyEl.innerHTML = '<div class="row"><span class="record-copy"><b>無法取得保養紀錄</b></span></div>';
-      }
-    }
   };
 
   /* 4. Update team filter button to reflect current count */
@@ -1608,6 +1634,7 @@ function appDialog(message, mode='notice') {
       if (name === 'service') await loadServicePage();
       if (name === 'qinao') await loadTripsPage();
       if (name === 'videos') await loadVideosPage();
+      if (name === 'demo') window.renderDemoVehicleHistory?.();
       return;
     }
     /* Auth/admin: hide all static sections, render into #view */
