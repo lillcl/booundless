@@ -35,6 +35,7 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <link rel="stylesheet" href="assets/shop.css">
+<link rel="stylesheet" href="assets/passport.css">
 <style>
 :root{
   --bg:#f5f6f7;--card:#fff;--ink:#131516;--muted:#747b80;--line:#e5e8ea;
@@ -86,6 +87,8 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .kc-topbar__user .role{font-size:11px;background:var(--color-brand-soft);color:var(--color-brand);padding:2px 8px;border-radius:99px;margin-left:4px}
 .kc-topbar__user .signout{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px;padding:6px 12px;border-radius:99px;cursor:pointer}
 .kc-topbar__user .signout:hover{color:var(--ink);border-color:var(--ink)}
+@media(max-width:700px){.kc-topbar{gap:8px;padding:10px 14px}.kc-topbar__nav{display:none}.kc-topbar__user{gap:6px}.kc-topbar__user .who{display:none}.kc-topbar__user .role{margin-left:0}.kc-topbar__user .signout{padding:6px 9px}}
+@media(max-width:420px){.kc-topbar__brand b{display:none}}
 .route-state{max-width:620px;margin:clamp(36px,8vw,90px) auto;padding:clamp(28px,5vw,48px);text-align:center;background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
 .route-state h1{margin:8px 0 12px;font-size:clamp(30px,5vw,46px);letter-spacing:-1.4px}.route-state p{margin:0 auto 24px;max-width:470px;color:var(--muted);line-height:1.7}.route-state a{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 22px;border-radius:15px;text-decoration:none;font-weight:800}
 
@@ -1586,7 +1589,7 @@ function appDialog(message, mode='notice') {
      screens live in <div id="view">. We delegate to showScreen() for
      the static routes and render into #view for the new ones. */
   const view = document.getElementById('view');
-  const STATIC_ROUTES = new Set(['landing', 'demo', 'home', 'garage', 'service', 'qinao', 'videos', 'profile']);
+  const STATIC_ROUTES = new Set(['landing', 'demo', 'home', 'service', 'qinao', 'videos', 'profile']);
   const NEW_ROUTES = {
     login: renderLogin,
     register: renderRegister,
@@ -1597,6 +1600,10 @@ function appDialog(message, mode='notice') {
     'admin/marketing': renderMarketing,
     shop: async root => (await import('./assets/shop.js')).renderShop(root, { me }),
     orders: async root => (await import('./assets/shop.js')).renderOrders(root, { me }),
+    garage: async root => (await import('./assets/passport.js')).renderVehiclePassports(root, {
+      me,
+      onAddVehicle: openAddVehicleSheet,
+    }),
     'admin/shop': async root => (await import('./assets/shop.js')).renderAdminShop(root, { me }),
     'requests': renderRequests,
     'admin/tracking': async root => (await import('./assets/tracking-admin.js')).render(root),
@@ -1611,6 +1618,7 @@ function appDialog(message, mode='notice') {
 
   async function dispatch() {
     const name = getRoute();
+    if (name !== 'garage') window.__vehiclePassportCleanup?.();
     syncTopbarNav();
     /* Hide any previously rendered view content */
     if (view) view.innerHTML = '';

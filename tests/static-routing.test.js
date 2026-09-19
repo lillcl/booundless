@@ -24,3 +24,9 @@ test('vehicle history resolves independently of maintenance status', () => {
   assert.ok(emptyStatusReturn > startHistory, 'history must start before an empty status can return early');
   assert.match(html, /if \(name === 'demo'\) window\.renderDemoVehicleHistory\?\.\(\);/);
 });
+
+test('garage is rendered by the database-backed vehicle passport module', () => {
+  assert.match(html, /\(await import\('\.\/assets\/passport\.js'\)\)\.renderVehiclePassports/);
+  assert.doesNotMatch(html, /const STATIC_ROUTES = new Set\(\[[^\]]*'garage'/);
+  assert.match(html, /onAddVehicle: openAddVehicleSheet/);
+});
