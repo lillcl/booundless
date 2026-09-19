@@ -196,6 +196,7 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .auth-wrap .top{margin-bottom:28px}
 .auth-card{width:100%;padding:28px;display:flex;flex-direction:column;gap:14px}
 .auth-card .field{margin-top:0}
+.auth-preview-note{padding:13px 15px;border:1px solid #d5e4eb;border-radius:14px;background:#eef7fa;color:#28576a;font-size:13px;line-height:1.55}.auth-live-link{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .auth-visual{position:relative;display:grid;place-items:center;min-height:510px}
 .auth-visual:before{content:"";position:absolute;inset:14% 4% 9%;z-index:-1;border-radius:50%;background:radial-gradient(circle,rgba(71,185,216,.16),rgba(11,57,121,.04) 54%,transparent 72%);filter:blur(15px)}
 .auth-visual__art{display:block;width:min(100%,430px);max-height:500px;object-fit:contain;filter:drop-shadow(0 24px 30px rgba(20,60,90,.13));animation:authArtFloat 7s ease-in-out infinite}
@@ -1716,15 +1717,19 @@ function appDialog(message, mode='notice') {
   function renderLogin(root) {
     /* Render directly into #view, not by copying the hidden <section> (which
        has display:none and would shadow the inputs). */
+    const isFilePreview = window.location.protocol === 'file:';
     root.innerHTML = `
       <div class="auth-wrap">
         <div class="auth-panel">
           <div class="top"><div><h1>登入</h1><p>管理員帳號或邀請碼登入。</p></div></div>
           <form id="loginForm" class="card auth-card">
+            ${isFilePreview ? '<div class="auth-preview-note" role="status"><b>目前是本機檔案預覽</b><br>登入需要連接 BOOUNDLESS 伺服器，請開啟網站版本。</div>' : ''}
             <div class="field"><label>電郵</label><input id="loginEmail" type="email" autocomplete="email" placeholder="admin@example.com" required></div>
             <div class="field"><label>密碼</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
             <div id="loginError" style="color:#cf3a2e;font-size:14px;display:none"></div>
-            <button class="primary" type="submit">登入</button>
+            ${isFilePreview
+              ? '<a class="primary auth-live-link" href="https://www.booundless.com/#/login">開啟安全登入頁</a>'
+              : '<button class="primary" type="submit">登入</button>'}
             <button class="secondary" type="button" id="loginBack">返回首頁</button>
             <p style="font-size:13px;color:var(--muted);margin:6px 0 0">還沒有帳號？<a href="#/register" style="color:#176b91;font-weight:750">建立新帳號</a></p>
           </form>
@@ -1761,24 +1766,41 @@ function appDialog(message, mode='notice') {
       const password = document.getElementById('loginPassword').value;
       const errEl = document.getElementById('loginError');
       errEl.style.display = 'none';
-      const r = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        me = d.user;
-        renderTopbar();
-        /* Reload vehicles / reminders / history now that the session cookie
-           is set — without this, the IIFE's earlier /api/vehicles fetch came
-           back 401 and the garage would stay empty until manual reload. */
-        await hydrateHomeAndGarageData();
-        window.location.hash = '#/home';
-      } else {
-        const d = await r.json().catch(() => ({}));
-        errEl.textContent = d?.error?.message || '登入失敗';
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalLabel = submitBtn?.textContent || '登入';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '正在登入…';
+      }
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          me = d.user;
+          renderTopbar();
+          /* Reload vehicles / reminders / history now that the session cookie
+             is set — without this, the IIFE's earlier /api/vehicles fetch came
+             back 401 and the garage would stay empty until manual reload. */
+          await hydrateHomeAndGarageData();
+          window.location.hash = '#/home';
+        } else {
+          const d = await r.json().catch(() => ({}));
+          errEl.textContent = d?.error?.message || '電郵或密碼不正確';
+          errEl.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('[auth] login request failed', error);
+        errEl.textContent = '暫時無法連接登入服務，請檢查網絡後再試。';
         errEl.style.display = 'block';
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalLabel;
+        }
       }
     }
   });

@@ -30,3 +30,9 @@ test('garage is rendered by the database-backed vehicle passport module', () => 
   assert.doesNotMatch(html, /const STATIC_ROUTES = new Set\(\[[^\]]*'garage'/);
   assert.match(html, /onAddVehicle: openAddVehicleSheet/);
 });
+
+test('file previews send login to the hosted API-backed application', () => {
+  assert.match(html, /window\.location\.protocol === 'file:'/);
+  assert.match(html, /href="https:\/\/www\.booundless\.com\/#\/login"/);
+  assert.match(html, /暫時無法連接登入服務/);
+});
