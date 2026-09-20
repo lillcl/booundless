@@ -1,10 +1,14 @@
-const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_TIMEOUT_MS = 25000;
 
 export async function askAI({ system, user, temperature = 0.2, maxTokens = 700, model: requestedModel = null }) {
   const key = process.env.AI_API_KEY;
   if (!key) throw new Error('AI_API_KEY is not configured');
   const base = String(process.env.AI_BASE_URL || 'https://api.minimax.io/v1').replace(/\/$/, '');
   const model = requestedModel || process.env.AI_MODEL || 'MiniMax-M3';
+  const provider = (() => {
+    try { return new URL(base).hostname.toLowerCase().includes('minimax') ? 'minimax' : 'custom'; }
+    catch { return 'custom'; }
+  })();
   const anthropic = /\/anthropic$/i.test(base);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Number(process.env.AI_TIMEOUT_MS || DEFAULT_TIMEOUT_MS));
@@ -25,7 +29,7 @@ export async function askAI({ system, user, temperature = 0.2, maxTokens = 700, 
     const text = anthropic
       ? (payload?.content || []).filter((part) => part.type === 'text').map((part) => part.text).join('')
       : payload?.choices?.[0]?.message?.content || '';
-    return { text, model: payload?.model || model, usage: payload?.usage || {} };
+    return { text, model: payload?.model || model, provider, usage: payload?.usage || {} };
   } finally {
     clearTimeout(timer);
   }

@@ -29,6 +29,38 @@ async function getJSON(url) {
   return response.json();
 }
 
+async function sendJSONRequest(url, method, body) {
+  const response = await fetch(url, {
+    method,
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error?.message || `${response.status} ${response.statusText}`);
+  return payload;
+}
+
+async function prepareImage(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('無法讀取照片'));
+    reader.readAsDataURL(file);
+  });
+  const image = await new Promise((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error('照片格式不支援'));
+    element.src = dataUrl;
+  });
+  const scale = Math.min(1, 1200 / Math.max(image.width, image.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', .8);
+}
+
 function bookMarkup(vehicle, reminder) {
   const hasReminder = Boolean(reminder);
   const unknown = vehicle.scope_confirmed === false;
@@ -56,6 +88,7 @@ function identityPage(vehicle) {
   return `<div class="vp-paper"><span class="vp-page-label">01 · VEHICLE IDENTITY</span><h3>車輛身份</h3>
     <img class="vp-identity-photo ${placeholder ? 'is-placeholder' : ''}" src="${esc(vehicle.image || 'assets/vehicle-placeholder.svg')}" alt="${esc(vehicleName(vehicle))}">
     <div class="vp-data-grid">${fields.map(([label, value]) => `<span><small>${label}</small><b>${esc(value)}</b></span>`).join('')}</div>
+    <button class="vp-edit-trigger" type="button" data-edit-passport>修改護照</button>
   </div>`;
 }
 
@@ -78,8 +111,8 @@ function maintenancePage(status) {
     <div class="vp-list">${items.length ? items.slice(0, 7).map((item) => {
       const warn = Number(item.wear) >= 80;
       const detail = item.last_done_at ? `上次：${dateLabel(item.last_done_at)}` : '尚未記錄基準';
-      return `<div class="vp-row"><span><b>${esc(item.item)}</b><small>${esc(detail)}</small></span><span class="vp-pill ${warn ? 'warn' : ''}">${warn ? '需要留意' : item.last_done_at ? `${Number(item.wear) || 0}%` : '待確認'}</span></div>`;
-    }).join('') : '<div class="vp-note">尚未建立保養範圍。完成車輛資料後，系統會為你建立適用項目。</div>'}</div>
+      return `<div class="vp-row"><span><b>${esc(item.item)}</b><small>${esc(detail)}</small></span><span class="vp-pill ${warn ? 'warn' : item.last_done_at ? '' : 'unknown'}">${warn ? '需要留意' : item.last_done_at ? `${Number(item.wear) || 0}%` : '狀態未知'}</span></div>`;
+    }).join('') : '<div class="vp-note">正在建立並保存適合這台車的保養範圍。</div>'}</div>
   </div>`;
 }
 
@@ -163,22 +196,104 @@ export async function renderVehiclePassports(root, context = {}) {
     reader.querySelector('[data-page-next]').addEventListener('click', () => setSpread(activeSpread + 1));
 
     try {
-      const [status, historyPayload] = await Promise.all([
+      let [status, historyPayload] = await Promise.all([
         getJSON(`/api/vehicles/${encodeURIComponent(vehicle.id)}/status`),
         getJSON(`/api/vehicles/${encodeURIComponent(vehicle.id)}/history`),
       ]);
+      if (!Array.isArray(status.items) || status.items.length === 0) {
+        status = await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}/scope/generate`, 'POST', { template_only: true });
+        status.data_complete = false;
+      }
       if (!reader) return;
       const history = Array.isArray(historyPayload) ? historyPayload : historyPayload.data || [];
       const ownReminders = allReminders.filter((item) => item.vehicle_id === vehicle.id);
       const book = reader.querySelector('.vp-reader__book');
       book.innerHTML = `<section class="vp-spread is-active">${identityPage(vehicle)}${overviewPage(vehicle, status, history)}</section><section class="vp-spread">${maintenancePage(status)}${historyPage(history)}</section><section class="vp-spread">${reminderPage(ownReminders)}${documentsPage()}</section><div class="vp-cover"><div class="vp-cover__content">${seal}<h2>${esc(vehicleName(vehicle))}</h2><p>車輛護照</p></div></div>`;
       setSpread(0);
+      reader.querySelector('[data-edit-passport]')?.addEventListener('click', () => openEditor(vehicle, allReminders));
       window.setTimeout(() => reader?.querySelector('.vp-reader__close')?.focus(), 450);
     } catch (error) {
       const loading = reader?.querySelector('.vp-loading');
       if (loading) loading.outerHTML = '<div class="vp-paper"><div class="vp-note">暫時無法同步這本護照，請關閉後再試。</div></div>';
       console.error('[vehicle-passport] failed to load', error);
     }
+  };
+
+  const openEditor = (vehicle, allReminders) => {
+    if (!reader) return;
+    const editor = document.createElement('div');
+    editor.className = 'vp-editor';
+    editor.setAttribute('role', 'dialog');
+    editor.setAttribute('aria-modal', 'true');
+    editor.setAttribute('aria-label', '修改車輛護照');
+    editor.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">PASSPORT EDITOR</span><h2>修改車輛護照</h2><p>可以直接輸入，或拍攝車身／行車證及儀表盤，讓 MiniMax AI 預填後再確認。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
+      <div class="vp-ai-capture"><label><span>車身或行車證照片</span><input type="file" accept="image/*" capture="environment" data-ai-vehicle></label><button type="button" data-recognize-vehicle>AI 辨識車輛</button><label><span>儀表盤照片</span><input type="file" accept="image/*" capture="environment" data-ai-dashboard></label><button type="button" data-recognize-dashboard>AI 讀取里程</button></div>
+      <div class="vp-editor__status" data-editor-status>AI 只會預填資料；儲存前請先確認。</div>
+      <form data-passport-form><div class="vp-editor__grid">
+        <label>品牌<input name="make" value="${esc(vehicle.make || '')}" placeholder="例如 Toyota"></label>
+        <label>型號<input name="model" required value="${esc(vehicle.model || '')}" placeholder="例如 Corolla Cross"></label>
+        <label>年份<input name="year" type="number" min="1950" max="2100" value="${esc(vehicle.year || '')}"></label>
+        <label>能源<select name="fuel_type">${['','燃油','純電','油電混合','Hybrid','EV','Petrol','Diesel'].map((value) => `<option value="${esc(value)}" ${String(vehicle.fuel_type || '') === value ? 'selected' : ''}>${esc(value || '未填寫')}</option>`).join('')}</select></label>
+        <label>車牌<input name="plate" value="${esc(vehicle.plate || '')}"></label>
+        <label>VIN<input name="vin" value="${esc(vehicle.vin || '')}"></label>
+        <label>目前里程（km）<input name="mileage_km" type="number" min="0" value="${esc(vehicle.mileage_km ?? '')}"></label>
+      </div><div class="vp-editor__actions"><button type="button" data-editor-cancel>取消</button><button type="submit">儲存護照</button></div></form></div>`;
+    reader.appendChild(editor);
+    const statusLine = editor.querySelector('[data-editor-status]');
+    const form = editor.querySelector('[data-passport-form]');
+    let vehicleImage = vehicle.image || '';
+    const close = () => editor.remove();
+    editor.querySelector('[data-editor-close]').addEventListener('click', close);
+    editor.querySelector('[data-editor-cancel]').addEventListener('click', close);
+    editor.addEventListener('click', (event) => { if (event.target === editor) close(); });
+    const recognize = async (kind) => {
+      const input = editor.querySelector(kind === 'vehicle' ? '[data-ai-vehicle]' : '[data-ai-dashboard]');
+      if (!input.files?.[0]) { statusLine.textContent = '請先拍攝或選擇照片。'; return; }
+      statusLine.className = 'vp-editor__status is-working';
+      statusLine.textContent = '正在連接 MiniMax AI 辨識照片…';
+      try {
+        const image = await prepareImage(input.files[0]);
+        const result = await sendJSONRequest('/api/ai', 'POST', { mode: kind === 'vehicle' ? 'vehicle-image' : 'dashboard-image', image });
+        if (kind === 'vehicle') {
+          const info = result.vehicle || {};
+          for (const name of ['make', 'model', 'year', 'fuel_type', 'plate']) if (info[name] !== '' && info[name] != null && form.elements[name]) form.elements[name].value = info[name];
+          vehicleImage = image;
+        } else if (result.dashboard?.mileage_km != null) form.elements.mileage_km.value = result.dashboard.mileage_km;
+        statusLine.className = 'vp-editor__status is-success';
+        statusLine.textContent = `${result.provider === 'minimax' ? 'MiniMax AI' : 'AI'} 已完成預填（${result.model || 'vision model'}），請核對後儲存。`;
+      } catch (error) {
+        statusLine.className = 'vp-editor__status is-error';
+        statusLine.textContent = `${error.message || '辨識失敗'}；仍可手動輸入。`;
+      }
+    };
+    editor.querySelector('[data-recognize-vehicle]').addEventListener('click', () => recognize('vehicle'));
+    editor.querySelector('[data-recognize-dashboard]').addEventListener('click', () => recognize('dashboard'));
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector('[type="submit"]');
+      submit.disabled = true;
+      statusLine.className = 'vp-editor__status is-working';
+      statusLine.textContent = '正在儲存護照…';
+      try {
+        const data = Object.fromEntries(new FormData(form).entries());
+        data.mileage_km = Number(data.mileage_km) || 0;
+        data.year = data.year ? Number(data.year) : null;
+        if (vehicleImage) data.image = vehicleImage;
+        const updated = await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}`, 'PATCH', data);
+        Object.assign(vehicle, updated);
+        close();
+        const trigger = activeVehicle;
+        reader.remove();
+        reader = null;
+        await openReader(vehicle, trigger, allReminders);
+      } catch (error) {
+        statusLine.className = 'vp-editor__status is-error';
+        statusLine.textContent = error.message || '儲存失敗，請再試一次。';
+        submit.disabled = false;
+      }
+    });
+    requestAnimationFrame(() => editor.classList.add('is-open'));
+    form.elements.make.focus();
   };
 
   document.addEventListener('keydown', onKeyDown);

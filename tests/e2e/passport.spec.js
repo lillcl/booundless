@@ -90,3 +90,52 @@ test('vehicle passport opens live identity, maintenance, history and reminders',
     await closeDb();
   }
 });
+
+test('empty passport persists unknown maintenance scope and supports manual edits', async ({ page }) => {
+  test.setTimeout(45_000);
+  const suffix = randomUUID();
+  const userId = `u-passport-empty-${suffix}`;
+  const vehicleId = `v-passport-empty-${suffix}`;
+  const email = `passport-empty-${suffix}@example.test`;
+  const password = 'Passport-e2e-only-2026!';
+  const db = await getDb();
+  await db.query(`INSERT INTO users(id,email,password_hash,role,display_name) VALUES($1,$2,$3,'user','Empty Passport E2E')`, [userId, email, await hashPassword(password)]);
+  await db.query(
+    `INSERT INTO vehicles (id,model,make,year,fuel_type,vehicle_class,powertrain_type,onboarding_state,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
+     VALUES($1,'Fit','Honda',2022,'燃油','light_passenger','fuel','identity_confirmed',NULL,5200,'5,200 km','/assets/vehicle-placeholder.svg','Empty Passport E2E','personal',$2,$2)`,
+    [vehicleId, userId],
+  );
+  try {
+    await page.goto('/#/login');
+    await page.locator('#loginEmail').fill(email);
+    await page.locator('#loginPassword').fill(password);
+    await page.getByRole('button', { name: '登入', exact: true }).click();
+    await expect(page).toHaveURL(/#\/home$/, { timeout: 15_000 });
+    await page.goto('/#/garage');
+    await page.getByRole('button', { name: /開啟 Honda Fit 車輛護照/ }).click();
+    const reader = page.getByRole('dialog', { name: /Honda Fit 車輛護照/ });
+    await expect(reader).toBeVisible();
+    await expect(reader.getByRole('button', { name: '修改護照' })).toBeVisible();
+    await reader.getByRole('button', { name: '下一頁' }).click();
+    await expect(reader.getByText('狀態未知').first()).toBeVisible();
+    const persisted = await db.query('SELECT item, source FROM vehicle_status WHERE vehicle_id=$1', [vehicleId]);
+    expect(persisted.rowCount).toBeGreaterThan(0);
+    expect(persisted.rows.every((row) => row.item && row.source === 'template')).toBeTruthy();
+
+    await reader.getByRole('button', { name: '上一頁' }).click();
+    await reader.getByRole('button', { name: '修改護照' }).click();
+    const editor = page.getByRole('dialog', { name: '修改車輛護照' });
+    await expect(editor.getByText('MiniMax AI', { exact: false })).toBeVisible();
+    await editor.locator('[name="plate"]').fill('AA-2026');
+    await editor.locator('[name="mileage_km"]').fill('6789');
+    await editor.getByRole('button', { name: '儲存護照' }).click();
+    await expect(page.getByRole('dialog', { name: /Honda Fit 車輛護照/ })).toContainText('AA-2026');
+    const updated = await db.query('SELECT plate,mileage_km,mileage_label FROM vehicles WHERE id=$1', [vehicleId]);
+    expect(updated.rows[0]).toMatchObject({ plate: 'AA-2026', mileage_km: 6789, mileage_label: '6,789 km' });
+  } finally {
+    await db.query('DELETE FROM vehicles WHERE id=$1', [vehicleId]);
+    await db.query('DELETE FROM audit_log WHERE actor_email=$1', [email]);
+    await db.query('DELETE FROM users WHERE id=$1', [userId]);
+    await closeDb();
+  }
+});

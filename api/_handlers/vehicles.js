@@ -51,6 +51,7 @@ async function handleStatus(req, res, id, user) {
 
 async function handleScopeGenerate(req, res, id, user) {
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Only POST allowed');
+  const options = await readBody(req).catch(() => ({}));
   const db = await getDb();
   const v = await db.query(
     `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, mileage_km
@@ -114,7 +115,11 @@ async function handleScopeGenerate(req, res, id, user) {
   /* AI extension: model-specific items beyond the template (DPF, timing
      belt, transfer case, AdBlue, EV battery thermal checks, etc.). Failures
      never block — the helper returns [] on any error and logs the reason. */
-  const aiRows = await suggestExtraScope(vehicle);
+  /* Passport rendering requests the deterministic DB template first so an
+     empty book never waits on an external model. Full generation still adds
+     model-specific AI rows when called without template_only=1. */
+  const templateOnly = options?.template_only === true;
+  const aiRows = templateOnly ? [] : await suggestExtraScope(vehicle);
   for (const row of aiRows) {
     const labelKey = `label:${String(row.item || '').trim().toLowerCase()}`;
     const fpKey = `fp:${scopeFingerprint(row.item)}`;
@@ -188,7 +193,7 @@ async function handleOnboarding(req, res, id, user) {
 }
 
 export default async function handler(req, res) {
-  if (!onlyMethod(req, res, ['GET', 'POST'])) return;
+  if (!onlyMethod(req, res, ['GET', 'POST', 'PATCH'])) return;
   const user = await requireUser(req, res);
   if (!user) return;
 
@@ -210,6 +215,39 @@ export default async function handler(req, res) {
     if (idMatch) {
       const id = decodeURIComponent(idMatch[1]);
       const db = await getDb();
+      if (req.method === 'PATCH') {
+        const body = await readBody(req, { limit: '8mb' });
+        const allowed = ['model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'vin', 'plate', 'mileage_km', 'image'];
+        const updates = [];
+        const values = [];
+        for (const field of allowed) {
+          if (!Object.prototype.hasOwnProperty.call(body || {}, field)) continue;
+          let value = body[field];
+          if (field === 'model' && !String(value || '').trim()) return sendError(res, 422, 'unprocessable', 'model is required');
+          if (field === 'mileage_km') value = Math.max(0, Number(value) || 0);
+          if (field === 'year') value = value === '' || value == null ? null : Number(value);
+          if (!['mileage_km', 'year'].includes(field)) value = String(value || '').trim() || null;
+          values.push(value);
+          updates.push(`${field}=$${values.length}`);
+          if (field === 'mileage_km') {
+            values.push(`${Number(value).toLocaleString()} km`);
+            updates.push(`mileage_label=$${values.length}`);
+          }
+        }
+        if (!updates.length) return sendError(res, 422, 'unprocessable', 'No editable fields supplied');
+        values.push(user.id, id);
+        const updated = await db.query(
+          `UPDATE vehicles SET ${updates.join(', ')}, updated_by_user_id=$${values.length - 1}, updated_at=NOW()
+           WHERE id=$${values.length} AND created_by_user_id=$${values.length - 1} AND archived_at IS NULL
+           RETURNING id, model, make, year, fuel_type, vehicle_class, powertrain_type,
+             onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label,
+             image, owner, team, created_at, updated_at`,
+          values,
+        );
+        if (!updated.rowCount) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
+        return sendJSON(res, 200, updated.rows[0]);
+      }
+      if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET or PATCH allowed');
       const r = await db.query(
         `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,

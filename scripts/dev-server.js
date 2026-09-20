@@ -53,10 +53,12 @@ function adapt(handler) {
 app.get('/api/health', adapt(healthHandler));
 app.get('/api/vehicles', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id', adapt(vehiclesHandler));
+app.patch('/api/vehicles/:id', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id/status', adapt(vehiclesHandler));
 app.get('/api/vehicles/:id/history', adapt(vehiclesHandler));
 app.post('/api/vehicles', adapt(vehiclesHandler));
 app.post('/api/vehicles/:id/scope/generate', adapt(vehiclesHandler));
+app.post('/api/vehicles/:id/onboarding', adapt(vehiclesHandler));
 app.get('/api/history', adapt(historyHandler));
 app.get('/api/history/recent', adapt(historyHandler));
 app.get('/api/reminders', adapt(remindersHandler));

@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       });
       let vehicle = {};
       try { vehicle = JSON.parse(result.text.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* keep empty fields when provider returns non-JSON */ }
-      return sendJSON(res, 200, { vehicle, model: result.model });
+      return sendJSON(res, 200, { vehicle, model: result.model, provider: result.provider });
     } else if (mode === 'dashboard-image') {
       if (typeof body.image !== 'string' || !body.image.startsWith('data:image/')) return sendError(res, 422, 'unprocessable', 'image must be a data URL');
       const image = body.image.slice(0, 7 * 1024 * 1024);
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       if (!Number.isFinite(mileage) || mileage < 0 || mileage > 3000000) dashboard.mileage_km = null;
       if (!Array.isArray(dashboard.warning_lights)) dashboard.warning_lights = [];
       if (!Array.isArray(dashboard.displayed_messages)) dashboard.displayed_messages = [];
-      return sendJSON(res, 200, { dashboard, model: result.model });
+      return sendJSON(res, 200, { dashboard, model: result.model, provider: result.provider });
     } else return sendError(res, 422, 'unprocessable', 'mode must be service, trip, support, vehicle-image or dashboard-image');
     const result = await askAI({ system, user: prompt });
     return sendJSON(res, 200, result);
