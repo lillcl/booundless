@@ -26,7 +26,7 @@ function productCard(product, cart) {
       <p>${esc(product.short_description)}</p>
       ${specs.length ? `<div class="shop-specs">${specs.map((item) => `<span>${esc(item)}</span>`).join('')}</div>` : ''}
       <div class="shop-product__meta"><span class="shop-price">${variant ? money(variant.price_minor, variant.currency) : '暫未供應'} <small>${esc(variant?.variant_name || '')}</small></span><span class="shop-stock ${stock <= (variant?.low_stock_threshold || 0) ? 'low' : ''}">${stock ? `尚餘 ${stock}` : '售罄'}</span></div>
-      ${inCart && !incompatible ? `<div class="shop-qty" aria-label="${esc(product.name)} 購物車數量"><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="-1" aria-label="減少 ${esc(product.name)}">−</button><b>${inCart}</b><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="1" aria-label="增加 ${esc(product.name)}" ${inCart >= stock ? 'disabled' : ''}>＋</button></div>` : `<button class="shop-add" type="button" data-shop-add="${esc(variant?.id || '')}" ${!variant || !stock || incompatible ? 'disabled' : ''}>${incompatible ? '不適用此車' : '加入購物車'}</button>`}
+      ${inCart && !incompatible ? `<div class="shop-qty" aria-label="${esc(product.name)} 購物車數量"><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="-1" aria-label="減少 ${esc(product.name)}">−</button><b>${inCart}</b><button type="button" data-shop-qty="${esc(variant?.id || '')}" data-delta="1" aria-label="增加 ${esc(product.name)}" ${inCart >= stock || inCart >= 20 ? 'disabled' : ''}>＋</button></div>` : `<button class="shop-add" type="button" data-shop-add="${esc(variant?.id || '')}" ${!variant || !stock || incompatible ? 'disabled' : ''}>${incompatible ? '不適用此車' : '加入購物車'}</button>`}
     </div>
   </article>`;
 }
@@ -70,6 +70,8 @@ export async function renderShop(root, context = {}) {
   let activeCategory = '全部';
   let searchQuery = '';
   let compatibleOnly = true;
+  const quantityQueues = new Map();
+  const desiredQuantities = new Map();
   const productsHost = root.querySelector('[data-shop-products]');
   const cartHost = root.querySelector('[data-shop-cart]');
   const countHost = root.querySelector('[data-shop-count]');
@@ -115,23 +117,59 @@ export async function renderShop(root, context = {}) {
     draw();
   } catch (error) { productsHost.innerHTML = `<div class="shop-error">${esc(error.message)}</div>`; cartHost.innerHTML = cartMarkup(cart, signedIn); }
 
+  const setLocalQuantity = (variantId, quantity) => {
+    const current = cart.items?.find((item) => item.variant_id === variantId);
+    if (!current) return;
+    const items = quantity === 0
+      ? cart.items.filter((item) => item.variant_id !== variantId)
+      : cart.items.map((item) => item.variant_id === variantId
+        ? { ...item, quantity, line_total_minor: Number(item.price_minor) * quantity }
+        : item);
+    cart = {
+      ...cart,
+      items,
+      item_count: items.reduce((sum, item) => sum + Number(item.quantity), 0),
+      subtotal_minor: items.reduce((sum, item) => sum + Number(item.line_total_minor), 0),
+      currency: items[0]?.currency || cart.currency || 'MOP',
+    };
+  };
+
+  const queueQuantitySync = (variantId, quantity) => {
+    desiredQuantities.set(variantId, quantity);
+    const previous = quantityQueues.get(variantId) || Promise.resolve();
+    const task = previous.catch(() => {}).then(async () => {
+      const options = quantity === 0
+        ? { method: 'DELETE' }
+        : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ variant_id: variantId, quantity }) };
+      const result = await api(quantity === 0 ? `/api/shop/cart/items/${encodeURIComponent(variantId)}` : '/api/shop/cart/items', options);
+      /* A newer click may already be visible. Only replace the optimistic
+         state when this response represents the latest requested quantity. */
+      if (desiredQuantities.get(variantId) === quantity) {
+        cart = result.cart;
+        desiredQuantities.delete(variantId);
+        draw();
+      }
+    }).catch(async (error) => {
+      if (desiredQuantities.get(variantId) === quantity) {
+        desiredQuantities.delete(variantId);
+        try { cart = (await api('/api/shop/cart')).cart; draw(); } catch { /* keep the last visible state */ }
+        window.alert(error.message);
+      }
+    }).finally(() => {
+      if (quantityQueues.get(variantId) === task) quantityQueues.delete(variantId);
+    });
+    quantityQueues.set(variantId, task);
+  };
+
   root.onclick = async (event) => {
     const quantityButton = event.target.closest('[data-shop-qty]');
     if (quantityButton) {
       const variantId = quantityButton.dataset.shopQty;
       const current = cart.items?.find((item) => item.variant_id === variantId)?.quantity || 0;
       const next = Math.max(0, current + Number(quantityButton.dataset.delta || 0));
-      quantityButton.disabled = true;
-      try {
-        const options = next === 0
-          ? { method: 'DELETE' }
-          : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ variant_id: variantId, quantity: next }) };
-        cart = (await api(next === 0 ? `/api/shop/cart/items/${encodeURIComponent(variantId)}` : '/api/shop/cart/items', options)).cart;
-        draw();
-      } catch (error) {
-        quantityButton.disabled = false;
-        window.alert(error.message);
-      }
+      setLocalQuantity(variantId, next);
+      draw();
+      queueQuantitySync(variantId, next);
       return;
     }
     const add = event.target.closest('[data-shop-add]');
@@ -145,6 +183,9 @@ export async function renderShop(root, context = {}) {
     const remove = event.target.closest('[data-shop-remove]');
     if (remove) { cart = (await api(`/api/shop/cart/items/${encodeURIComponent(remove.dataset.shopRemove)}`,{method:'DELETE'})).cart; draw(); return; }
     if (event.target.closest('[data-shop-checkout]')) {
+      /* Checkout must use the persisted quantities even when the owner taps
+         it immediately after a fast optimistic +/− update. */
+      if (quantityQueues.size) await Promise.allSettled([...quantityQueues.values()]);
       cartHost.innerHTML = checkoutMarkup(cart);
       const form=cartHost.querySelector('form');const address=form.querySelector('[data-address]');form.elements.fulfillment_method.onchange=()=>{const delivery=form.elements.fulfillment_method.value==='delivery';address.hidden=!delivery;form.elements.delivery_address.required=delivery;};
       form.onsubmit=async (submitEvent)=>{submitEvent.preventDefault();const button=form.querySelector('[type=submit]');const status=form.querySelector('[role=status]');button.disabled=true;status.textContent='';const data=Object.fromEntries(new FormData(form));data.idempotency_key=crypto.randomUUID();try{const result=await api('/api/shop/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});cart={items:[],item_count:0,subtotal_minor:0,currency:'MOP'};cartHost.innerHTML=`<div class="shop-order-success"><div class="shop-order-success__mark">✓</div><h2>訂單已收到</h2><p>訂單編號<br><b>${esc(result.order.order_number)}</b></p><a href="#/orders">查看我的訂單</a></div>`;countHost.textContent='0';}catch(error){status.textContent=error.message;button.disabled=false;}};

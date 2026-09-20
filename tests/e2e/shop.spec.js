@@ -134,11 +134,20 @@ test.describe('complete order and administration workflow', () => {
       await expect(customerPage.locator('[data-shop-count]')).toHaveText('1');
       const quantity = firstProduct.locator('.shop-qty');
       await expect(quantity).toContainText('1');
+      let delayedQuantityRequest = true;
+      await customerPage.route('**/api/shop/cart/items', async (route) => {
+        if (delayedQuantityRequest && route.request().method() === 'POST') {
+          delayedQuantityRequest = false;
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+        await route.continue();
+      });
       await quantity.getByRole('button', { name: `增加 ${productName}` }).click();
-      await expect(customerPage.locator('[data-shop-count]')).toHaveText('2');
-      await expect(firstProduct.locator('.shop-qty')).toContainText('2');
+      await expect(customerPage.locator('[data-shop-count]')).toHaveText('2', { timeout: 300 });
+      await expect(firstProduct.locator('.shop-qty')).toContainText('2', { timeout: 300 });
       await firstProduct.getByRole('button', { name: `減少 ${productName}` }).click();
       await expect(customerPage.locator('[data-shop-count]')).toHaveText('1');
+      await customerPage.unroute('**/api/shop/cart/items');
       await customerPage.locator('[data-shop-checkout]').click();
       await customerPage.getByLabel('姓名').fill('Playwright Customer');
       await customerPage.getByLabel('電話').fill('6888 1234');
