@@ -25,7 +25,7 @@ export function resolveHandler(path) {
   if(path==='/api/admin/marketing/tracking'||/^\/api\/marketing\/(config|conversions)$/.test(path))return tracking;
   if (/^\/api\/service-requests(?:\/|$)/.test(path)) return requests;
   if (path === '/api/admin/marketing/pages') return marketing;
-  if (path === '/api/service-item-types') return dealers;
+  if (path === '/api/service-item-types' || path === '/api/dealers') return dealers;
   if (/^\/api\/(?:admin\/dealers|dealer)(?:\/|$)/.test(path)
       || /^\/api\/vehicles\/[^/]+\/(?:dealer-matches|service-requests|needs)$/.test(path)) return dealers;
   const match = path.match(/^\/api\/([^/]+)(?:\/|$)/);

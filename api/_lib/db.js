@@ -28,19 +28,15 @@ function resolveSchemaPath() {
   return join(__dirname, '..', '..', 'db', 'schema.sql');
 }
 
-async function applySchema(pool) {
+async function applySchema(db) {
   const sql = readFileSync(resolveSchemaPath(), 'utf8');
-  const client = await pool.connect();
-  try {
-    await client.query(sql);
-    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
-    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
-    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
-    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
-    await client.query(readFileSync(join(dirname(resolveSchemaPath()), 'shop-schema.sql'), 'utf8'));
-  } finally {
-    client.release();
-  }
+  await db.query(sql);
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'shop-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'vehicle-sharing-schema.sql'), 'utf8'));
 }
 
 async function rowCount(pool, table) {
@@ -162,13 +158,23 @@ export async function getDb() {
   });
 
   try {
-    await applySchema(_pool);
-    await seedShopCatalog(_pool);
-    const seeded = await _pool.query("SELECT value FROM _meta WHERE key = 'seeded'");
-    const count = await rowCount(_pool, 'vehicles');
-    if (seeded.rowCount === 0 && count === 0) await seedDefaultData(_pool);
-    await backfillVehicleServiceKeys(_pool);
-    await archiveLegacyDemoVehicles(_pool);
+    /* Playwright workers and serverless instances can start together. Serialize
+       additive migrations and seed upserts across processes so PostgreSQL never
+       has competing ALTER TABLE / catalogue locks during cold start. */
+    const bootstrap = await _pool.connect();
+    try {
+      await bootstrap.query('SELECT pg_advisory_lock($1)', [42420260921]);
+      await applySchema(bootstrap);
+      await seedShopCatalog(bootstrap);
+      const seeded = await bootstrap.query("SELECT value FROM _meta WHERE key = 'seeded'");
+      const count = await rowCount(bootstrap, 'vehicles');
+      if (seeded.rowCount === 0 && count === 0) await seedDefaultData(bootstrap);
+      await backfillVehicleServiceKeys(bootstrap);
+      await archiveLegacyDemoVehicles(bootstrap);
+    } finally {
+      await bootstrap.query('SELECT pg_advisory_unlock($1)', [42420260921]).catch(() => {});
+      bootstrap.release();
+    }
     return _pool;
   } catch (error) {
     const failedPool = _pool;

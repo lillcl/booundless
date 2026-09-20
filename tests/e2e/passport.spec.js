@@ -69,7 +69,7 @@ test('vehicle passport opens live identity, maintenance, history and reminders',
 
     await reader.getByRole('button', { name: '下一頁' }).click();
     await expect(reader).toContainText('機油保養即將到期');
-    await expect(reader).toContainText('文件功能準備中');
+    await expect(reader).toContainText('車商協作由你控制');
 
     await page.setViewportSize({ width: 390, height: 844 });
     const dimensions = await page.evaluate(() => ({

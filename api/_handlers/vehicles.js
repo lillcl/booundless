@@ -4,10 +4,11 @@
    POST /api/vehicles/:id/scope/generate — backfill missing vehicle_status rows. */
 import { getDb } from '../_lib/db.js';
 import { randomUUID } from 'node:crypto';
-import { requireUser } from '../_lib/auth.js';
+import { audit, requireUser } from '../_lib/auth.js';
 import { readBody, sendError, sendJSON, onlyMethod } from '../_lib/http.js';
 import { defaultScopeRows } from '../_lib/scope-template.js';
 import { suggestExtraScope, fingerprint as scopeFingerprint } from '../_lib/scope-ai.js';
+import { createServiceRecord, updateServiceRecord } from '../_lib/service-records.js';
 
 async function handleStatus(req, res, id, user) {
   const db = await getDb();
@@ -165,14 +166,110 @@ async function handleHistory(req, res, id, user) {
   const v = await db.query('SELECT id FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL', [id, user.id]);
   if (v.rowCount === 0) return sendError(res, 404, 'not_found', `Vehicle ${id} not found`);
 
+  if (req.method === 'POST') {
+    const body = await readBody(req);
+    try {
+      const record = await createServiceRecord(db, {
+        vehicleId: id, userId: user.id, body, source: 'owner_manual',
+      });
+      await audit({ actor: user, action: 'vehicle.history.create', targetType: 'service_history',
+        targetId: record.id, payload: { vehicle_id: id, service_keys: record.service_keys }, req });
+      return sendJSON(res, 201, { record });
+    } catch (error) {
+      return sendError(res, error.status || 422, 'unprocessable', error.message);
+    }
+  }
+  if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Use GET or POST');
+
   const r = await db.query(
-    `SELECT id, vehicle_id, performed_at, kind, title, notes, cost, mileage_km
+    `SELECT id, vehicle_id, performed_at, kind, title, notes, cost, mileage_km,
+            source,dealer_id,branch_id,service_keys,version,created_at,updated_at
      FROM service_history
-     WHERE vehicle_id = $1
-     ORDER BY performed_at DESC`,
+     WHERE vehicle_id = $1 AND voided_at IS NULL
+     ORDER BY performed_at DESC, created_at DESC`,
     [id],
   );
   sendJSON(res, 200, { data: r.rows, count: r.rowCount });
+}
+
+async function handleHistoryRecord(req, res, vehicleId, recordId, user) {
+  if (req.method !== 'PATCH') return sendError(res, 405, 'method_not_allowed', 'Only PATCH allowed');
+  const db = await getDb();
+  const owned = await db.query(
+    'SELECT id FROM vehicles WHERE id=$1 AND created_by_user_id=$2 AND archived_at IS NULL',
+    [vehicleId, user.id],
+  );
+  if (!owned.rowCount) return sendError(res, 404, 'not_found', 'Vehicle not found');
+  try {
+    const record = await updateServiceRecord(db, {
+      vehicleId, recordId, userId: user.id, body: await readBody(req), owner: true,
+    });
+    await audit({ actor: user, action: 'vehicle.history.update', targetType: 'service_history',
+      targetId: record.id, payload: { vehicle_id: vehicleId, version: record.version }, req });
+    return sendJSON(res, 200, { record });
+  } catch (error) {
+    return sendError(res, error.status || 422, error.status === 409 ? 'conflict' : 'unprocessable', error.message);
+  }
+}
+
+async function handleDealerAccess(req, res, vehicleId, grantId, user) {
+  const db = await getDb();
+  const owned = await db.query(
+    'SELECT id FROM vehicles WHERE id=$1 AND created_by_user_id=$2 AND archived_at IS NULL',
+    [vehicleId, user.id],
+  );
+  if (!owned.rowCount) return sendError(res, 404, 'not_found', 'Vehicle not found');
+
+  if (req.method === 'GET' && !grantId) {
+    const grants = await db.query(
+      `SELECT g.id,g.vehicle_id,g.dealer_id,d.display_name AS dealer_name,g.can_view_vehicle,
+              g.can_manage_service_records,g.can_update_maintenance_status,g.granted_at,g.expires_at,g.revoked_at
+         FROM vehicle_dealer_grants g JOIN dealers d ON d.id=g.dealer_id
+        WHERE g.vehicle_id=$1 AND g.revoked_at IS NULL
+        ORDER BY d.display_name`,
+      [vehicleId],
+    );
+    return sendJSON(res, 200, { data: grants.rows });
+  }
+  if (req.method === 'POST' && !grantId) {
+    const body = await readBody(req);
+    const dealerId = String(body?.dealer_id || '').trim();
+    if (!dealerId) return sendError(res, 422, 'unprocessable', '請選擇車商');
+    const dealer = await db.query("SELECT id FROM dealers WHERE id=$1 AND status='active'", [dealerId]);
+    if (!dealer.rowCount) return sendError(res, 404, 'not_found', '找不到可用車商');
+    const expiresAt = body?.expires_at ? new Date(body.expires_at) : null;
+    if (expiresAt && Number.isNaN(expiresAt.getTime())) return sendError(res, 422, 'unprocessable', '到期日期無效');
+    const result = await db.query(
+      `INSERT INTO vehicle_dealer_grants
+        (id,vehicle_id,dealer_id,granted_by_user_id,can_view_vehicle,can_manage_service_records,
+         can_update_maintenance_status,granted_at,expires_at,revoked_at,updated_at)
+       VALUES($1,$2,$3,$4,TRUE,$5,$6,NOW(),$7,NULL,NOW())
+       ON CONFLICT(vehicle_id,dealer_id) DO UPDATE SET
+         granted_by_user_id=EXCLUDED.granted_by_user_id,can_view_vehicle=TRUE,
+         can_manage_service_records=EXCLUDED.can_manage_service_records,
+         can_update_maintenance_status=EXCLUDED.can_update_maintenance_status,
+         granted_at=NOW(),expires_at=EXCLUDED.expires_at,revoked_at=NULL,updated_at=NOW()
+       RETURNING *`,
+      [`grant-${randomUUID()}`, vehicleId, dealerId, user.id,
+       body?.can_manage_service_records !== false, body?.can_update_maintenance_status !== false,
+       expiresAt],
+    );
+    await audit({ actor: user, action: 'vehicle.dealer_access.grant', targetType: 'vehicle', targetId: vehicleId,
+      payload: { dealer_id: dealerId, grant_id: result.rows[0].id }, req });
+    return sendJSON(res, 201, { grant: result.rows[0] });
+  }
+  if (req.method === 'DELETE' && grantId) {
+    const result = await db.query(
+      `UPDATE vehicle_dealer_grants SET revoked_at=NOW(),updated_at=NOW()
+        WHERE id=$1 AND vehicle_id=$2 AND revoked_at IS NULL RETURNING id,dealer_id`,
+      [grantId, vehicleId],
+    );
+    if (!result.rowCount) return sendError(res, 404, 'not_found', '找不到有效授權');
+    await audit({ actor: user, action: 'vehicle.dealer_access.revoke', targetType: 'vehicle', targetId: vehicleId,
+      payload: { dealer_id: result.rows[0].dealer_id, grant_id: grantId }, req });
+    return sendJSON(res, 200, { ok: true });
+  }
+  return sendError(res, 405, 'method_not_allowed', 'Method not allowed');
 }
 
 async function handleOnboarding(req, res, id, user) {
@@ -193,14 +290,24 @@ async function handleOnboarding(req, res, id, user) {
 }
 
 export default async function handler(req, res) {
-  if (!onlyMethod(req, res, ['GET', 'POST', 'PATCH'])) return;
+  if (!onlyMethod(req, res, ['GET', 'POST', 'PATCH', 'DELETE'])) return;
   const user = await requireUser(req, res);
   if (!user) return;
 
   try {
     const url = req.url || '';
+    const historyRecordMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/history\/([^/?#]+)\/?(?:\?.*)?$/);
+    if (historyRecordMatch) return await handleHistoryRecord(req, res,
+      decodeURIComponent(historyRecordMatch[1]), decodeURIComponent(historyRecordMatch[2]), user);
+
     const historyMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/history\/?$/);
     if (historyMatch) return await handleHistory(req, res, decodeURIComponent(historyMatch[1]), user);
+
+    const accessRecordMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/dealer-access\/([^/?#]+)\/?(?:\?.*)?$/);
+    if (accessRecordMatch) return await handleDealerAccess(req, res,
+      decodeURIComponent(accessRecordMatch[1]), decodeURIComponent(accessRecordMatch[2]), user);
+    const accessMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/dealer-access\/?(?:\?.*)?$/);
+    if (accessMatch) return await handleDealerAccess(req, res, decodeURIComponent(accessMatch[1]), null, user);
 
     const onboardingMatch = url.match(/^\/api\/vehicles\/([^/?#]+)\/onboarding\/?$/);
     if (onboardingMatch) return await handleOnboarding(req, res, decodeURIComponent(onboardingMatch[1]), user);
@@ -309,7 +416,7 @@ export default async function handler(req, res) {
       return sendJSON(res, 201, vehicle);
     }
 
-    if (url.startsWith('/api/vehicles')) {
+    if (url.startsWith('/api/vehicles') && req.method === 'GET') {
       const db = await getDb();
       /* scope_confirmed follows the same rule as data_complete (every scope row
          has last_done_km AND last_done_at) AND the owner has explicitly
@@ -335,6 +442,6 @@ export default async function handler(req, res) {
 
     sendError(res, 404, 'not_found', `No route matches ${url}`);
   } catch (err) {
-    sendError(res, 500, 'internal_error', err.message);
+    sendError(res, err.status || 500, 'internal_error', err.message);
   }
 }

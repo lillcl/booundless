@@ -6,6 +6,7 @@ import { calculateDealerMatches, rankBranches } from '../_lib/dealer-matcher.js'
 import { readBody, sendError, sendJSON } from '../_lib/http.js';
 import { sendInvitation } from '../_lib/invitation-mail.js';
 import {vehicleNeeds} from '../_lib/vehicle-needs.js';
+import { createServiceRecord, updateServiceRecord } from '../_lib/service-records.js';
 
 const DEALER_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
 const EDIT_ROLES = new Set(['owner', 'manager']);
@@ -261,6 +262,89 @@ async function dealerPortalRoute(req, res, path, query) {
     return sendJSON(res, 200, { data: r.rows });
   }
 
+  const dealerVehicleMatch = path.match(/^\/api\/dealer\/vehicles(?:\/([^/]+)(?:\/history(?:\/([^/]+))?)?)?$/);
+  if (dealerVehicleMatch) {
+    const dealerId = await resolveDealerForUser(req, res, db, user);
+    const member = await getMember(db, dealerId, user.id);
+    if (!member || member.status !== 'active') return sendError(res, 403, 'forbidden', 'Dealer access denied');
+    const vehicleId = dealerVehicleMatch[1] ? decodeURIComponent(dealerVehicleMatch[1]) : null;
+    const recordId = dealerVehicleMatch[2] ? decodeURIComponent(dealerVehicleMatch[2]) : null;
+    if (!vehicleId && req.method === 'GET') {
+      const rows = await db.query(
+        `SELECT v.id,v.model,v.make,v.year,v.fuel_type,v.plate,v.mileage_km,v.image,
+                g.can_manage_service_records,g.can_update_maintenance_status,g.expires_at,
+                (SELECT COUNT(*)::int FROM service_history h WHERE h.vehicle_id=v.id AND h.voided_at IS NULL) AS history_count,
+                (SELECT COUNT(*)::int FROM vehicle_status s WHERE s.vehicle_id=v.id AND s.last_done_at IS NULL) AS unknown_count
+           FROM vehicle_dealer_grants g JOIN vehicles v ON v.id=g.vehicle_id
+          WHERE g.dealer_id=$1 AND g.can_view_vehicle AND g.revoked_at IS NULL
+            AND (g.expires_at IS NULL OR g.expires_at>NOW()) AND v.archived_at IS NULL
+          ORDER BY g.updated_at DESC`,
+        [dealerId],
+      );
+      return sendJSON(res, 200, { data: rows.rows });
+    }
+    if (!vehicleId) return sendError(res, 405, 'method_not_allowed', 'Only GET allowed');
+    const access = await db.query(
+      `SELECT g.* FROM vehicle_dealer_grants g JOIN vehicles v ON v.id=g.vehicle_id
+        WHERE g.dealer_id=$1 AND g.vehicle_id=$2 AND g.can_view_vehicle
+          AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at>NOW())
+          AND v.archived_at IS NULL`,
+      [dealerId, vehicleId],
+    );
+    if (!access.rowCount) return sendError(res, 404, 'not_found', '這間車商未獲授權查看此車輛');
+    const grant = access.rows[0];
+    const historyRoute = path.includes('/history');
+    if (!historyRoute && req.method === 'GET') {
+      const [vehicle, status, history] = await Promise.all([
+        db.query(`SELECT id,model,make,year,fuel_type,vehicle_class,powertrain_type,vin,plate,mileage_km,image
+                    FROM vehicles WHERE id=$1`, [vehicleId]),
+        db.query(`SELECT id,item,service_item_type_key,interval_km,interval_months,last_done_km,last_done_at,wear,display_order
+                    FROM vehicle_status WHERE vehicle_id=$1 ORDER BY display_order,id`, [vehicleId]),
+        db.query(`SELECT id,performed_at,kind,title,notes,cost,mileage_km,source,dealer_id,service_keys,version,created_at,updated_at
+                    FROM service_history WHERE vehicle_id=$1 AND voided_at IS NULL ORDER BY performed_at DESC,created_at DESC`, [vehicleId]),
+      ]);
+      return sendJSON(res, 200, { vehicle: vehicle.rows[0], status: status.rows, history: history.rows,
+        permissions: { can_manage_service_records: grant.can_manage_service_records,
+          can_update_maintenance_status: grant.can_update_maintenance_status }, dealer_id: dealerId });
+    }
+    if (!historyRoute) return sendError(res, 405, 'method_not_allowed', 'Only GET allowed');
+    if (!['owner', 'manager', 'staff'].includes(member.role) || !grant.can_manage_service_records) {
+      return sendError(res, 403, 'forbidden', '這個帳號沒有修改此車保養紀錄的權限');
+    }
+    const body = await readBody(req);
+    if ((body?.service_keys?.length || 0) && !grant.can_update_maintenance_status) {
+      return sendError(res, 403, 'forbidden', '車主未授權車商更新保養狀態');
+    }
+    if (!recordId && req.method === 'POST') {
+      const branchId = body?.branch_id ? id(body.branch_id, 'branch_id') : null;
+      if (branchId) {
+        const branch = await db.query('SELECT id FROM dealer_branches WHERE id=$1 AND dealer_id=$2 AND is_active', [branchId, dealerId]);
+        if (!branch.rowCount) return sendError(res, 422, 'unprocessable', '分店不屬於目前車商');
+      }
+      try {
+        const record = await createServiceRecord(db, { vehicleId, userId: user.id, dealerId, branchId,
+          body, source: 'dealer' });
+        await audit({ actor: user, action: 'dealer.vehicle.history.create', targetType: 'service_history',
+          targetId: record.id, payload: { vehicle_id: vehicleId, dealer_id: dealerId }, req });
+        return sendJSON(res, 201, { record });
+      } catch (error) {
+        return sendError(res, error.status || 422, 'unprocessable', error.message);
+      }
+    }
+    if (recordId && req.method === 'PATCH') {
+      try {
+        const record = await updateServiceRecord(db, { vehicleId, recordId, userId: user.id,
+          dealerId, body, owner: false });
+        await audit({ actor: user, action: 'dealer.vehicle.history.update', targetType: 'service_history',
+          targetId: record.id, payload: { vehicle_id: vehicleId, dealer_id: dealerId, version: record.version }, req });
+        return sendJSON(res, 200, { record });
+      } catch (error) {
+        return sendError(res, error.status || 422, error.status === 409 ? 'conflict' : 'unprocessable', error.message);
+      }
+    }
+    return sendError(res, 405, 'method_not_allowed', 'Use POST or PATCH');
+  }
+
   const serviceMatch = path.match(/^\/api\/dealer\/services(?:\/([^/]+))?$/);
   const branchRoute = path.match(/^\/api\/dealer\/branches(?:\/([^/]+)\/services)?$/);
   if (branchRoute) {
@@ -510,6 +594,15 @@ export default async function handler(req, res) {
       if (!await requireUser(req, res)) return;
       const db = await getDb();
       const r = await db.query('SELECT key,category,display_names FROM service_item_types WHERE is_active ORDER BY category,key');
+      return sendJSON(res, 200, { data: r.rows });
+    }
+    if (pathname === '/api/dealers' && req.method === 'GET') {
+      if (!await requireUser(req, res)) return;
+      const db = await getDb();
+      const r = await db.query(
+        `SELECT id,display_name,legal_name,website
+           FROM dealers WHERE status='active' ORDER BY display_name`,
+      );
       return sendJSON(res, 200, { data: r.rows });
     }
     if (/^\/api\/vehicles\/[^/]+\/(dealer-matches|service-requests|needs)$/.test(pathname))

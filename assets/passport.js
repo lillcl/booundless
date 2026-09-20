@@ -118,7 +118,8 @@ function maintenancePage(status) {
 
 function historyPage(history) {
   return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">04 · SERVICE RECORDS</span><h3>保養紀錄</h3>
-    <div class="vp-list">${history.length ? history.slice(0, 6).map((item) => `<div class="vp-row"><span><b>${esc(item.title)}</b><small>${esc([dateLabel(item.performed_at), item.mileage_km ? `${Number(item.mileage_km).toLocaleString()} km` : '', item.cost || ''].filter(Boolean).join(' · '))}</small></span><span class="vp-pill">已記錄</span></div>`).join('') : '<div class="vp-note">暫時未有保養紀錄。完成首次保養後，日期、里程與項目會同步保存。</div>'}</div>
+    <button class="vp-edit-trigger vp-edit-trigger--primary" type="button" data-add-history>＋ 手動新增保養紀錄</button>
+    <div class="vp-list">${history.length ? history.slice(0, 6).map((item) => `<button class="vp-row vp-row--button" type="button" data-history-id="${esc(item.id)}"><span><b>${esc(item.title)}</b><small>${esc([dateLabel(item.performed_at), item.mileage_km != null ? `${Number(item.mileage_km).toLocaleString()} km` : '', item.cost || '', item.source === 'dealer' ? '由車商記錄' : '由車主記錄'].filter(Boolean).join(' · '))}</small></span><span class="vp-pill">修改</span></button>`).join('') : '<div class="vp-note">暫時未有保養紀錄。你可以手動加入日期、里程及完成項目。</div>'}</div>
   </div>`;
 }
 
@@ -130,7 +131,8 @@ function reminderPage(reminders) {
 
 function documentsPage() {
   return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">06 · PASSPORT DATA</span><h3>資料與下一步</h3>
-    <div class="vp-note"><b>文件功能準備中</b><br>現時未有已驗證的行車證或收據文件，因此不會顯示虛構附件。車輛身份、保養與訂購資料已由資料庫同步。</div>
+    <div class="vp-note"><b>車商協作由你控制</b><br>你可以只把這輛車授權給指定車商。其他車輛不會一併分享，亦可隨時取消。</div>
+    <button class="vp-edit-trigger vp-edit-trigger--primary" type="button" data-manage-dealer-access>管理車商權限</button>
     <div class="vp-actions"><a href="#/service">保養與服務</a><a href="#/shop">選購合適用品</a></div>
   </div>`;
 }
@@ -211,6 +213,12 @@ export async function renderVehiclePassports(root, context = {}) {
       book.innerHTML = `<section class="vp-spread is-active">${identityPage(vehicle)}${overviewPage(vehicle, status, history)}</section><section class="vp-spread">${maintenancePage(status)}${historyPage(history)}</section><section class="vp-spread">${reminderPage(ownReminders)}${documentsPage()}</section><div class="vp-cover"><div class="vp-cover__content">${seal}<h2>${esc(vehicleName(vehicle))}</h2><p>車輛護照</p></div></div>`;
       setSpread(0);
       reader.querySelector('[data-edit-passport]')?.addEventListener('click', () => openEditor(vehicle, allReminders));
+      reader.querySelector('[data-add-history]')?.addEventListener('click', () => openHistoryEditor(vehicle, status, history, allReminders));
+      reader.querySelectorAll('[data-history-id]').forEach((button) => button.addEventListener('click', () => {
+        const record = history.find((item) => item.id === button.dataset.historyId);
+        if (record) openHistoryEditor(vehicle, status, history, allReminders, record);
+      }));
+      reader.querySelector('[data-manage-dealer-access]')?.addEventListener('click', () => openDealerAccess(vehicle));
       window.setTimeout(() => reader?.querySelector('.vp-reader__close')?.focus(), 450);
     } catch (error) {
       const loading = reader?.querySelector('.vp-loading');
@@ -294,6 +302,120 @@ export async function renderVehiclePassports(root, context = {}) {
     });
     requestAnimationFrame(() => editor.classList.add('is-open'));
     form.elements.make.focus();
+  };
+
+  const refreshReader = async (vehicle, allReminders) => {
+    const trigger = activeVehicle;
+    reader?.remove();
+    reader = null;
+    await openReader(vehicle, trigger, allReminders);
+  };
+
+  const openHistoryEditor = (vehicle, status, history, allReminders, existing = null) => {
+    if (!reader) return;
+    const items = Array.isArray(status?.items) ? status.items.filter((item) => item.service_item_type_key) : [];
+    const selected = new Set(existing?.service_keys || []);
+    const modal = document.createElement('div');
+    modal.className = 'vp-editor';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `<div class="vp-editor__panel vp-editor__panel--compact"><div class="vp-editor__head"><div><span class="vp-page-label">SERVICE RECORD</span><h2>${existing ? '修改保養紀錄' : '新增保養紀錄'}</h2><p>選擇已完成的項目後，護照內的保養狀態會同步更新。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
+      <form data-history-form><div class="vp-editor__grid">
+        <label>日期<input name="performed_at" type="date" required value="${esc((existing?.performed_at || new Date().toISOString()).slice(0, 10))}"></label>
+        <label>當時里程（km）<input name="mileage_km" type="number" min="0" value="${esc(existing?.mileage_km ?? vehicle.mileage_km ?? '')}"></label>
+        <label class="vp-editor__wide">紀錄名稱<input name="title" required value="${esc(existing?.title || '')}" placeholder="例如：更換機油及機油隔"></label>
+        <label>費用<input name="cost" value="${esc(existing?.cost || '')}" placeholder="例如 MOP 980"></label>
+        <label class="vp-editor__wide">備註<textarea name="notes" rows="3" placeholder="零件品牌、工場或其他資料">${esc(existing?.notes || '')}</textarea></label>
+      </div><fieldset class="vp-service-checks"><legend>本次完成項目</legend>${items.map((item) => `<label><input type="checkbox" name="service_keys" value="${esc(item.service_item_type_key)}" ${selected.has(item.service_item_type_key) ? 'checked' : ''}><span>${esc(item.item)}</span></label>`).join('') || '<p>這輛車暫時沒有可選保養項目。</p>'}</fieldset>
+      <div class="vp-editor__status" data-history-status>資料會儲存在這輛車的護照中。</div><div class="vp-editor__actions"><button type="button" data-editor-cancel>取消</button><button type="submit">${existing ? '儲存修改' : '加入紀錄'}</button></div></form></div>`;
+    reader.appendChild(modal);
+    const close = () => modal.remove();
+    modal.querySelector('[data-editor-close]').addEventListener('click', close);
+    modal.querySelector('[data-editor-cancel]').addEventListener('click', close);
+    modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+    const form = modal.querySelector('[data-history-form]');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector('[type="submit"]');
+      const statusLine = modal.querySelector('[data-history-status]');
+      submit.disabled = true;
+      statusLine.className = 'vp-editor__status is-working';
+      statusLine.textContent = '正在同步保養紀錄與車況…';
+      try {
+        const values = new FormData(form);
+        const payload = {
+          performed_at: values.get('performed_at'), title: values.get('title'), notes: values.get('notes'),
+          cost: values.get('cost'), mileage_km: values.get('mileage_km'),
+          service_keys: values.getAll('service_keys'), version: existing?.version,
+        };
+        const path = existing
+          ? `/api/vehicles/${encodeURIComponent(vehicle.id)}/history/${encodeURIComponent(existing.id)}`
+          : `/api/vehicles/${encodeURIComponent(vehicle.id)}/history`;
+        await sendJSONRequest(path, existing ? 'PATCH' : 'POST', payload);
+        close();
+        await refreshReader(vehicle, allReminders);
+      } catch (error) {
+        statusLine.className = 'vp-editor__status is-error';
+        statusLine.textContent = error.message || '儲存失敗，請再試一次。';
+        submit.disabled = false;
+      }
+    });
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    form.elements.title.focus();
+  };
+
+  const openDealerAccess = async (vehicle) => {
+    if (!reader) return;
+    const modal = document.createElement('div');
+    modal.className = 'vp-editor';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `<div class="vp-editor__panel vp-editor__panel--compact"><div class="vp-editor__head"><div><span class="vp-page-label">DEALER ACCESS</span><h2>管理車商權限</h2><p>授權只適用於「${esc(vehicleName(vehicle))}」，車商不會看到你的其他車輛。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div><div data-access-body><div class="vp-loading"></div></div></div>`;
+    reader.appendChild(modal);
+    const close = () => modal.remove();
+    modal.querySelector('[data-editor-close]').addEventListener('click', close);
+    modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+    const body = modal.querySelector('[data-access-body]');
+    const load = async () => {
+      try {
+        const [dealersPayload, grantsPayload] = await Promise.all([
+          getJSON('/api/dealers'), getJSON(`/api/vehicles/${encodeURIComponent(vehicle.id)}/dealer-access`),
+        ]);
+        const dealers = dealersPayload.data || [];
+        const grants = grantsPayload.data || [];
+        const grantedIds = new Set(grants.map((grant) => grant.dealer_id));
+        body.innerHTML = `<form data-access-form><label class="vp-access-select">選擇車商<select name="dealer_id" required><option value="">請選擇</option>${dealers.filter((dealer) => !grantedIds.has(dealer.id)).map((dealer) => `<option value="${esc(dealer.id)}">${esc(dealer.display_name)}</option>`).join('')}</select></label><div class="vp-access-options"><label><input type="checkbox" name="can_manage" checked> 可新增及修改該車的保養紀錄</label><label><input type="checkbox" name="can_status" checked> 可同步更新該車的保養狀態</label></div><button class="vp-edit-trigger vp-edit-trigger--primary" type="submit" ${dealers.length === grants.length ? 'disabled' : ''}>授權車商</button><p class="vp-editor__status" data-access-status>${dealers.length === grants.length && dealers.length ? '所有可用車商已在清單中。' : '你可以隨時取消授權。'}</p></form><div class="vp-access-list">${grants.length ? grants.map((grant) => `<div class="vp-row"><span><b>${esc(grant.dealer_name)}</b><small>${grant.can_update_maintenance_status ? '可更新紀錄與保養狀態' : '只可管理紀錄'}</small></span><button type="button" data-revoke-grant="${esc(grant.id)}">取消授權</button></div>`).join('') : '<div class="vp-note">目前沒有已授權車商。</div>'}</div>`;
+        const form = body.querySelector('[data-access-form]');
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const button = form.querySelector('[type="submit"]');
+          const line = form.querySelector('[data-access-status]');
+          button.disabled = true;
+          try {
+            await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}/dealer-access`, 'POST', {
+              dealer_id: form.elements.dealer_id.value,
+              can_manage_service_records: form.elements.can_manage.checked,
+              can_update_maintenance_status: form.elements.can_status.checked,
+            });
+            await load();
+          } catch (error) {
+            line.className = 'vp-editor__status is-error'; line.textContent = error.message;
+            button.disabled = false;
+          }
+        });
+        body.querySelectorAll('[data-revoke-grant]').forEach((button) => button.addEventListener('click', async () => {
+          button.disabled = true;
+          try {
+            await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}/dealer-access/${encodeURIComponent(button.dataset.revokeGrant)}`, 'DELETE');
+            await load();
+          } catch (error) { button.disabled = false; await window.appDialog?.(error.message); }
+        }));
+      } catch (error) {
+        body.innerHTML = `<div class="vp-note">${esc(error.message || '無法載入車商權限')}</div>`;
+      }
+    };
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    await load();
   };
 
   document.addEventListener('keydown', onKeyDown);
