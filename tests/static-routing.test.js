@@ -31,6 +31,11 @@ test('garage is rendered by the database-backed vehicle passport module', () => 
   assert.match(html, /onAddVehicle: openAddVehicleSheet/);
 });
 
+test('standalone AI function bundles database schema files required by authentication', () => {
+  const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.equal(config.functions?.['api/ai.js']?.includeFiles, 'db/*.sql');
+});
+
 test('file previews send login to the hosted API-backed application', () => {
   assert.match(html, /window\.location\.protocol === 'file:'/);
   assert.match(html, /href="https:\/\/www\.booundless\.com\/#\/login"/);

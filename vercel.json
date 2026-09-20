@@ -4,6 +4,7 @@
   "outputDirectory": ".",
   "functions": {
     "api/ai.js": {
+      "includeFiles": "db/*.sql",
       "maxDuration": 30
     },
     "api/agent.js": {
