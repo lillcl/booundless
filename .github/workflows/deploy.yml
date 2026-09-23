@@ -24,6 +24,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci --omit=dev
+      - name: Apply database migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set on this repository; refusing to deploy with an unverified schema state." >&2
+            exit 1
+          fi
+          node scripts/migrate.js
       - uses: actions/download-artifact@v4
         with:
           name: playwright-report

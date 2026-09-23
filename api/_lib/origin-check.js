@@ -23,6 +23,19 @@ function loadAllowlist() {
   return list;
 }
 
+function matchOrigin(allow, origin) {
+  /* Allowlist entries support a single `*` wildcard (any chars, no slashes
+     expected) so preview URLs like https://*.vercel.app match every
+     `*.vercel.app` deployment without enumerating hashes. */
+  for (const pattern of allow) {
+    if (pattern === origin) return true;
+    if (!pattern.includes('*')) continue;
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^./]*');
+    if (new RegExp(`^${escaped}$`).test(origin)) return true;
+  }
+  return false;
+}
+
 function requestOrigin(req) {
   const origin = req.headers['origin'];
   if (typeof origin === 'string' && origin) return origin;
@@ -54,7 +67,7 @@ export function originCheck(_req, _res, next) {
       sendError(res, 403, 'forbidden', 'Missing Origin header.');
       return false;
     }
-    if (!allow.includes(origin)) {
+    if (!matchOrigin(allow, origin)) {
       sendError(res, 403, 'forbidden', 'Origin not allowed.');
       return false;
     }
@@ -79,7 +92,7 @@ export function originCheckWrap(handler) {
       if (process.env.KC_ALLOW_NO_ORIGIN === '1' && !isProd) return handler(req, res);
       return sendError(res, 403, 'forbidden', 'Missing Origin header.');
     }
-    if (!allow.includes(origin)) {
+    if (!matchOrigin(allow, origin)) {
       return sendError(res, 403, 'forbidden', 'Origin not allowed.');
     }
     return handler(req, res);
