@@ -22,6 +22,17 @@ const ADVISORY_LOCK_KEY = 42420260921;
 const BASE_SCHEMA_FILE = 'schema.sql';
 const MVP_SCHEMA_FILE = 'service-mvp-schema.sql';
 
+// Additive slices applied after the base schema. Order MUST match
+// api/_lib/db.js applySchema() so referential dependencies are satisfied.
+const ADDITIVE_SLICES = [
+  'marketing-schema.sql',
+  'merchant-v2-schema.sql',
+  'workflow-schema.sql',
+  'scope-ai-schema.sql',
+  'shop-schema.sql',
+  'vehicle-sharing-schema.sql',
+];
+
 const LEDGER_DDL = `
   CREATE TABLE IF NOT EXISTS schema_migrations (
     name TEXT PRIMARY KEY,
@@ -73,10 +84,14 @@ export async function runMigrations({ connectionString, verbose = true } = {}) {
     if (existsSync(join(SCHEMA_DIR, BASE_SCHEMA_FILE))) {
       slices.push({ name: BASE_SCHEMA_FILE, path: join(SCHEMA_DIR, BASE_SCHEMA_FILE), required: true });
     }
+    for (const name of ADDITIVE_SLICES) {
+      const path = join(SCHEMA_DIR, name);
+      if (existsSync(path)) slices.push({ name, path, required: true });
+    }
     if (existsSync(join(SCHEMA_DIR, MVP_SCHEMA_FILE))) {
       slices.push({ name: MVP_SCHEMA_FILE, path: join(SCHEMA_DIR, MVP_SCHEMA_FILE), required: true });
     }
-    // Any extra additive slices (future) live in db/migrations/*.sql
+    // Any future additive slices live in db/migrations/*.sql
     const extraDir = join(SCHEMA_DIR, 'migrations');
     if (existsSync(extraDir)) {
       for (const f of readdirSync(extraDir).filter((n) => n.endsWith('.sql')).sort()) {
@@ -129,7 +144,7 @@ export async function readinessCheck({ connectionString, expectedSlices } = {}) 
     await client.query(LEDGER_DDL);
     const r = await client.query('SELECT name, sha256 FROM schema_migrations');
     const applied = new Map(r.rows.map((row) => [row.name, row.sha256]));
-    const missing = (expectedSlices || [BASE_SCHEMA_FILE, MVP_SCHEMA_FILE]).filter((s) => !applied.has(s));
+    const missing = (expectedSlices || [BASE_SCHEMA_FILE, ...ADDITIVE_SLICES, MVP_SCHEMA_FILE]).filter((s) => !applied.has(s));
     return { ok: missing.length === 0, applied: [...applied.keys()], missing };
   } finally {
     client.release();
