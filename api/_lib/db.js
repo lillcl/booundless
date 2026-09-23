@@ -28,7 +28,9 @@ function resolveSchemaPath() {
   return join(__dirname, '..', '..', 'db', 'schema.sql');
 }
 
-async function applySchema(db) {
+export const SCHEMA_VERSION = '2026-09-22-service-mvp-1';
+
+export async function applySchema(db) {
   const sql = readFileSync(resolveSchemaPath(), 'utf8');
   await db.query(sql);
   await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
@@ -37,6 +39,8 @@ async function applySchema(db) {
   await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
   await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'shop-schema.sql'), 'utf8'));
   await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'vehicle-sharing-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'service-mvp-schema.sql'), 'utf8'));
+  await db.query("INSERT INTO _meta(key,value) VALUES('schema_version',$1) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", [SCHEMA_VERSION]);
 }
 
 async function rowCount(pool, table) {
@@ -71,7 +75,7 @@ async function backfillVehicleServiceKeys(pool) {
     WHERE service_item_type_key IS NULL`);
 }
 
-async function seedDefaultData(pool) {
+export async function seedDefaultData(pool) {
   const now = new Date().toISOString();
 
   await pool.query(`
@@ -163,14 +167,21 @@ export async function getDb() {
        has competing ALTER TABLE / catalogue locks during cold start. */
     const bootstrap = await _pool.connect();
     try {
-      await bootstrap.query('SELECT pg_advisory_lock($1)', [42420260921]);
-      await applySchema(bootstrap);
-      await seedShopCatalog(bootstrap);
-      const seeded = await bootstrap.query("SELECT value FROM _meta WHERE key = 'seeded'");
-      const count = await rowCount(bootstrap, 'vehicles');
-      if (seeded.rowCount === 0 && count === 0) await seedDefaultData(bootstrap);
-      await backfillVehicleServiceKeys(bootstrap);
-      await archiveLegacyDemoVehicles(bootstrap);
+      const autoMigrate = process.env.KC_AUTO_MIGRATE === '1' ||
+        (process.env.KC_AUTO_MIGRATE !== '0' && process.env.NODE_ENV !== 'production' && !process.env.VERCEL);
+      if (autoMigrate) {
+        await bootstrap.query('SELECT pg_advisory_lock($1)', [42420260921]);
+        await applySchema(bootstrap);
+        await seedShopCatalog(bootstrap);
+        const seeded = await bootstrap.query("SELECT value FROM _meta WHERE key = 'seeded'");
+        const count = await rowCount(bootstrap, 'vehicles');
+        if (seeded.rowCount === 0 && count === 0 && (process.env.KC_DEMO_SEED !== '0') && (process.env.DEMO_SEED_ENABLED !== '0')) await seedDefaultData(bootstrap);
+        await backfillVehicleServiceKeys(bootstrap);
+        await archiveLegacyDemoVehicles(bootstrap);
+      } else {
+        const version = await bootstrap.query("SELECT value FROM _meta WHERE key='schema_version'");
+        if (version.rows[0]?.value !== SCHEMA_VERSION) throw new Error(`Database migration required: ${SCHEMA_VERSION}`);
+      }
     } finally {
       await bootstrap.query('SELECT pg_advisory_unlock($1)', [42420260921]).catch(() => {});
       bootstrap.release();

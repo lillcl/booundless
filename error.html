@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>頁面錯誤｜無界啟程 BOOUNDLESS</title>
+  <meta name="robots" content="noindex,follow" />
+  <meta property="og:title" content="頁面錯誤｜無界啟程 BOOUNDLESS" />
+  <link rel="icon" href="assets/icons/booundless-car.png" />
+  <style>
+    :root { --bg:#0d2238; --card:#fff; --ink:#0f1b2d; --muted:#5b6b80; --line:#dde5ee; --brand:#073568; --accent:#1999be; --err:#b23a32; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; padding:0; background:#f4f7fb; color:var(--ink); font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; line-height:1.7; min-height:100vh; display:flex; flex-direction:column; }
+    header { display:flex; align-items:center; gap:12px; padding:18px 24px; background:var(--bg); color:#fff; }
+    header a { color:#fff; text-decoration:none; display:inline-flex; gap:10px; align-items:center; font-weight:600; }
+    header img { width:32px; height:30px; }
+    main { flex:1; display:flex; align-items:center; justify-content:center; padding:48px 24px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:40px 32px; max-width:560px; width:100%; box-shadow:0 6px 24px rgba(15,27,45,.06); text-align:center; }
+    .code { font-size:64px; font-weight:800; color:var(--brand); letter-spacing:4px; line-height:1; margin:0 0 12px; }
+    .code.err { color:var(--err); }
+    .eyebrow { color:var(--accent); font-size:12px; letter-spacing:2px; text-transform:uppercase; margin:0 0 8px; font-weight:600; }
+    h1 { font-size:22px; margin:8px 0 12px; }
+    p { color:var(--muted); margin:0 0 24px; }
+    .actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    a.btn { display:inline-block; padding:10px 18px; background:var(--brand); color:#fff; border-radius:10px; text-decoration:none; font-weight:600; }
+    a.btn.secondary { background:#e8f1f9; color:var(--brand); }
+    a.btn:hover { filter:brightness(1.1); }
+    .support { font-size:13px; color:var(--muted); margin-top:24px; }
+    .ref { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:12px; color:var(--muted); margin-top:8px; }
+    footer { text-align:center; color:var(--muted); font-size:13px; padding:16px; }
+    footer a { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/"><img src="assets/icons/booundless-car.png" alt="" />無界啟程 BOOUNDLESS</a>
+  </header>
+  <main>
+    <div class="card" id="card">
+      <p class="eyebrow" id="eyebrow">PAGE ERROR</p>
+      <p class="code" id="code">500</p>
+      <h1 id="title">頁面暫時無法載入</h1>
+      <p id="desc">我們已收到這個問題的記錄。請稍候再試,或回到首頁繼續使用其他功能。</p>
+      <div class="actions">
+        <a class="btn" href="/">返回首頁</a>
+        <a class="btn secondary" href="javascript:location.reload()">重新整理</a>
+      </div>
+      <p class="support">持續發生問題?請於「我的 → 聯絡客服」回報,並複製參考編號給我們。</p>
+      <p class="ref" id="ref"></p>
+    </div>
+  </main>
+  <footer>
+    <a href="/legal/privacy.html">隱私政策</a> · <a href="/legal/terms.html">服務條款</a> · © 2026 無界啟程 BOOUNDLESS
+  </footer>
+  <script>
+    /* Map HTTP status + an optional `code` query into a localized message.
+       Falls back to a generic message for unknown codes. */
+    var SCENARIOS = {
+      '404': { eyebrow: 'NOT FOUND', desc: '連結可能已更改或輸入有誤。' },
+      '401': { eyebrow: 'SIGN IN REQUIRED', desc: '請登入後再使用此功能。' },
+      '403': { eyebrow: 'ACCESS DENIED', desc: '您沒有權限存取此頁面。' },
+      '429': { eyebrow: 'TOO MANY REQUESTS', desc: '操作太頻繁,請稍候再試。' },
+      '500': { eyebrow: 'SERVER ERROR', desc: '伺服器暫時無法回應,工程團隊已收到通知。' },
+      '502': { eyebrow: 'GATEWAY ERROR', desc: '上游服務暫時無法連線,請稍候再試。' },
+      '503': { eyebrow: 'SERVICE UNAVAILABLE', desc: '系統維護或暫時離線中,請稍候再試。' },
+      '504': { eyebrow: 'TIMEOUT', desc: '伺服器回應逾時,請稍候再試。' },
+      'payload_too_large': { code: '413', eyebrow: 'PAYLOAD TOO LARGE', desc: '上傳的檔案過大,請壓縮後再試。' },
+      'rate_limited': { code: '429', eyebrow: 'TOO MANY REQUESTS', desc: '操作太頻繁,請稍候再試。' },
+      'unauthorized': { code: '401', eyebrow: 'SIGN IN REQUIRED', desc: '請登入後再使用此功能。' },
+      'forbidden': { code: '403', eyebrow: 'ACCESS DENIED', desc: '您沒有權限存取此頁面。' },
+      'not_found': { code: '404', eyebrow: 'NOT FOUND', desc: '連結可能已更改或輸入有誤。' },
+      'internal_error': { code: '500', eyebrow: 'SERVER ERROR', desc: '伺服器暫時無法回應,工程團隊已收到通知。' },
+      'service_unavailable': { code: '503', eyebrow: 'SERVICE UNAVAILABLE', desc: '系統維護或暫時離線中,請稍候再試。' },
+    };
+    var qs = new URLSearchParams(location.search);
+    var statusFromQuery = qs.get('status') || '';
+    var codeFromQuery = qs.get('code') || '';
+    var scenario = SCENARIOS[codeFromQuery] || SCENARIOS[statusFromQuery] || null;
+    var displayCode = (scenario && scenario.code) || statusFromQuery || '500';
+    document.getElementById('code').textContent = displayCode;
+    document.getElementById('eyebrow').textContent = scenario ? scenario.eyebrow : 'PAGE ERROR';
+    var titles = { '401': '請先登入', '403': '沒有權限', '404': '找不到頁面', '429': '操作太頻繁', '500': '伺服器暫時無法回應', '502': '服務暫時無法使用', '503': '服務暫時無法使用', '504': '連線逾時' };
+    document.getElementById('title').textContent = titles[displayCode] || '頁面暫時無法載入';
+    document.getElementById('desc').textContent = scenario ? scenario.desc : '請稍候再試,或回到首頁繼續使用其他功能。';
+    if (displayCode === '500' || displayCode === '502' || displayCode === '503' || displayCode === '504') {
+      document.getElementById('code').classList.add('err');
+    }
+    var ref = 'ERR-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    document.getElementById('ref').textContent = '參考編號：' + ref;
+  </script>
+</body>
+</html>

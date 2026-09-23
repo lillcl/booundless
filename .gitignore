@@ -35,6 +35,7 @@ keys/*
 .vercel
 .env*
 production
+secrets.txt
 
 # Playwright output
 test-results/

@@ -1,14 +1,40 @@
 import { getDb } from '../_lib/db.js';
 import { requireUser } from '../_lib/auth.js';
 import { readBody,sendJSON,sendError } from '../_lib/http.js';
+import { createServiceRecordTx } from '../_lib/service-records.js';
+import {
+  acceptQuoteV2, rejectQuoteV2, scheduleSlotV2,
+  startService, submitCompletion, confirmCompletionV2,
+} from '../_lib/service-orders.js';
 
 export function quoteItems(items) {
   if (!Array.isArray(items)||!items.length||items.length>30) throw new Error('Provide 1–30 quote lines');
   const result=items.map(item=>{
     if(typeof item.description!=='string'||!item.description.trim()||item.description.length>200||!Number.isInteger(item.amount_minor)||item.amount_minor<0||item.amount_minor>10000000) throw new Error('Invalid quote item');
-    return {description:item.description.trim(),amount_minor:item.amount_minor};
+    const keys = item.service_keys ?? [];
+    if (!Array.isArray(keys) || keys.length > 30 || keys.some(key => typeof key !== 'string' || !/^[a-z][a-z0-9_]{0,99}$/.test(key))) throw new Error('Invalid quote service keys');
+    return {description:item.description.trim(),amount_minor:item.amount_minor,service_keys:[...new Set(keys)]};
   });
   return {items:result,total:result.reduce((sum,item)=>sum+item.amount_minor,0)};
+}
+
+export function validateCompletion({ service_keys, mileage_km, total_minor, notes }, quote) {
+  if(!Array.isArray(service_keys)||service_keys.length>30||service_keys.some(key=>typeof key!=='string'))throw new Error('List the work actually completed');
+  if(!Number.isInteger(mileage_km)||mileage_km<0||mileage_km>10000000)throw new Error('Actual completion mileage is required');
+  if(typeof notes!=='string'||!notes.trim()||notes.length>3000)throw new Error('Completion notes are required');
+  if(!Number.isInteger(total_minor)||total_minor<0||total_minor>quote.total_minor)throw new Error('Final amount must not exceed the accepted quote');
+  const approvedKeys=new Set(quote.items.flatMap(item=>item.service_keys||[]));
+  const completedKeys=[...new Set(service_keys)];
+  if(completedKeys.some(key=>!approvedKeys.has(key)))throw new Error('Completed work must be in the accepted quote');
+  return { completedKeys, mileage: mileage_km, total: total_minor, notes: notes.trim() };
+}
+
+export function selectedQuoteLines(items, indexes) {
+  const selected = indexes == null ? items.map((_, index) => index) : indexes;
+  if(!Array.isArray(selected)||!selected.length||selected.length>items.length||
+    selected.some(index=>!Number.isInteger(index)||index<0||index>=items.length)||
+    new Set(selected).size!==selected.length)throw new Error('Select at least one valid quote line');
+  return selected.map(index=>({ index, ...items[index] }));
 }
 export default async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
@@ -22,6 +48,7 @@ export default async function handler(req,res) {
       EXISTS(SELECT 1 FROM dealer_members m WHERE m.dealer_id=r.dealer_id AND m.user_id=$1 AND m.role IN ('owner','manager','staff') AND d.status='active') AS can_manage,
       COALESCE((SELECT json_agg(q ORDER BY q.version DESC) FROM dealer_quotes q WHERE q.request_id=r.id),'[]') AS quotes
       ,COALESCE((SELECT json_agg(i) FROM dealer_request_items i WHERE i.request_id=r.id),'[]') AS items
+      ,COALESCE((SELECT json_agg(l ORDER BY l.quote_line_index) FROM service_order_lines l WHERE l.request_id=r.id),'[]') AS order_lines
       FROM dealer_service_requests r JOIN dealers d ON d.id=r.dealer_id JOIN vehicles v ON v.id=r.vehicle_id
       WHERE (r.user_id=$1 OR EXISTS(SELECT 1 FROM dealer_members m WHERE m.dealer_id=r.dealer_id AND m.user_id=$1 AND d.status='active'))
       AND ($2::text IS NULL OR r.id=$2) ORDER BY r.created_at DESC LIMIT 100`,[user.id,match[1]||null]);
@@ -43,34 +70,109 @@ export default async function handler(req,res) {
     if(body.action==='quote') {
       if(!operator||!['new','quoted'].includes(r.status))throw new Error('Cannot quote this request');
       const {items,total}=quoteItems(body.items);
+      // Preserve line_id + quantity + parts fields when present (v2 items).
+      const storedItems = items.map((it, i) => {
+        const raw = Array.isArray(body.items) ? body.items[i] : null;
+        return raw && typeof raw === 'object'
+          ? { ...it, line_id: raw.line_id || it.line_id || null, quantity: raw.quantity ?? 1,
+              parts_unit_minor: raw.parts_unit_minor ?? 0, labour_minor: raw.labour_minor ?? it.amount_minor,
+              parts_brand: raw.parts_brand ?? null, parts_spec: raw.parts_spec ?? null,
+              part_number: raw.part_number ?? null, work_type: raw.work_type ?? 'service',
+              warranty_text: raw.warranty_text ?? null }
+          : it;
+      });
+      const requested = await client.query('SELECT DISTINCT service_key FROM dealer_request_items WHERE request_id=$1',[r.id]);
+      const allowed = new Set(requested.rows.map(item=>item.service_key));
+      if(items.some(item=>item.service_keys.some(key=>!allowed.has(key))))throw new Error('Quote contains a service outside this request');
       if(!['MOP','HKD','CNY'].includes(body.currency))throw new Error('Unsupported currency');
       const expires=new Date(body.expires_at);
       if(!Number.isFinite(expires.getTime())||expires<=new Date()||expires.getTime()>Date.now()+30*86400000)throw new Error('Quote expiry must be within 30 days');
-      await client.query(`INSERT INTO dealer_quotes(request_id,version,currency,items,total_minor,expires_at,created_by) VALUES($1,$2,$3,$4,$5,$6,$7)`,[r.id,r.version+1,body.currency,JSON.stringify(items),total,expires,user.id]);next='quoted';
+      await client.query(`INSERT INTO dealer_quotes(request_id,version,currency,items,total_minor,expires_at,created_by) VALUES($1,$2,$3,$4,$5,$6,$7)`,[r.id,r.version+1,body.currency,JSON.stringify(storedItems),total,expires,user.id]);next='quoted';
     } else if(body.action==='accept_quote') {
-      if(!customer||r.status!=='quoted')throw new Error('Only the owner can accept a current quote');
+      if(!customer)throw new Error('Only the owner can accept a current quote');
       const q=(await client.query('SELECT * FROM dealer_quotes WHERE request_id=$1 ORDER BY version DESC LIMIT 1',[r.id])).rows[0];
-      if(!q||q.id!==body.quote_id||new Date(q.expires_at)<=new Date())throw new Error('Quote has changed or expired');
-      await client.query('UPDATE dealer_quotes SET accepted_at=NOW() WHERE id=$1',[q.id]);next='accepted';
+      if(!q||q.id!==body.quote_id)throw new Error('Quote has changed; refresh and try again');
+      if(new Date(q.expires_at)<=new Date())throw new Error('Quote has expired');
+      if(r.workflow_version>=2){
+        await acceptQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:q.id, selectedLineIds:body.selected_line_ids||[] });
+      } else {
+        const approved=selectedQuoteLines(q.items,body.selected_line_indexes);
+        await client.query('UPDATE dealer_quotes SET accepted_at=NOW() WHERE id=$1',[q.id]);
+        await client.query('UPDATE dealer_service_requests SET accepted_quote_id=$1 WHERE id=$2',[q.id,r.id]);
+        for(const line of approved)await client.query(`INSERT INTO service_order_lines
+          (request_id,quote_id,quote_line_index,description,amount_minor,service_keys) VALUES($1,$2,$3,$4,$5,$6)`,
+        [r.id,q.id,line.index,line.description,line.amount_minor,line.service_keys||[]]);
+      }
+      next='accepted';
+    } else if(body.action==='reject_quote') {
+      if(!customer)throw new Error('Only the owner can reject a quote');
+      await rejectQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:body.quote_id, reason:body.reason });
+      next='new';
     } else if(body.action==='schedule') {
-      if(!operator||r.status!=='accepted')throw new Error('Accept a quote before scheduling');
-      const scheduled=new Date(body.scheduled_at);
-      if(!Number.isFinite(scheduled.getTime())||scheduled<=new Date())throw new Error('Future appointment time required');
-      await client.query('UPDATE dealer_service_requests SET scheduled_at=$1 WHERE id=$2',[scheduled,r.id]);next='scheduled';
+      if(body.slot_id){
+        if(!operator&&!customer)throw new Error('Only the owner or operator can schedule');
+        await scheduleSlotV2(client, { requestId:r.id, userId:user.id, slotId:body.slot_id, operator: !!operator });
+      } else {
+        if(!operator||r.status!=='accepted')throw new Error('Accept a quote before scheduling');
+        const scheduled=new Date(body.scheduled_at);
+        if(!Number.isFinite(scheduled.getTime())||scheduled<=new Date())throw new Error('Future appointment time required');
+        await client.query('UPDATE dealer_service_requests SET scheduled_at=$1 WHERE id=$2',[scheduled,r.id]);
+      }
+      next='scheduled';
+    } else if(body.action==='start') {
+      if(!operator)throw new Error('Only operator can start');
+      await startService(client, { requestId:r.id, userId:user.id });
+      next='scheduled';
     } else if(body.action==='complete') {
-      if(!operator||r.status!=='scheduled')throw new Error('Only scheduled work can be completed');next='completed';
+      if(!operator)throw new Error('Only operator can complete');
+      if(r.workflow_version>=2){
+        if(!body.completion||!Array.isArray(body.completion.lines))throw new Error('completion.lines required');
+        if(!Number.isInteger(body.completion.mileage_km)||body.completion.mileage_km<0)throw new Error('Valid mileage_km required');
+        await submitCompletion(client, {
+          requestId:r.id, userId:user.id,
+          completion: {
+            mileage_km:body.completion.mileage_km,
+            started_at:body.completion.started_at||r.scheduled_at||new Date().toISOString(),
+            finished_at:body.completion.finished_at||new Date().toISOString(),
+            duration_minutes:body.completion.duration_minutes,
+            technician_name:String(body.completion.technician_name||'').slice(0,200),
+            notes:body.completion.notes,
+            lines:body.completion.lines
+          }
+        });
+      } else {
+        const quote=await client.query(`SELECT items,total_minor FROM dealer_quotes WHERE request_id=$1 AND accepted_at IS NOT NULL
+          AND ($2::uuid IS NULL OR id=$2) ORDER BY version DESC LIMIT 1`,[r.id,r.accepted_quote_id]);
+        if(!quote.rowCount)throw new Error('Accepted quote not found');
+        let approvedQuote=quote.rows[0];
+        if(r.workflow_version>=2){
+          const lines=await client.query('SELECT service_keys,amount_minor FROM service_order_lines WHERE request_id=$1',[r.id]);
+          if(!lines.rowCount)throw new Error('Approved order lines are missing');
+          approvedQuote={items:lines.rows,total_minor:lines.rows.reduce((sum,line)=>sum+line.amount_minor,0)};
+        }
+        const completion=validateCompletion(body,approvedQuote);
+        await client.query(`UPDATE dealer_service_requests SET completed_service_keys=$1,completion_mileage_km=$2,
+          completion_performed_at=NOW(),completion_notes=$3,completed_by_user_id=$4,completion_total_minor=$5 WHERE id=$6`,
+        [completion.completedKeys,completion.mileage,completion.notes,user.id,completion.total,r.id]);
+      }
+      next='completed';
     } else if(body.action==='confirm_completion') {
-      if(!customer||r.status!=='completed'||r.completion_confirmed_at)throw new Error('Completion already confirmed or unavailable');
-      const q=(await client.query('SELECT * FROM dealer_quotes WHERE request_id=$1 AND accepted_at IS NOT NULL ORDER BY version DESC LIMIT 1',[r.id])).rows[0];
-      if(!q)throw new Error('No accepted quote');
-      await client.query(`INSERT INTO service_history(id,vehicle_id,performed_at,kind,title,notes,cost,mileage_km)
-        SELECT $1,v.id,NOW(),'merchant_service','車商服務完成',$2,$3,v.mileage_km FROM vehicles v WHERE v.id=$4`,
-        ['request-'+r.id,q.items.map(i=>i.description).join('；'),`${q.currency} ${(q.total_minor/100).toFixed(2)}`,r.vehicle_id]);
-      await client.query('UPDATE dealer_service_requests SET completion_confirmed_at=NOW() WHERE id=$1',[r.id]);
-      await client.query(`UPDATE vehicle_status SET wear=0,last_done_at=NOW(),last_done_km=(SELECT mileage_km FROM vehicles WHERE id=$2) WHERE vehicle_id=$2 AND service_item_type_key IN (SELECT service_key FROM dealer_request_items WHERE request_id=$1)`,[r.id,r.vehicle_id]);
-      await client.query(`INSERT INTO vehicle_needs(vehicle_id,service_key,state,urgency,source)
-        SELECT DISTINCT $2,service_key,'resolved','routine','merchant_completion' FROM dealer_request_items WHERE request_id=$1
-        ON CONFLICT(vehicle_id,service_key) DO UPDATE SET state='resolved',source='merchant_completion',updated_at=NOW()`,[r.id,r.vehicle_id]);
+      if(!customer)throw new Error('Only the owner can confirm completion');
+      if(r.workflow_version>=2){
+        await confirmCompletionV2(client, { requestId:r.id, userId:user.id });
+      } else {
+        if(r.status!=='completed'||r.completion_confirmed_at)throw new Error('Completion already confirmed or unavailable');
+        const q=(await client.query(`SELECT * FROM dealer_quotes WHERE request_id=$1 AND accepted_at IS NOT NULL
+          AND ($2::uuid IS NULL OR id=$2) ORDER BY version DESC LIMIT 1`,[r.id,r.accepted_quote_id])).rows[0];
+        if(!q)throw new Error('No accepted quote');
+        if(r.completion_mileage_km==null||r.completion_total_minor==null||!r.completion_performed_at||!r.completed_by_user_id)throw new Error('Completion report is missing');
+        await createServiceRecordTx(client, {vehicleId:r.vehicle_id,userId:r.completed_by_user_id,dealerId:r.dealer_id,branchId:r.branch_id,
+          requestId:r.id,source:'service_request',body:{title:'車商服務完成',kind:'merchant_service',
+            performed_at:r.completion_performed_at,mileage_km:r.completion_mileage_km,
+            service_keys:r.completed_service_keys,notes:r.completion_notes,
+            cost:`${q.currency} ${(r.completion_total_minor/100).toFixed(2)}`}});
+        await client.query('UPDATE dealer_service_requests SET completion_confirmed_at=NOW() WHERE id=$1',[r.id]);
+      }
     } else if(body.action==='cancel') {
       if(['completed','cancelled','declined'].includes(r.status))throw new Error('Request is already closed');next='cancelled';
     } else if(body.action==='decline') {

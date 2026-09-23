@@ -1,6 +1,13 @@
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[char]));
 const money = (minor, currency = 'MOP') => `${esc(currency)} ${(Number(minor || 0) / 100).toFixed(2)}`;
-const imageStyle = (item) => `--image:url('${esc(item.primary_image_url || item.image_url || '/assets/shop-product-collection-v1.png')}');--position:${esc(item.image_position || '0% 0%')}`;
+const imageStyle = (item) => {
+  const url = item.primary_image_url || item.image_url || '/assets/shop-product-collection-v1.png';
+  const sheet = url.startsWith('/assets/shop-catalog/sheet-');
+  const position = item.image_position || '0% 0%';
+  const [x, y] = position.split(' ');
+  const croppedY = { '0%':'7%', '50%':'53%', '100%':'99%' }[y] || y;
+  return `--image:url('${esc(url)}');--position:${esc(position)};--image-size:${sheet ? '300% 300%' : '200% 200%'};--visual-size:${sheet ? '300% auto' : '200% 200%'};--visual-position:${esc(sheet ? `${x} ${croppedY}` : position)};--visual-ratio:${sheet ? '1.28' : '1'}`;
+};
 const statusLabel = { pending:'待確認',confirmed:'已確認',packing:'備貨中',ready:'可取貨／配送中',completed:'已完成',cancelled:'已取消' };
 const nextStatuses = { pending:['confirmed','cancelled'],confirmed:['packing','cancelled'],packing:['ready','cancelled'],ready:['completed','cancelled'],completed:[],cancelled:[] };
 
@@ -51,7 +58,7 @@ function shopShell(root) {
         <strong data-result-count></strong>
       </div>
     </section>
-    <div class="shop-toolbar"><div><h2 data-shop-heading>全部商品</h2><p>涉及尺寸、黏度或原廠認證時，請以車主手冊為準。</p></div></div>
+    <div class="shop-toolbar"><div><h2 data-shop-heading>全部商品</h2><p>圖片為 AI 生成示意圖，不代表實際品牌或包裝；規格及適用車型請以商品資料與車主手冊為準。</p></div></div>
     <div class="shop-layout"><div class="shop-grid" data-shop-products><div class="shop-loading">正在載入商品…</div></div><aside class="shop-cart"><div class="shop-cart__head"><h2>購物車</h2><span class="shop-count" data-shop-count>0</span></div><div class="shop-cart__body" data-shop-cart></div></aside></div>
   </div>`;
 }

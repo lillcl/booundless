@@ -20,6 +20,26 @@ const ART = {
   moto: ['/assets/shop-safety-ev-moto-v1.png', '100% 100%'],
 };
 
+// Each supplied sheet contains nine illustrations, left to right and top to
+// bottom. Slug mapping keeps photos correct if catalogue order changes.
+const PHOTO_SHEET_SLUGS = [
+  'full-synthetic-engine-oil semi-synthetic-engine-oil diesel-engine-oil engine-oil-additive engine-flush oil-filter engine-air-filter cabin-filter activated-carbon-cabin-filter',
+  'fuel-filter atf-fluid cvt-fluid dct-fluid mtf-fluid differential-oil gear-oil-75w90 front-brake-pads rear-brake-pads',
+  'brake-disc brake-fluid-dot3 brake-fluid-dot4 brake-cleaner engine-coolant ev-coolant radiator-flush spark-plug ignition-coil',
+  'car-battery-12v agm-battery efb-battery battery-charger jump-starter automotive-fuse headlight-bulb passenger-tyre tyre-repair-kit',
+  'tyre-inflator tyre-pressure-gauge tpms-sensor wheel-nut wiper-blade washer-fluid glass-cleaner rain-repellent car-shampoo',
+  'car-wax ceramic-coating quick-detailer tyre-shine wheel-cleaner iron-remover tar-remover interior-cleaner leather-care',
+  'fabric-cleaner ac-deodorizer microfiber-cloth wash-mitt drying-towel phone-mount car-charger usb-c-cable dash-cam',
+  'car-vacuum car-air-freshener sunshade trunk-organizer first-aid-kit reflective-vest warning-triangle window-breaker tow-rope',
+  'jumper-cable car-fire-extinguisher flashlight basic-tool-kit torque-wrench car-jack wheel-wrench obd2-scanner type2-charging-cable',
+  'ccs2-accessories portable-ev-charger charging-port-protection ev-low-voltage-battery hybrid-battery-filter hybrid-12v-battery motorcycle-oil chain-lube chain-cleaner',
+];
+const PHOTO_BY_SLUG = new Map(PHOTO_SHEET_SLUGS.flatMap((sheet, sheetIndex) =>
+  sheet.split(' ').map((slug, cellIndex) => [slug, {
+    url: `/assets/shop-catalog/sheet-${sheetIndex + 1}.png`,
+    position: `${(cellIndex % 3) * 50}% ${Math.floor(cellIndex / 3) * 50}%`,
+  }])));
+
 const rows = [];
 const add = (category, slug, name, powertrains, tags, art, price, specifications = '', useCases = '更換', vehicleTypes = 'passenger|van') => {
   rows.push({ category, slug, name, powertrains: powertrains.split('|'), tags: tags.split('|'), art, price_minor: price,
@@ -145,7 +165,10 @@ add('套餐 / Bundles','road-trip-emergency-kit','長途 / 北上應急套裝','
 add('套餐 / Bundles','car-care-bundle','洗車護理套裝','ALL','洗車套裝|detailing kit|car care','wash',42800,'','清潔|套餐');
 
 export const SHOP_CATALOG = rows.map((row, index) => {
-  const [image_url, image_position] = ART[row.art];
+  const photo = PHOTO_BY_SLUG.get(row.slug);
+  const [fallback_url, fallback_position] = ART[row.art];
+  const image_url = photo?.url || fallback_url;
+  const image_position = photo?.position || fallback_position;
   const applies = row.powertrains.includes('ALL') ? '所有動力車型' : row.powertrains.join(' / ');
   return {
     id: `catalog-${row.slug}`, slug: row.slug, name: row.name, category: row.category,
@@ -154,7 +177,7 @@ export const SHOP_CATALOG = rows.map((row, index) => {
     tags: [...new Set([row.name, row.category, ...row.tags])], vehicle_types: row.vehicle_types,
     powertrains: row.powertrains, compatible_makes: [], compatible_models: [], compatible_years: [],
     specifications: row.specifications, use_cases: row.use_cases, image_url, image_position,
-    image_alt: `${row.name} 商品圖片`, price_minor: row.price_minor, stock_quantity: 12 + (index % 17),
+    image_alt: `${row.name} AI 生成商品示意圖`, price_minor: row.price_minor, stock_quantity: 12 + (index % 17),
     sku: `BL-${String(index + 1).padStart(3, '0')}`, featured: index < 8,
   };
 });

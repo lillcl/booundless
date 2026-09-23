@@ -32,6 +32,14 @@
 </script>
 <script src="assets/site-metadata.js" defer></script>
 <script src="assets/marketing-tracking.js" defer></script>
+<script src="assets/error-state.js" defer></script>
+<script src="assets/service-ui.js" defer></script>
+<script src="assets/service-offers.js" defer></script>
+<script src="assets/service-requests.js" defer></script>
+<script src="assets/dealer-workspace.js" defer></script>
+<script src="assets/dealer-inspection.js" defer></script>
+<script src="assets/dealer-completion.js" defer></script>
+<script src="assets/passport-cta.js" defer></script>
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <link rel="stylesheet" href="assets/shop.css">
@@ -60,15 +68,24 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .section-title{font-size:19px;font-weight:760;margin:28px 4px 12px}.list{overflow:hidden}.row{min-height:74px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);background:#fff}.row:last-child{border-bottom:0}
 .row b{display:block;font-size:16px}.row small{display:block;color:var(--muted);font-size:12px;margin-top:4px}.state{font-size:13px;font-weight:750;white-space:nowrap}.state.ok{color:var(--green)}.state.warn{color:var(--amber)}.state.unknown{color:#777}
 .profile-action{width:100%;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}.profile-action:last-child{border-bottom:0}.profile-action:hover{background:#fafbfb}
+.profile-action--danger b{color:var(--err,#b23a32)}.profile-action--danger:hover{background:#fff5f4}
+.legal-links{margin-top:18px;color:var(--muted);font-size:13px}.legal-links a{color:var(--muted);text-decoration:underline;text-decoration-color:var(--line)}
 .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 28px}.feature-link{min-height:112px;border:1px solid var(--line);border-radius:18px;background:#fff;text-align:left;padding:18px;cursor:pointer}.feature-link b{display:block;font-size:18px}.feature-link small{display:block;color:var(--muted);margin-top:7px;line-height:1.4}.form-card{padding:20px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.form-grid .field{margin:0}.form-grid .wide{grid-column:1/-1}.form-card select,.form-card textarea{width:100%;min-height:54px;border:1px solid #dfe3e5;border-radius:15px;padding:12px 14px;font:inherit;background:#fff}.ai-result{display:none;margin-top:16px;padding:18px;border-radius:16px;background:#eef6ef;border:1px solid #d9e8dc;white-space:pre-wrap;line-height:1.6}.ai-result.show{display:block}.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.video-card{padding:20px;min-height:180px;display:flex;flex-direction:column}.video-card .tag{font-size:12px;color:var(--green);font-weight:750}.video-card h2{font-size:20px;margin:12px 0 8px}.video-card p{color:var(--muted);line-height:1.5;margin:0 0 16px}.video-card a{margin-top:auto;color:var(--ink);font-weight:750}.toggle-row input{width:22px;height:22px}
 @media(max-width:700px){.feature-grid,.video-grid,.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}}
 @media(max-width:700px){.onboarding__top{margin-top:0;margin-bottom:22px}.onboarding__hero{grid-template-columns:1fr;min-height:0}.onboarding__copy{padding:32px 25px 16px}.onboarding__passport{margin:18px 0 37px;width:min(280px,72%)}.onboarding__steps{grid-template-columns:1fr;gap:9px}.onboarding__steps>div{display:grid;grid-template-columns:40px 1fr;column-gap:8px;padding:14px 16px}.onboarding__steps span{grid-row:span 2;margin:4px 0 0}.onboarding__steps small{margin-top:3px}}
 .passport-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.passport-head h2{margin:0;font-size:25px}.passport-head button{border:0;background:var(--soft);padding:10px 13px;border-radius:12px;font-weight:700}
 .records .row{min-height:68px}
 .profile-card{padding:22px}.profile-card h2{margin:0 0 5px}.profile-card p{margin:0;color:var(--muted)}
-.profile-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,380px);align-items:center;gap:24px;min-height:250px;padding:28px 30px;overflow:hidden;background:radial-gradient(circle at 82% 28%,rgba(71,185,216,.13),transparent 42%),#fff}
-.profile-hero__copy{position:relative;z-index:2}.profile-hero__eyebrow{display:block;margin-bottom:10px;color:#438f72;font-size:11px;font-weight:800;letter-spacing:.12em}.profile-hero h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.04em}.profile-hero p{max-width:460px;line-height:1.7}.profile-hero__art{display:block;width:100%;height:220px;object-fit:contain;filter:drop-shadow(0 18px 25px rgba(26,70,100,.12))}
-@media(max-width:700px){.profile-hero{grid-template-columns:1fr;padding:24px}.profile-hero__art{height:170px}.profile-hero__visual{order:-1}}
+.profile-hero{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:0;min-height:0;padding:24px 28px;overflow:hidden;background:#fff}
+.profile-hero__copy{position:relative;z-index:2}.profile-hero__eyebrow{display:block;margin-bottom:8px;color:#438f72;font-size:11px;font-weight:800;letter-spacing:.12em}.profile-hero h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.04em;margin:0 0 4px}.profile-hero p{max-width:520px;line-height:1.7;margin:0 0 18px;color:#5b6b80}
+.profile-hero__stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px;border-top:1px solid #eef2f6;padding-top:16px}
+.profile-stat{display:flex;flex-direction:column;gap:2px;min-width:0}
+.profile-stat__num{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#0f1b2d;line-height:1.1;font-variant-numeric:tabular-nums}
+.profile-stat__num.is-zero{color:#9aa6b3}
+.profile-stat__num.is-warn{color:#b23a32}
+.profile-stat__label{font-size:11px;color:#5b6b80;letter-spacing:.04em}
+@media(max-width:700px){.profile-hero__stats{grid-template-columns:repeat(2,1fr);gap:16px}}
+@media(max-width:700px){.profile-hero{grid-template-columns:1fr;padding:24px}}
 .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(520px,calc(100% - 24px));height:66px;padding:6px;background:rgba(255,255,255,.95);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 35px rgba(20,25,30,.12);display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
 .kc-bottom-nav{grid-template-columns:repeat(3,1fr) !important}
 
@@ -91,6 +108,9 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 @media(max-width:420px){.kc-topbar__brand b{display:none}}
 .route-state{max-width:620px;margin:clamp(36px,8vw,90px) auto;padding:clamp(28px,5vw,48px);text-align:center;background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
 .route-state h1{margin:8px 0 12px;font-size:clamp(30px,5vw,46px);letter-spacing:-1.4px}.route-state p{margin:0 auto 24px;max-width:470px;color:var(--muted);line-height:1.7}.route-state a{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 22px;border-radius:15px;text-decoration:none;font-weight:800}
+.route-state__actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.landing__primary--ghost{background:transparent;color:var(--ink,#0f1b2d);border:1px solid var(--line,#dde5ee)}
+.route-state__actions a + a{margin-left:0}
 
 /* Tab strip used on admin Assets + Audit pages */
 .kc-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
@@ -378,6 +398,8 @@ button,input,select,textarea{font-family:inherit}
   </nav>
   <div class="kc-topbar__user" id="topbarUser">
     <a href="#/login" data-nav="login" data-anon-only>登入</a>
+    <a href="/legal/privacy.html" data-nav="legal" rel="noopener">隱私</a>
+    <a href="/legal/terms.html" data-nav="legal" rel="noopener">條款</a>
   </div>
 </header>
 
@@ -447,7 +469,7 @@ button,input,select,textarea{font-family:inherit}
 
     <div class="home-grid">
       <div class="card vehicle">
-        <div class="vehicle-photo"><img src="assets/vehicle-placeholder.svg" alt="你的車輛照片"></div>
+        <div class="vehicle-photo"><img src="assets/vehicle-placeholder-ai.png" alt="你的車輛照片"></div>
         <div class="vehicle-body">
           <div class="eyebrow">YOUR CAR PASSPORT</div>
           <h2>尚未建立車輛</h2>
@@ -557,15 +579,34 @@ button,input,select,textarea{font-family:inherit}
 <section class="screen" id="profile">
   <div class="wrap">
     <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
-    <div class="card profile-card profile-hero"><div class="profile-hero__copy"><span class="profile-hero__eyebrow">YOUR VEHICLE INFORMATION</span><h2 id="profileDisplayName">你的帳戶</h2><p id="profileVehicleSummary">登入後查看你的車輛護照</p></div><div class="profile-hero__visual"><img class="profile-hero__art" src="assets/account-info-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="帳戶、車輛資訊與保養提醒"></div></div>
-    <a class="row card" href="#/requests">服務請求、報價與預約 →</a>
-    <a class="row card" href="#/orders">我的訂單 →</a>
+    <div class="card profile-card profile-hero">
+      <div class="profile-hero__copy">
+        <span class="profile-hero__eyebrow" id="profileRoleEyebrow">YOUR VEHICLE INFORMATION</span>
+        <h2 id="profileDisplayName">你的帳戶</h2>
+        <p id="profileVehicleSummary">登入後查看你的車輛護照</p>
+        <div class="profile-hero__stats" id="profileHeroStats">
+          <div class="profile-stat"><span class="profile-stat__num" id="profileStatVehicles">—</span><span class="profile-stat__label">車輛</span></div>
+          <div class="profile-stat"><span class="profile-stat__num" id="profileStatHistory">—</span><span class="profile-stat__label">保養紀錄</span></div>
+          <div class="profile-stat"><span class="profile-stat__num" id="profileStatReminders">—</span><span class="profile-stat__label">待辦提醒</span></div>
+          <div class="profile-stat"><span class="profile-stat__num" id="profileStatOrders">—</span><span class="profile-stat__label">進行中訂單</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">快捷操作</div>
+    <div class="card list">
+      <a class="row" href="#/requests"><span><b>服務請求、報價與預約</b><small>建立新請求、查看報價、預約時段</small></span><span>›</span></a>
+      <a class="row" href="#/orders"><span><b>我的訂單</b><small>進行中與已完成的服務</small></span><span>›</span></a>
+      <a class="row" href="#/landing"><span><b>車輛護照</b><small>查看保養與里程紀錄</small></span><span>›</span></a>
+    </div>
     <div class="section-title">設定</div>
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="家庭 / 多車"><span><b>家庭 / 多車</b><small>需要時再開啟</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="支援"><span><b>支援</b><small>聯絡康程</small></span><span>›</span></button>
+      <button class="row profile-action" type="button" id="profileExportBtn" data-requires-auth><span><b>下載我的資料</b><small>JSON 副本 · 依隱私政策</small></span><span>↓</span></button>
+      <button class="row profile-action profile-action--danger" type="button" id="profileDeleteBtn" data-requires-auth><span><b>刪除我的帳號</b><small>將永久停用並去識別化</small></span><span>›</span></button>
     </div>
+    <p class="legal-links"><a href="/legal/privacy.html" rel="noopener">隱私政策</a> · <a href="/legal/terms.html" rel="noopener">服務條款</a></p>
   </div>
 </section>
 
@@ -997,6 +1038,8 @@ function appDialog(message, mode='notice') {
     if (e.target.closest?.('[data-close-sheet]')) closeSheet();
     const profileAction = e.target.closest?.('[data-profile-action]');
     if (profileAction) openProfileAction(profileAction.dataset.profileAction);
+    if (e.target.closest?.('#profileExportBtn')) downloadMyExport();
+    if (e.target.closest?.('#profileDeleteBtn')) confirmDeleteMyAccount();
     const viewButton = e.target.closest?.('[data-mycar-view]');
     if (viewButton) {
       document.querySelectorAll('[data-mycar-view]').forEach((b) => b.classList.toggle('active', b === viewButton));
@@ -1015,6 +1058,42 @@ function appDialog(message, mode='notice') {
     }
   });
   document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
+  async function downloadMyExport() {
+    try {
+      const r = await fetch('/api/me/export', { credentials: 'same-origin' });
+      if (r.status === 401) { alert('請先登入後再下載資料。'); return; }
+      if (!r.ok) throw new Error('下載失敗,請稍候再試。');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      const cd = r.headers.get('Content-Disposition') || '';
+      a.download = /filename="?([^"]+)"?/.exec(cd)?.[1] || `kc-carai-export-${Date.now()}.json`;
+      a.href = URL.createObjectURL(blob);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+    } catch (e) { alert(e.message || '下載失敗。'); }
+  }
+
+  async function confirmDeleteMyAccount() {
+    if (!window.me) { alert('請先登入。'); return; }
+    if (!confirm('刪除帳號將停用您的帳號並去識別化所有資料,且無法復原。\n\n確定要繼續嗎?')) return;
+    if (!confirm('最後確認:此操作會立即生效。是否送出?')) return;
+    try {
+      const r = await fetch('/api/me', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { 'X-Confirm-Delete': 'yes' },
+      });
+      if (r.status === 401) { alert('請先登入。'); return; }
+      if (!r.ok) throw new Error('刪除失敗,請稍候再試。');
+      alert('您的帳號已停用。我們將於 30 天內完成所有資料的去識別化。');
+      window.me = null;
+      window.location.hash = '#/landing';
+      window.location.reload();
+    } catch (e) { alert(e.message || '刪除失敗。'); }
+  }
+
   async function openProfileAction(action) {
     if (action === '通知') {
       openSheet('<h2>通知</h2><div id="notificationPrefs"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
@@ -1167,8 +1246,50 @@ function appDialog(message, mode='notice') {
   if (profileName) profileName.textContent = me ? displayName : '你的帳戶';
   const profileSummary = document.getElementById('profileVehicleSummary');
   if (profileSummary) profileSummary.textContent = me
-    ? `${vehicles.length} 架車 · Vehicle Passport ${vehicles.length ? '已建立' : '尚未建立'}`
+    ? (me.role === 'admin' ? 'Admin · 車行監督與商務條款管理'
+      : vehicles.length ? `${vehicles.length} 架車 · 車輛護照已建立`
+      : '尚未建立車輛護照')
     : '登入後查看你的車輛護照';
+  const profileEyebrow = document.getElementById('profileRoleEyebrow');
+  if (profileEyebrow && me) {
+    profileEyebrow.textContent = me.role === 'admin'
+      ? 'ADMIN · BOOUNDLESS'
+      : (me.role === 'user' ? 'YOUR VEHICLE INFORMATION' : 'YOUR ACCOUNT');
+  }
+  /* Profile hero stat tiles: vehicles, history records, upcoming reminders,
+     and in-flight service requests. Driven by the same fetches used for the
+     home dashboard so no extra round-trips are needed. */
+  const statVehicles = document.getElementById('profileStatVehicles');
+  const statHistory = document.getElementById('profileStatHistory');
+  const statReminders = document.getElementById('profileStatReminders');
+  const statOrders = document.getElementById('profileStatOrders');
+  if (me) {
+    let histCount = 0, remindCount = 0, orderCount = 0;
+    try {
+      const hist = await fetch('/api/history/recent?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] }));
+      histCount = (hist.data || []).filter((row) => vehicles.some((v) => v.id === row.vehicle_id)).length;
+    } catch {}
+    remindCount = (reminders || []).filter((r) => (r.status || 'upcoming') === 'upcoming').length;
+    try {
+      const reqs = await fetch('/api/service-requests?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] }));
+      orderCount = (reqs.data || []).filter((r) => !['completed','cancelled','declined'].includes(r.status)).length;
+    } catch {}
+    function setStat(node, value, warn) {
+      if (!node) return;
+      node.textContent = value;
+      node.classList.toggle('is-zero', value === 0);
+      node.classList.toggle('is-warn', !!warn && value > 0);
+    }
+    setStat(statVehicles, vehicles.length, false);
+    setStat(statHistory, histCount, false);
+    setStat(statReminders, remindCount, remindCount > 0);
+    setStat(statOrders, orderCount, orderCount > 0);
+  } else {
+    if (statVehicles) statVehicles.textContent = '—';
+    if (statHistory) statHistory.textContent = '—';
+    if (statReminders) statReminders.textContent = '—';
+    if (statOrders) statOrders.textContent = '—';
+  }
 
   /* 1. Home hero card — show the first vehicle and its most urgent reminder */
   const hero = vehicles[0];
@@ -1271,9 +1392,9 @@ function appDialog(message, mode='notice') {
       /* Sub-line below the model name. Prefer fuel_type (human-readable) so the
          card tells owner what kind of vehicle this is at a glance. */
       const subtitle = [v.year, v.fuel_type].filter(Boolean).join(' · ');
-      const isPlaceholder = !v.image || /vehicle-placeholder\.svg$/.test(v.image);
+      const isPlaceholder = !v.image || /vehicle-placeholder(?:\.svg|-ai\.png)$/.test(v.image);
       return `
-        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder.svg')}')">
+        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder-ai.png')}')">
           <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
           ${isPlaceholder ? '<span class="v10-photo-tag">尚未上傳照片</span>' : ''}
           <span class="v10-dots">•••</span>
@@ -1382,7 +1503,7 @@ function appDialog(message, mode='notice') {
     if (v.mileage_label) metaParts.push(String(v.mileage_label));
     else if (v.mileage_km != null) metaParts.push(`${Number(v.mileage_km).toLocaleString()} km`);
     document.getElementById('detailCarMeta').textContent = metaParts.join(' · ');
-    document.getElementById('detailCarPhoto').src = v.image || 'assets/vehicle-placeholder.svg';
+    document.getElementById('detailCarPhoto').src = v.image || 'assets/vehicle-placeholder-ai.png';
     document.getElementById('detailCarPhoto').alt = displayName;
     showScreen('vehicleDetailSimple');
 
@@ -1609,6 +1730,10 @@ function appDialog(message, mode='notice') {
     'requests': renderRequests,
     'admin/tracking': async root => (await import('./assets/tracking-admin.js')).render(root),
     dealer: renderDealerPortal,
+    'service-offers': async (root) => window.serviceOffersView && window.serviceOffersView(root),
+    'service-request': async (root, params) => window.serviceRequestView && window.serviceRequestView(root, params),
+    'dealer/inspection': async (root, params) => window.dealerInspectionView && window.dealerInspectionView(root, params.id),
+    'dealer/completion': async (root, params) => window.dealerCompletionView && window.dealerCompletionView(root, params.id),
   };
 
   function getRoute() {
@@ -1616,9 +1741,34 @@ function appDialog(message, mode='notice') {
     if (raw) return raw;
     return window.location.pathname.replace(/\/+$/, '') === '/demo' ? 'demo' : 'landing';
   }
+  /* Spec §8 routes may carry path segments and a query string. Parsing here
+     keeps existing static-route strings working unchanged. */
+  function parseHashRoute(hash) {
+    const cleaned = (hash || '').replace(/^#\/?/, '');
+    const [pathPart, queryPart] = cleaned.split('?');
+    const segments = (pathPart || '').split('/').filter(Boolean);
+    const qs = Object.fromEntries(new URLSearchParams(queryPart || '').entries());
+    if (segments[0] === 'service-request' && segments[1] === 'new') {
+      return { name: 'service-request', params: { kind: 'new', qs } };
+    }
+    if (segments[0] === 'service-request' && segments[1]) {
+      return { name: 'service-request', params: { id: segments[1] } };
+    }
+    if (segments[0] === 'service-offers') {
+      return { name: 'service-offers', params: { qs } };
+    }
+    if (segments[0] === 'dealer' && segments[1] === 'inspection' && segments[2]) {
+      return { name: 'dealer/inspection', params: { id: segments[2] } };
+    }
+    if (segments[0] === 'dealer' && segments[1] === 'completion' && segments[2]) {
+      return { name: 'dealer/completion', params: { id: segments[2] } };
+    }
+    return { name: segments[0] || 'landing', params: {} };
+  }
 
   async function dispatch() {
-    const name = getRoute();
+    const parsed = parseHashRoute(window.location.hash);
+    const name = parsed.name;
     if (name !== 'garage') window.__vehiclePassportCleanup?.();
     syncTopbarNav();
     /* Hide any previously rendered view content */
@@ -1658,9 +1808,9 @@ function appDialog(message, mode='notice') {
       return;
     }
     if (handler && view) {
-      await handler(view);
+      await handler(view, (parsed && parsed.params) || {});
     } else if (view) {
-      view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
+      if (window.errorState) window.errorState.render(view, 'not_found'); else view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">404</span><h1>找不到頁面</h1><p>連結可能已更改或輸入有誤。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
     }
   }
   async function fetchMe() {
@@ -1679,7 +1829,7 @@ function appDialog(message, mode='notice') {
     const userEl = document.getElementById('topbarUser');
     const anonLinks = document.querySelectorAll('.kc-topbar__user a[data-anon-only]');
     if (!me) {
-      userEl.innerHTML = '<a href="#/login" data-nav="login">登入</a>';
+      userEl.innerHTML = '<a href="#/login" data-nav="login">登入</a><a href="/legal/privacy.html" data-nav="legal" rel="noopener">隱私</a><a href="/legal/terms.html" data-nav="legal" rel="noopener">條款</a>';
       anonLinks.forEach((a) => a.style.display = '');
     } else {
       anonLinks.forEach((a) => a.style.display = 'none');
@@ -1689,7 +1839,8 @@ function appDialog(message, mode='notice') {
       userEl.innerHTML = workspaceLink +
         '<span class="who">' + esc(me.display_name || me.email) +
         '<span class="role">' + esc(me.role) + '</span></span>' +
-        '<button class="signout" id="signoutBtn">登出</button>';
+        '<button class="signout" id="signoutBtn">登出</button>' +
+        '<a href="/legal/privacy.html" data-nav="legal" rel="noopener">隱私</a><a href="/legal/terms.html" data-nav="legal" rel="noopener">條款</a>';
       const btn = document.getElementById('signoutBtn');
       if (btn) btn.onclick = async () => {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -2588,7 +2739,7 @@ function appDialog(message, mode='notice') {
       console.error('Route rendering failed', error);
       if (getRoute() !== requestedRoute) return;
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>';
+      if (view) { if (window.errorState) window.errorState.render(view, 'server'); else view.innerHTML = '<div class="wrap"><div class="route-state"><h1>頁面暫時無法載入</h1><p>請重新整理後再試。</p><a class="landing__primary" href="#/landing">返回首頁</a></div></div>'; }
     });
   });
 

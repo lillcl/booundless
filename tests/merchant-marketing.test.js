@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { scoreFitment, calculateDealerMatches, rankBranches } from '../api/_lib/dealer-matcher.js';
 import { validateMetadata, renderMetadata } from '../api/_lib/marketing.js';
 import { readFileSync } from 'node:fs';
-import {quoteItems} from '../api/_handlers/requests.js';
+import {quoteItems,selectedQuoteLines,validateCompletion} from '../api/_handlers/requests.js';
 import {validateTracking} from '../api/_handlers/tracking.js';
 import {sendInvitation} from '../api/_lib/invitation-mail.js';
 
@@ -33,6 +33,21 @@ test('quote monetary values use nonnegative integer minor units',()=>{
   assert.equal(quoteItems([{description:'Oil',amount_minor:12345},{description:'Filter',amount_minor:100}]).total,12445);
   assert.throws(()=>quoteItems([{description:'Oil',amount_minor:-1}]));
   assert.throws(()=>quoteItems([{description:'Oil',amount_minor:1.5}]));
+});
+test('completion cannot claim unapproved work or exceed the accepted price',()=>{
+  const quote={total_minor:45000,items:[{service_keys:['oil_filter'],amount_minor:45000}]};
+  const body={service_keys:['oil_filter'],mileage_km:42680,total_minor:45000,notes:'Oil changed'};
+  assert.deepEqual(validateCompletion(body,quote).completedKeys,['oil_filter']);
+  assert.throws(()=>validateCompletion({...body,service_keys:['brake_fluid']},quote));
+  assert.throws(()=>validateCompletion({...body,total_minor:45001},quote));
+  assert.throws(()=>validateCompletion({...body,mileage_km:null},quote));
+});
+test('selected quote lines are explicit and cannot be duplicated',()=>{
+  const lines=[{description:'Oil',amount_minor:100},{description:'Brake',amount_minor:200}];
+  assert.deepEqual(selectedQuoteLines(lines,[0]).map(line=>line.description),['Oil']);
+  assert.throws(()=>selectedQuoteLines(lines,[]));
+  assert.throws(()=>selectedQuoteLines(lines,[0,0]));
+  assert.throws(()=>selectedQuoteLines(lines,[2]));
 });
 test('tracking rejects scripts and invalid destination IDs',()=>{
   assert.throws(()=>validateTracking({ga4:'<script>'}));assert.throws(()=>validateTracking({enabled:true}));

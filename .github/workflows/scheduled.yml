@@ -1,0 +1,60 @@
+name: scheduled
+on:
+  schedule:
+    # Daily at 03:17 UTC. Off the :00 mark to avoid the GitHub Actions herd.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: scheduled-tasks
+  cancel-in-progress: false
+
+jobs:
+  audit-retention:
+    name: Audit log retention (365d)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      KC_DATABASE_URL: ${{ secrets.KC_DATABASE_URL }}
+      KC_AUDIT_RETENTION_DAYS: ${{ vars.KC_AUDIT_RETENTION_DAYS || '365' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci --omit=dev
+      - name: Run retention script
+        run: node scripts/audit-retention.js
+
+  health-probe:
+    name: Production health probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET /api/health
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://booundless.vercel.app/api/health" | tee /tmp/health.json
+          test "$(jq -r '.status' /tmp/health.json)" = "ok"
+
+  daily-digest:
+    name: Daily ops digest (Service MVP pilot)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      KC_DATABASE_URL: ${{ secrets.KC_DATABASE_URL }}
+      DIGEST_WEBHOOK_URL: ${{ secrets.DIGEST_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci --omit=dev
+      - name: Build digest
+        run: node scripts/daily-digest.js | tee /tmp/digest.json
+      - name: Post digest to webhook (optional)
+        if: env.DIGEST_WEBHOOK_URL != ''
+        run: |
+          curl -fsS -X POST -H 'Content-Type: application/json' \
+               --data-binary @/tmp/digest.json \
+               "$DIGEST_WEBHOOK_URL" || echo "webhook post failed (non-fatal)"

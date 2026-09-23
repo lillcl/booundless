@@ -23,6 +23,8 @@
     { "src": "/demo/?", "dest": "/api/index" },
     { "src": "/campaigns/[^/]+/?", "dest": "/api/index" },
     { "src": "/sitemap.xml", "dest": "/api/index" },
+    { "src": "/legal/(.*)", "dest": "/legal/$1" },
+    { "src": "/(legal/.*)", "dest": "/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "status": 404, "dest": "/404.html" }
   ]

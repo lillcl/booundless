@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { calculateCheckoutTotals, compatibilityFor, ORDER_TRANSITIONS } from '../api/_handlers/shop.js';
 import { resolveHandler } from '../api/index.js';
 import { SHOP_CATALOG } from '../db/shop-catalog.js';
@@ -44,6 +44,19 @@ test('full catalogue contains every requested product family with structured met
     assert.ok(SHOP_CATALOG.some((product) => product.name === name), `missing ${name}`);
   }
   assert.ok(SHOP_CATALOG.every((product) => product.tags.length && product.vehicle_types.length && product.powertrains.length));
+});
+
+test('ninety supplied catalogue illustrations map to distinct products and real sheets', () => {
+  const illustrated = SHOP_CATALOG.filter((product) => product.image_url.startsWith('/assets/shop-catalog/sheet-'));
+  assert.equal(illustrated.length, 90);
+  assert.equal(new Set(illustrated.map((product) => product.slug)).size, 90);
+  for (const product of illustrated) {
+    assert.ok(existsSync(new URL(`../${product.image_url.slice(1)}`, import.meta.url)), product.slug);
+    assert.match(product.image_position, /^(0|50|100)% (0|50|100)%$/);
+  }
+  assert.equal(SHOP_CATALOG.find((product) => product.slug === 'oil-filter').image_url, '/assets/shop-catalog/sheet-1.png');
+  assert.equal(SHOP_CATALOG.find((product) => product.slug === 'type2-charging-cable').image_url, '/assets/shop-catalog/sheet-9.png');
+  assert.equal(SHOP_CATALOG.find((product) => product.slug === 'hybrid-coolant').image_url.startsWith('/assets/shop-catalog/'), false);
 });
 
 test('Vehicle Passport compatibility excludes combustion products from EVs', () => {

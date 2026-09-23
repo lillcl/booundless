@@ -1,45 +1,42 @@
-/* Apply schema to a Postgres URL and seed if empty.
-   Usage: node scripts/migrate.js [postgresql://…]
-   If no URL is passed, uses KC_DATABASE_URL from .env. */
-
-import { config as loadDotenv } from 'dotenv';
-loadDotenv();
+/* Apply the app's schema outside request handling.
+   Usage: node scripts/migrate.js [--seed-demo]
+   Uses SUPABASE_DB_URL or KC_DATABASE_URL.
+   Per spec §12: production request path MUST NOT execute DDL/seed. Run this
+   script via CI/CD before deploy. The migration runner is ledger-aware
+   (scripts/_lib/migrations.js) — re-running it on a healthy DB is a no-op. */
+import 'dotenv/config';
+import { runMigrations } from './_lib/migrations.js';
+import { seedShopCatalog } from '../db/shop-catalog.js';
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const URL = process.argv[2] || process.env.KC_DATABASE_URL;
-if (!URL) { console.error('No DB URL'); process.exit(1); }
-const SCHEMA = readFileSync(join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
+const seedDemo = process.argv.includes('--seed-demo');
 
-const pool = new pg.Pool({ connectionString: URL, max: 2 });
-const client = await pool.connect();
-try {
-  console.log('Connecting…');
-  await client.query(SCHEMA);
-  console.log('Schema applied.');
+const result = await runMigrations({ verbose: true });
+if (!result.ok) throw new Error('migration failed');
 
-  const seeded = await client.query("SELECT value FROM _meta WHERE key = 'seeded'");
-  const count = await client.query('SELECT COUNT(*)::int AS n FROM vehicles');
-  if (seeded.rowCount === 0 && count.rows[0].n === 0) {
-    console.log('Seeding…');
-    const { seedDefaultData } = await import('../api/_lib/db.js');
-    await seedDefaultData(pool);
-    console.log('Seeded.');
-  } else {
-    console.log(`Already seeded (${count.rows[0].n} vehicles). Skipping.`);
+if (seedDemo) {
+  const url = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
+  if (!url) throw new Error('SUPABASE_DB_URL or KC_DATABASE_URL required to seed demo data');
+  const pool = new pg.Pool({ connectionString: url, max: 1 });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [42420260921]);
+    await seedShopCatalog(client);
+    if (process.env.KC_DEMO_SEED !== '0' && process.env.DEMO_SEED_ENABLED !== '0') {
+      const seeded = await client.query("SELECT value FROM _meta WHERE key='seeded'");
+      const count = await client.query('SELECT COUNT(*)::int AS n FROM vehicles');
+      if (!seeded.rowCount && count.rows[0].n === 0) {
+        const { seedDefaultData } = await import('../api/_lib/db.js');
+        await seedDefaultData(client);
+      }
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+    await pool.end();
   }
-
-  const r = await client.query(`
-    SELECT
-      (SELECT COUNT(*)::int FROM vehicles)         AS vehicles,
-      (SELECT COUNT(*)::int FROM reminders)        AS reminders,
-      (SELECT COUNT(*)::int FROM vehicle_status)   AS status_rows
-  `);
-  console.log('Counts:', r.rows[0]);
-} finally {
-  client.release();
-  await pool.end();
 }

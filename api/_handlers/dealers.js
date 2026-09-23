@@ -505,6 +505,58 @@ async function vehicleRoute(req, res, path) {
 
   if (match[2] === 'service-requests' && req.method === 'POST') {
     const body = await readBody(req);
+    /* v2 path: owner picks an offer (created via service_offers) */
+    if (body.offer_id) {
+      const offerId = id(body.offer_id, 'offer_id');
+      const offerRes = await db.query(`SELECT * FROM service_offers WHERE id=$1 AND active=true`, [offerId]);
+      if (!offerRes.rowCount) return sendError(res, 404, 'not_found', 'Offer not found or inactive');
+      const offer = offerRes.rows[0];
+      if (!user) return sendError(res, 401, 'unauthorized', 'Sign in required');
+      const ownership = await db.query('SELECT 1 FROM vehicles WHERE id=$1 AND created_by_user_id=$2 AND archived_at IS NULL', [vehicleId, user.id]);
+      if (!ownership.rowCount) return sendError(res, 403, 'forbidden', 'Vehicle does not belong to you');
+      const ins = await db.query(
+        `INSERT INTO dealer_service_requests
+           (id, dealer_id, branch_id, vehicle_id, user_id, status, workflow_version,
+            offer_id, service_kind, contact_name, contact_phone, customer_note,
+            currency, terms_version, consented_at, customer_origin, vehicle_snapshot, offer_snapshot,
+            created_at, updated_at)
+         VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 'new', 2, $5, $6, $7, $8, $9,
+                 $10, $11, $12, $13, $14, $15, NOW(), NOW())
+         RETURNING *`,
+        [offer.dealer_id, offer.branch_id, vehicleId, user.id, offer.id, offer.kind,
+         (body.contact_name || '').slice(0,200), (body.contact_phone || '').slice(0,50),
+         (body.customer_note || '').slice(0,2000), offer.currency,
+         (body.terms_version || '').slice(0,40), body.consented_at || null,
+         body.customer_origin || null,
+         JSON.stringify({ id: vehicleId }),
+         JSON.stringify({ id: offer.id, name: offer.name, price_minor: offer.price_minor, currency: offer.currency, duration_minutes: offer.duration_minutes })]
+      );
+      /* Seed dealer_request_items with the offer's effective service_keys so
+         the v1 quote allowlist check still works for v2 offers. */
+      const offerItems = await db.query(
+        `SELECT DISTINCT dsi.service_item_type_key
+           FROM service_offer_items soi
+           JOIN dealer_service_items dsi ON dsi.id = soi.dealer_service_item_id
+          WHERE soi.offer_id = $1`, [offer.id]
+      );
+      const seen = new Set();
+      for (const row of offerItems.rows) {
+        const k = row.service_item_type_key;
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        const dsr = await db.query(
+          `SELECT id, name FROM dealer_service_items
+             WHERE dealer_id=$1 AND service_item_type_key=$2 LIMIT 1`,
+          [offer.dealer_id, k]);
+        const serviceId = dsr.rows[0]?.id || `synthetic-${k}`;
+        const serviceName = dsr.rows[0]?.name || k;
+        await db.query(
+          `INSERT INTO dealer_request_items (request_id, service_id, service_key, name)
+           VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+          [ins.rows[0].id, serviceId, k, serviceName]);
+      }
+      return sendJSON(res, 200, { data: ins.rows[0] });
+    }
     const dealerId = id(body.dealer_id, 'dealer_id');
     const dealer = await db.query('SELECT id FROM dealers WHERE id=$1 AND status=\'active\'', [dealerId]);
     if (!dealer.rowCount) return sendError(res, 404, 'not_found', 'Active dealer not found');
@@ -554,8 +606,8 @@ async function vehicleRoute(req, res, path) {
       const activeBranch=await client.query('SELECT id FROM dealer_branches WHERE id=$1 AND dealer_id=$2 AND is_active FOR SHARE',[branchId,dealerId]);
       const activeServices=await client.query('SELECT s.id FROM dealer_service_items s JOIN dealer_branch_services bs ON bs.service_id=s.id WHERE s.id=ANY($1::text[]) AND s.dealer_id=$2 AND s.is_active AND bs.branch_id=$3 AND bs.is_active FOR SHARE OF s,bs',[serviceIds,dealerId,branchId]);
       if(!activeMerchant.rowCount||!activeBranch.rowCount||activeServices.rowCount!==serviceIds.length)throw new Error('Merchant service availability changed; refresh matches');
-      r=await client.query(`INSERT INTO dealer_service_requests (id,dealer_id,branch_id,user_id,vehicle_id,service_item_type_key,dealer_service_item_id,package_id,message,request_key,request_fingerprint)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (user_id,request_key) WHERE request_key IS NOT NULL DO NOTHING RETURNING *`, [`request-${randomUUID()}`, dealerId, branchId, user.id, vehicleId, serviceKey, serviceId, body.package_id ? id(body.package_id, 'package_id') : null, text(body.message, null, 2000),requestKey,fingerprint]);
+      r=await client.query(`INSERT INTO dealer_service_requests (id,dealer_id,branch_id,user_id,vehicle_id,service_item_type_key,dealer_service_item_id,package_id,message,request_key,request_fingerprint,workflow_version)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,2) ON CONFLICT (user_id,request_key) WHERE request_key IS NOT NULL DO NOTHING RETURNING *`, [`request-${randomUUID()}`, dealerId, branchId, user.id, vehicleId, serviceKey, serviceId, body.package_id ? id(body.package_id, 'package_id') : null, text(body.message, null, 2000),requestKey,fingerprint]);
       if(!r.rowCount){
         const previous=(await client.query('SELECT * FROM dealer_service_requests WHERE user_id=$1 AND request_key=$2',[user.id,requestKey])).rows[0];
         await client.query('ROLLBACK');return previous?.request_fingerprint===fingerprint?sendJSON(res,200,{request:previous}):sendError(res,409,'conflict','Request key conflict');

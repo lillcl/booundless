@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>隱私政策｜無界啟程 BOOUNDLESS</title>
+  <meta name="description" content="無界啟程 BOOUNDLESS 的隱私政策：說明我們蒐集哪些資料、用途、保存期限、您的權利，以及聯絡方式。" />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="隱私政策｜無界啟程 BOOUNDLESS" />
+  <meta property="og:description" content="無界啟程 BOOUNDLESS 的隱私政策：資料蒐集範圍、用途、保存期限與您的權利。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="zh_HK" />
+  <link rel="icon" href="assets/icons/booundless-car.png" />
+  <link rel="canonical" href="https://booundless.vercel.app/legal/privacy.html" />
+  <style>
+    :root { --bg:#0d2238; --card:#fff; --ink:#0f1b2d; --muted:#5b6b80; --line:#dde5ee; --brand:#073568; --accent:#1999be; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; padding:0; background:#f4f7fb; color:var(--ink); font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; line-height:1.7; }
+    .wrap { max-width:780px; margin:0 auto; padding:32px 24px 80px; }
+    header { display:flex; align-items:center; gap:12px; padding:18px 24px; background:var(--bg); color:#fff; }
+    header a { color:#fff; text-decoration:none; display:inline-flex; gap:10px; align-items:center; font-weight:600; }
+    header img { width:32px; height:30px; }
+    h1 { font-size:28px; margin:24px 0 8px; }
+    h2 { font-size:18px; margin:32px 0 8px; color:var(--brand); }
+    .meta { color:var(--muted); font-size:14px; margin-bottom:24px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; }
+    .toc a { display:block; padding:6px 0; color:var(--brand); text-decoration:none; border-bottom:1px dashed var(--line); }
+    .toc a:hover { color:var(--accent); }
+    .pill { display:inline-block; padding:2px 10px; border-radius:999px; background:#e8f1f9; color:var(--brand); font-size:12px; margin-right:6px; }
+    footer { text-align:center; color:var(--muted); font-size:13px; margin-top:48px; }
+    .updated { font-style:italic; color:var(--muted); }
+    a { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/"><img src="assets/icons/booundless-car.png" alt="" />無界啟程 BOOUNDLESS</a>
+  </header>
+  <main class="wrap">
+    <h1>隱私政策</h1>
+    <p class="meta">本政策說明「無界啟程 BOOUNDLESS」（下稱「我們」、「本平台」）如何蒐集、使用、儲存與保護您的個人資料。本平台於中華人民共和國澳門特別行政區營運,適用《個人資料保護法》(第 8/2005 號法律),並盡力對齊《中華人民共和國個人信息保護法》(PIPL) 與歐盟 GDPR 之合理標準。</p>
+    <p class="meta updated">最後更新：2026-09-22</p>
+
+    <nav class="card toc" aria-label="目錄">
+      <a href="#scope">1. 適用範圍</a>
+      <a href="#collect">2. 我們蒐集的資料</a>
+      <a href="#use">3. 使用目的</a>
+      <a href="#share">4. 分享與第三方</a>
+      <a href="#retention">5. 保存期限</a>
+      <a href="#rights">6. 您的權利</a>
+      <a href="#transfer">7. 跨境傳輸</a>
+      <a href="#security">8. 安全措施</a>
+      <a href="#cookies">9. Cookie 與本機儲存</a>
+      <a href="#children">10. 兒少保護</a>
+      <a href="#changes">11. 政策變更</a>
+      <a href="#contact">12. 聯絡我們</a>
+    </nav>
+
+    <section id="scope"><h2>1. 適用範圍</h2>
+      <p>本政策適用於您使用 BOOUNDLESS 網頁應用程式(booundless.vercel.app)與相關後端 API(統稱「本服務」)時所產生的個人資料處理行為。透過本服務建立之車輛護照、保養紀錄、行程、客服單據與 AI 對話紀錄,均依本政策處理。</p>
+    </section>
+
+    <section id="collect"><h2>2. 我們蒐集的資料</h2>
+      <ul>
+        <li><span class="pill">帳號</span>電子郵件、顯示名稱、密碼(以 bcrypt 加鹽雜湊儲存)。</li>
+        <li><span class="pill">車輛</span>您主動登錄的車型、年份、燃料、牌號、車身號碼、行駛里程、照片。</li>
+        <li><span class="pill">行為</span>保養提醒、維修紀錄、行程起訖、AI 對話紀錄、客服單據。</li>
+        <li><span class="pill">裝置</span>IP 位址、User-Agent、登入時間(用於安全稽核)。</li>
+        <li><span class="pill">車商</span>若您受邀加入車商團隊,將額外儲存您於該團隊的角色。</li>
+      </ul>
+      <p>我們不會主動蒐集生物特徵、定位軌跡、金融帳戶、證件影本等敏感個資。</p>
+    </section>
+
+    <section id="use"><h2>3. 使用目的</h2>
+      <ol>
+        <li>建立與維護您的車輛護照、保養提醒與行程建議。</li>
+        <li>回應您透過客服、AI 對話提交之問題。</li>
+        <li>安全稽核、異常登入偵測、爭議事件回溯。</li>
+        <li>產品改進(去識別化統計),不會用於投放個人化廣告。</li>
+      </ol>
+    </section>
+
+    <section id="share"><h2>4. 分享與第三方</h2>
+      <p>我們僅在下列情境下分享您的資料:</p>
+      <ul>
+        <li>您明確指示下分享給車商(例如接受報價請求) — 僅分享您授權範圍內的車輛資料。</li>
+        <li>雲端基礎設施供應商(Supabase / Vercel)為提供儲存與託管所必要之傳輸。</li>
+        <li>AI 模型供應商(MiniMax)為回應您主動發起的對話所必要之傳輸。</li>
+        <li>法律強制要求時,依司法或行政機關之正式文書辦理。</li>
+      </ul>
+    </section>
+
+    <section id="retention"><h2>5. 保存期限</h2>
+      <p>帳號資料於您主動刪除前持續保留;一旦您執行「刪除我的帳號」,我們會於 30 天內完成去識別化。稽核紀錄依法律要求保留至爭議時效消滅後刪除。對話紀錄預設保留 12 個月,您可隨時在 AI 對話頁面刪除單筆對話。</p>
+    </section>
+
+    <section id="rights"><h2>6. 您的權利</h2>
+      <p>依《個人資料保護法》及 PIPL,您享有:</p>
+      <ul>
+        <li><b>查閱權:</b>透過 <code>GET /api/me</code> 取得您的個人資料。</li>
+        <li><b>可攜權:</b>透過 <code>GET /api/me/export</code> 下載 JSON 格式資料副本(於「我的」頁面亦可一鍵下載)。</li>
+        <li><b>更正權:</b>於「我的」頁面編輯顯示名稱、聯絡電話等欄位。</li>
+        <li><b>刪除權(被遺忘權):</b>於「我的 → 刪除我的帳號」可一鍵停用並去識別化。</li>
+        <li><b>限制處理權:</b>如您認為資料不正確或處理超出同意範圍,可要求暫停特定處理。</li>
+        <li><b>申訴權:</b>如認為處理違反法律,可向澳門個人資料保護辦公室或 PIPL 相關監管機關申訴。</li>
+      </ul>
+    </section>
+
+    <section id="transfer"><h2>7. 跨境傳輸</h2>
+      <p>資料儲存於 Vercel 與 Supabase 之雲端基礎設施,可能於美國、歐盟、新加坡等區域進行處理。我們選擇具備 SOC 2 / ISO 27001 等認證之供應商,並要求其僅得為達成我們指示之目的而處理資料。</p>
+    </section>
+
+    <section id="security"><h2>8. 安全措施</h2>
+      <ul>
+        <li>密碼以 bcrypt cost-10 加鹽雜湊儲存,工作階段以 HTTP-only + Secure(生產環境)cookie 維持。</li>
+        <li>所有 API 回應皆套用 <code>Strict-Transport-Security</code>、<code>X-Content-Type-Options</code>、<code>Referrer-Policy</code>、<code>X-Frame-Options</code> 等安全標頭。</li>
+        <li>登入與敏感端點受速率限制(每分鐘 15 次)與 Origin allowlist 保護。</li>
+        <li>AI 對話提示採嚴格隔離,使用者輸入僅作為資料而非法令。</li>
+      </ul>
+    </section>
+
+    <section id="cookies"><h2>9. Cookie 與本機儲存</h2>
+      <p>本服務使用一項必要 cookie(<code>kc_session</code>)以維持登入狀態,以及 <code>localStorage</code> 儲存少量偏好設定。我們不投放廣告、不使用第三方追蹤 cookie。若未來加入分析或偏好追蹤,將於本頁更新並於登入後徵詢同意。</p>
+    </section>
+
+    <section id="children"><h2>10. 兒少保護</h2>
+      <p>本服務不針對未滿 18 歲之未成年人提供獨立服務;若您為未成年人,請於法定監護人陪同下使用。</p>
+    </section>
+
+    <section id="changes"><h2>11. 政策變更</h2>
+      <p>本政策之實質變更將於生效 14 天前於本頁公告,並透過應用程式內通知提醒您繼續使用即視為同意變更。</p>
+    </section>
+
+    <section id="contact"><h2>12. 聯絡我們</h2>
+      <p>如對個人資料處理有任何疑問、申訴或行使權利之請求,請透過下列方式聯絡資料保護負責人:</p>
+      <ul>
+        <li>電子郵件:privacy@booundless.example(請改為實際地址)</li>
+        <li>通訊地址:澳門 [請填寫實際地址]</li>
+        <li>應用程式內:「我的 → 聯絡客服」</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>© 2026 無界啟程 BOOUNDLESS · <a href="terms.html">服務條款</a> · <a href="/">返回首頁</a></p>
+    </footer>
+  </main>
+</body>
+</html>

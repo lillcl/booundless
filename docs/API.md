@@ -200,6 +200,62 @@ The endpoint also sets `Set-Cookie: kc_session=<jwt>; HttpOnly; SameSite=Strict;
 - Privacy: `wechat_openid` is treated as a secret; only the first six characters are stored in the audit payload.
 - Client contract: The 小程序 persists `token` in `wx.setStorageSync('kc_mp_token', token)` and replays it as `Authorization: Bearer <token>` on every subsequent request.
 
+## User self-service — 2026-09-22
+
+### GET /api/me
+- Auth: required (`kc_session` cookie).
+- Rate limit: 15 req / minute.
+- Returns the current user row (no `password_hash`).
+
+### GET /api/me/export
+- Auth: required.
+- Rate limit: 15 req / minute.
+- Returns JSON document `{export_version, exported_at, user, vehicles, reminders, service_history, trips, teams, notification_preferences, dealer_memberships, audit_log}` with `Content-Disposition: attachment; filename="kc-carai-export-<id>-<ts>.json"`.
+
+### DELETE /api/me
+- Auth: required.
+- Rate limit: 15 req / minute.
+- Requires header `X-Confirm-Delete: yes`; otherwise returns 422 `unprocessable`.
+- Soft-deletes the user (`is_active = false`), anonymises `email` / `display_name` / `password_hash`, sets `audit_log.actor_email = NULL` for the actor, and clears the session cookie. Returns 200 `{ data: { status: 'deactivated' } }`.
+
+## Cross-cutting security — 2026-09-22
+
+- Every response from `api/index.js` and the dev shim sets `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and a default-src 'self' `Content-Security-Policy` (HTML routes only). Override `KC_CSP_ALLOWED_SOURCES` (comma-separated) to widen `connect-src`.
+- Mutating requests (`POST` / `PUT` / `PATCH` / `DELETE`) on the API require an `Origin` / `Referer` that matches `KC_ALLOWED_ORIGINS` or `ORIGIN`. Set `KC_ALLOW_NO_ORIGIN=1` for `curl` / server-to-server scripts.
+- `/api/auth/*` and `/api/me/*` are limited to 15 req / minute per `(userId | ip)`; other mutating routes 60 / minute; other reads 120 / minute. Override per-route via `rateLimit({ capacity, refillTokens, refillMs })` in `api/_lib/rate-limit.js`.
+
+## Service MVP — 2026-09-23
+
+Pinned to `SERVICE_MVP_ENABLED=true` and `SERVICE_MVP_DEALER_IDS=<csv>` in production. Pilot defaults: MOP, Asia/Macau, 0 bps commission, dealer on-site collection, manual reconciliation.
+
+| Endpoint | Method | Auth | Notes |
+| --- | --- | --- | --- |
+| `/api/service-offers` | GET | user | Returns active offers; `?vehicle_id=` filters by fitment. |
+| `/api/service-offers/:id/slots` | GET | user | Future slots ≥ `offer.duration_minutes`. |
+| `/api/dealer/booking-slots` | GET/POST/PATCH | owner/manager/staff | Members list; owner/manager create / update. |
+| `/api/service-requests/:id` | GET | owner/dealer | Appends `order_lines`, `changes`, `inspection`, `completion`. |
+| `/api/service-requests/:id` | POST | varies | Actions: `quote`, `accept_quote` (v2: `selected_line_ids`), `reject_quote`, `schedule` (v2: `slot_id`), `start`, `complete` (v2: `completion.lines`), `confirm_completion`, `cancel`, `decline`. |
+| `/api/service-requests/:id/inspection` | GET/PUT | owner reads published; operator draft | Version-checked draft. |
+| `/api/service-requests/:id/inspection/publish` | POST | operator | Validates every template item has a result. |
+| `/api/service-requests/:id/follow-up` | POST | owner | Creates child maintenance request; never auto-approves work. |
+| `/api/service-requests/:id/changes` | GET/POST | operator | Propose追加工程 (whole-batch only). |
+| `/api/service-requests/:id/changes/:changeId/decision` | POST | owner | `decision: approve|reject`. |
+| `/api/service-requests/:id/attachments/upload` | POST | owner/operator | Returns signed upload URL (10 min). |
+| `/api/service-requests/:id/attachments/:id/finalize` | POST | uploader | Verifies object exists, marks `ready`. |
+| `/api/service-requests/:id/attachments/:id` | GET | owner/operator | Signed read URL (5 min). |
+| `/api/service-requests/:id/cases` | POST | owner | Open dispute. Freezes commission. |
+| `/api/dealer/cases/:id` | GET/PATCH | dealer | Cannot erase owner text. |
+| `/api/dealer/service-orders/:id/payment` | POST | owner/manager | Records offline payment. Requires `Idempotency-Key`. |
+| `/api/admin/service-orders` | GET | admin | Overview. |
+| `/api/admin/service-orders/:id/refund` | POST | admin | Records refund, reverses commission. Requires `Idempotency-Key`. |
+| `/api/admin/commissions` | GET | admin | CSV export. |
+| `/api/notifications` | GET | user | Last 100. |
+| `/api/notifications/:id/read` | POST | user | Mark read. |
+
+Mutating routes accept `Idempotency-Key: <uuid>`; same key + same payload returns the cached response; same key + different payload returns 409.
+
+Errors: `401` unauthorized, `403` forbidden, `404` not_found, `409` conflict (stale version / full slot / duplicate payload), `422` unprocessable, `429` rate_limited, `503` service_unavailable.
+
 ## Rules
 - Frontend and backend consume the same documented contract.
 - Never silently change request/response/error shapes.

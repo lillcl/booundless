@@ -73,20 +73,33 @@ async function recomputeStatus(client, vehicleId, keys, actor) {
 }
 
 export async function createServiceRecord(db, { vehicleId, userId, dealerId = null, branchId = null, body, source }) {
-  const record = normalizeServiceRecord(body, source);
   const client = await db.connect();
   try {
     await client.query('BEGIN');
+    const inserted = await createServiceRecordTx(client, { vehicleId, userId, dealerId, branchId, body, source });
+    await client.query('COMMIT');
+    return inserted;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Caller owns the transaction, so an order and its passport update commit together.
+export async function createServiceRecordTx(client, { vehicleId, userId, dealerId = null, branchId = null, requestId = null, body, source }) {
+  const record = normalizeServiceRecord(body, source);
     await validateKeys(client, vehicleId, record.serviceKeys);
     const id = `history-${randomUUID()}`;
     const inserted = await client.query(
       `INSERT INTO service_history
         (id,vehicle_id,performed_at,kind,title,notes,cost,mileage_km,created_by_user_id,
-         updated_by_user_id,source,dealer_id,branch_id,service_keys)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11,$12,$13)
+         updated_by_user_id,source,dealer_id,branch_id,service_keys,request_id)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [id, vehicleId, record.performedAt, record.kind, record.title, record.notes,
-       record.cost, record.mileage, userId, record.source, dealerId, branchId, record.serviceKeys],
+       record.cost, record.mileage, userId, record.source, dealerId, branchId, record.serviceKeys, requestId],
     );
     await recomputeStatus(client, vehicleId, record.serviceKeys, { userId, dealerId });
     if (record.mileage != null) {
@@ -102,14 +115,7 @@ export async function createServiceRecord(db, { vehicleId, userId, dealerId = nu
         [vehicleId, record.serviceKeys],
       );
     }
-    await client.query('COMMIT');
     return inserted.rows[0];
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
 }
 
 export async function updateServiceRecord(db, { vehicleId, recordId, userId, dealerId = null, body, owner = false }) {
@@ -117,7 +123,7 @@ export async function updateServiceRecord(db, { vehicleId, recordId, userId, dea
   try {
     await client.query('BEGIN');
     const existing = await client.query(
-      `SELECT * FROM service_history WHERE id=$1 AND vehicle_id=$2 AND voided_at IS NULL FOR UPDATE`,
+      `SELECT * FROM service_history WHERE id=$1 AND vehicle_id=$2 AND voided_at IS NULL AND request_id IS NULL FOR UPDATE`,
       [recordId, vehicleId],
     );
     if (!existing.rowCount) throw Object.assign(new Error('找不到保養紀錄'), { status: 404 });

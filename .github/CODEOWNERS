@@ -1,0 +1,12 @@
+# CODEOWNERS — required reviewers per area. The Lead / Orchestrator is the
+# default owner of anything not listed.
+*                                          @lillcl
+/api/_lib/auth.js                          @lillcl
+/api/_lib/security-headers.js               @lillcl
+/api/_lib/rate-limit.js                    @lillcl
+/api/_lib/origin-check.js                  @lillcl
+/api/_lib/agent-safety.js                  @lillcl
+/SECURITY.md                               @lillcl
+/.env*                                     @lillcl
+/server-patch/                             @lillcl
+/miniprogram/                              @lillcl

@@ -436,6 +436,16 @@ export async function renderVehiclePassports(root, context = {}) {
       if (window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.gsap.fromTo(content.querySelectorAll('.vp-book'), { opacity: 0, y: 35, rotateY: 8 }, { opacity: 1, y: 0, rotateY: 0, duration: .7, stagger: .11, ease: 'power3.out' });
       }
+      /* Inject the "歷史未知" CTA above each vehicle that has no history
+         yet AND no baseline inspection pending. The CTA leads to the
+         service-offers page filtered by this vehicle. */
+      if (typeof window.passportCta === 'function') {
+        const shelf = content.querySelector('.vp-shelf');
+        for (const vehicle of vehicles) {
+          const cta = await window.passportCta(shelf, vehicle.id);
+          if (cta && shelf.firstChild !== cta) shelf.insertBefore(cta, shelf.firstChild);
+        }
+      }
     }
   } catch (error) {
     content.innerHTML = '<div class="vp-error"><b>暫時無法載入車輛護照</b><br><small>請檢查連線後重新整理頁面。</small><br><button class="vp-add" type="button" onclick="location.reload()">重新載入</button></div>';

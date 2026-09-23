@@ -1,0 +1,79 @@
+name: tests
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Unit suite
+        env:
+          # CI defaults: skip origin check (Playwright posts from same origin,
+          # but Origin header is only sent for cross-origin or POST. Tests that
+          # POST via fetch from the SPA host pass Origin = base URL, which is
+          # the default allowlist host).
+          KC_ALLOWED_ORIGINS: 'http://127.0.0.1:3100'
+          KC_ALLOW_NO_ORIGIN: '1'
+        run: npm run test:unit
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: unit
+    env:
+      KC_DATABASE_URL: postgresql://kc_app:kc_dev_password@127.0.0.1:5432/kc_carai
+      KC_ALLOWED_ORIGINS: 'http://127.0.0.1:3100'
+      KC_ALLOW_NO_ORIGIN: '1'
+      AI_API_KEY: ${{ secrets.AI_API_KEY || 'sk-test-dummy' }}
+      SUPABASE_DB_URL: ''
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kc_app
+          POSTGRES_PASSWORD: kc_dev_password
+          POSTGRES_DB: kc_carai
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U kc_app"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build schema (idempotent)
+        run: PGPASSWORD=kc_dev_password psql -h 127.0.0.1 -U kc_app -d kc_carai -f db/schema.sql || true
+      - name: Playwright suite
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
