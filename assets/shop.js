@@ -3,10 +3,13 @@ const money = (minor, currency = 'MOP') => `${esc(currency)} ${(Number(minor || 
 const imageStyle = (item) => {
   const url = item.primary_image_url || item.image_url || '/assets/shop-product-collection-v1.png';
   const sheet = url.startsWith('/assets/shop-catalog/sheet-');
+  const productImage = url.startsWith('/assets/shop-catalog/products/');
   const position = item.image_position || '0% 0%';
   const [x, y] = position.split(' ');
   const croppedY = { '0%':'7%', '50%':'53%', '100%':'99%' }[y] || y;
-  return `--image:url('${esc(url)}');--position:${esc(position)};--image-size:${sheet ? '300% 300%' : '200% 200%'};--visual-size:${sheet ? '300% auto' : '200% 200%'};--visual-position:${esc(sheet ? `${x} ${croppedY}` : position)};--visual-ratio:${sheet ? '1.28' : '1'}`;
+  const size = productImage ? 'contain' : (sheet ? '300% auto' : '200% 200%');
+  const visualPosition = productImage ? 'center' : (sheet ? `${x} ${croppedY}` : position);
+  return `--image:url('${esc(url)}');--position:${esc(position)};--image-size:${size};--visual-size:${size};--visual-position:${esc(visualPosition)};--visual-ratio:${sheet ? '1.28' : '1'}`;
 };
 const statusLabel = { pending:'待確認',confirmed:'已確認',packing:'備貨中',ready:'可取貨／配送中',completed:'已完成',cancelled:'已取消' };
 const nextStatuses = { pending:['confirmed','cancelled'],confirmed:['packing','cancelled'],packing:['ready','cancelled'],ready:['completed','cancelled'],completed:[],cancelled:[] };

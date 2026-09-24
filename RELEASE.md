@@ -88,7 +88,7 @@ curl -fsSI 'https://booundless.vercel.app/error.html?status=429&code=rate_limite
 
 ## 4. Smoke flows (manual, 5 minutes)
 
-- [ ] Anonymous landing page renders, topbar shows 隱私 / 條款.
+- [ ] Anonymous landing page renders, footer shows 隱私 / 條款.
 - [ ] `/api/health` returns `{ status: 'ok' }`.
 - [ ] Sign up with a fresh email, see home dashboard.
 - [ ] Add a vehicle, see it appear under 我的車.

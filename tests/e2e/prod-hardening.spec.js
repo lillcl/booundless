@@ -89,10 +89,10 @@ test('/api/me DELETE without X-Confirm-Delete returns 422', async ({ request }) 
   }
 });
 
-test('home page topbar carries 隱私 / 條款 links', async ({ page }) => {
+test('home page footer carries 隱私 / 條款 links', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('header a[href="/legal/privacy.html"]')).toBeVisible();
-  await expect(page.locator('header a[href="/legal/terms.html"]')).toBeVisible();
+  await expect(page.locator('footer a[href="/legal/privacy.html"]')).toBeVisible();
+  await expect(page.locator('footer a[href="/legal/terms.html"]')).toBeVisible();
 });
 
 test('home page sets HSTS + CSP headers in production-like response', async ({ request }) => {

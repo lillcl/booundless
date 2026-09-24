@@ -21,7 +21,8 @@ const ART = {
 };
 
 // Each supplied sheet contains nine illustrations, left to right and top to
-// bottom. Slug mapping keeps photos correct if catalogue order changes.
+// bottom. They are exported as individual transparent PNGs so every product
+// owns one stable image instead of relying on fragile CSS sprite positioning.
 const PHOTO_SHEET_SLUGS = [
   'full-synthetic-engine-oil semi-synthetic-engine-oil diesel-engine-oil engine-oil-additive engine-flush oil-filter engine-air-filter cabin-filter activated-carbon-cabin-filter',
   'fuel-filter atf-fluid cvt-fluid dct-fluid mtf-fluid differential-oil gear-oil-75w90 front-brake-pads rear-brake-pads',
@@ -34,11 +35,18 @@ const PHOTO_SHEET_SLUGS = [
   'jumper-cable car-fire-extinguisher flashlight basic-tool-kit torque-wrench car-jack wheel-wrench obd2-scanner type2-charging-cable',
   'ccs2-accessories portable-ev-charger charging-port-protection ev-low-voltage-battery hybrid-battery-filter hybrid-12v-battery motorcycle-oil chain-lube chain-cleaner',
 ];
-const PHOTO_BY_SLUG = new Map(PHOTO_SHEET_SLUGS.flatMap((sheet, sheetIndex) =>
-  sheet.split(' ').map((slug, cellIndex) => [slug, {
-    url: `/assets/shop-catalog/sheet-${sheetIndex + 1}.png`,
-    position: `${(cellIndex % 3) * 50}% ${Math.floor(cellIndex / 3) * 50}%`,
+const PHOTO_BY_SLUG = new Map(PHOTO_SHEET_SLUGS.flatMap((sheet) =>
+  sheet.split(' ').map((slug) => [slug, {
+    url: `/assets/shop-catalog/products/${slug}.png`,
+    position: '50% 50%',
   }])));
+for (const slug of [
+  'hybrid-coolant', 'hybrid-zone-coolant', 'motorcycle-brake-pad', 'motorcycle-tyre',
+  'basic-service-kit', 'minor-service-kit', 'ac-service-kit', 'brake-service-kit',
+  'used-car-baseline-kit', 'road-trip-emergency-kit', 'car-care-bundle',
+]) {
+  PHOTO_BY_SLUG.set(slug, { url: `/assets/shop-catalog/products/${slug}.png`, position: '50% 50%' });
+}
 
 const rows = [];
 const add = (category, slug, name, powertrains, tags, art, price, specifications = '', useCases = '更換', vehicleTypes = 'passenger|van') => {
