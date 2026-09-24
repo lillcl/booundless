@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seedShopCatalog } from '../../db/shop-catalog.js';
+import { SCHEMA_VERSION } from '../../shared/constants/schema-version.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,7 +29,7 @@ function resolveSchemaPath() {
   return join(__dirname, '..', '..', 'db', 'schema.sql');
 }
 
-export const SCHEMA_VERSION = '2026-09-22-service-mvp-1';
+export { SCHEMA_VERSION };
 
 export async function applySchema(db) {
   const sql = readFileSync(resolveSchemaPath(), 'utf8');

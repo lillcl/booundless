@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { SCHEMA_VERSION } from '../../shared/constants/schema-version.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = join(__dirname, '..', '..', 'db');
@@ -121,6 +122,13 @@ export async function runMigrations({ connectionString, verbose = true } = {}) {
       );
       report.push({ name: slice.name, status: 'applied', duration_ms: duration });
     }
+    // Request handlers deliberately never run DDL in production. Keep their
+    // cheap readiness marker in sync only after every slice has succeeded in
+    // this transaction; otherwise a healthy ledger can still be rejected.
+    await client.query(
+      "INSERT INTO _meta(key,value) VALUES('schema_version',$1) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value",
+      [SCHEMA_VERSION]
+    );
     await client.query('COMMIT');
     log('[migrate] done', JSON.stringify(report, null, 2));
     return { ok: true, report };
@@ -145,7 +153,15 @@ export async function readinessCheck({ connectionString, expectedSlices } = {}) 
     const r = await client.query('SELECT name, sha256 FROM schema_migrations');
     const applied = new Map(r.rows.map((row) => [row.name, row.sha256]));
     const missing = (expectedSlices || [BASE_SCHEMA_FILE, ...ADDITIVE_SLICES, MVP_SCHEMA_FILE]).filter((s) => !applied.has(s));
-    return { ok: missing.length === 0, applied: [...applied.keys()], missing };
+    const marker = await client.query("SELECT value FROM _meta WHERE key='schema_version'");
+    const schemaVersion = marker.rows[0]?.value || null;
+    return {
+      ok: missing.length === 0 && schemaVersion === SCHEMA_VERSION,
+      applied: [...applied.keys()],
+      missing,
+      schemaVersion,
+      expectedSchemaVersion: SCHEMA_VERSION,
+    };
   } finally {
     client.release();
     await pool.end();
