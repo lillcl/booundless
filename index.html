@@ -36,6 +36,7 @@
 <script src="assets/service-ui.js" defer></script>
 <script src="assets/service-offers.js" defer></script>
 <script src="assets/service-requests.js" defer></script>
+<script src="assets/service-console.js" defer></script>
 <script src="assets/dealer-workspace.js" defer></script>
 <script src="assets/dealer-inspection.js" defer></script>
 <script src="assets/dealer-completion.js" defer></script>
@@ -79,12 +80,13 @@ button,input{font:inherit}.app{min-height:100vh}.screen{display:none}.screen.act
 .profile-hero{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:0;min-height:0;padding:24px 28px;overflow:hidden;background:#fff}
 .profile-hero__copy{position:relative;z-index:2}.profile-hero__eyebrow{display:block;margin-bottom:8px;color:#438f72;font-size:11px;font-weight:800;letter-spacing:.12em}.profile-hero h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.04em;margin:0 0 4px}.profile-hero p{max-width:520px;line-height:1.7;margin:0 0 18px;color:#5b6b80}
 .profile-hero__stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px;border-top:1px solid #eef2f6;padding-top:16px}
-.profile-stat{display:flex;flex-direction:column;gap:2px;min-width:0}
-.profile-stat__num{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#0f1b2d;line-height:1.1;font-variant-numeric:tabular-nums}
+.profile-stat{display:flex;flex-direction:row;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
+.profile-stat__num{font-size:22px;font-weight:800;letter-spacing:-.02em;color:#0f1b2d;line-height:1.1;font-variant-numeric:tabular-nums;flex-shrink:0}
 .profile-stat__num.is-zero{color:#9aa6b3}
 .profile-stat__num.is-warn{color:#b23a32}
-.profile-stat__label{font-size:11px;color:#5b6b80;letter-spacing:.04em}
+.profile-stat__label{font-size:11px;color:#5b6b80;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.profile-hero__stats{grid-template-columns:repeat(2,1fr);gap:16px}}
+@media(max-width:420px){.profile-hero__stats{grid-template-columns:1fr}}
 @media(max-width:700px){.profile-hero{grid-template-columns:1fr;padding:24px}}
 .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(520px,calc(100% - 24px));height:66px;padding:6px;background:rgba(255,255,255,.95);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 35px rgba(20,25,30,.12);display:grid;grid-template-columns:repeat(3,1fr);z-index:20}
 .kc-bottom-nav{grid-template-columns:repeat(3,1fr) !important}
@@ -1728,10 +1730,15 @@ function appDialog(message, mode='notice') {
     }),
     'admin/shop': async root => (await import('./assets/shop.js')).renderAdminShop(root, { me }),
     'requests': renderRequests,
+    'notifications': async root => window.serviceNotificationsView && window.serviceNotificationsView(root),
+    'admin/service': async root => window.adminServiceView && window.adminServiceView(root),
     'admin/tracking': async root => (await import('./assets/tracking-admin.js')).render(root),
     dealer: renderDealerPortal,
+    'dealer/register': renderDealerRegister,
+    'admin/dealer-edit': async (root, params) => renderAdminDealerEdit(root, params.id),
     'service-offers': async (root) => window.serviceOffersView && window.serviceOffersView(root),
     'service-request': async (root, params) => window.serviceRequestView && window.serviceRequestView(root, params),
+    'dealer/request': async (root, params) => window.serviceRequestView && window.serviceRequestView(root, { ...params, dealer: true }),
     'dealer/inspection': async (root, params) => window.dealerInspectionView && window.dealerInspectionView(root, params.id),
     'dealer/completion': async (root, params) => window.dealerCompletionView && window.dealerCompletionView(root, params.id),
   };
@@ -1748,6 +1755,9 @@ function appDialog(message, mode='notice') {
     const [pathPart, queryPart] = cleaned.split('?');
     const segments = (pathPart || '').split('/').filter(Boolean);
     const qs = Object.fromEntries(new URLSearchParams(queryPart || '').entries());
+    if (!segments.length && window.location.pathname.replace(/\/+$/, '') === '/demo') {
+      return { name: 'demo', params: {} };
+    }
     if (segments[0] === 'service-request' && segments[1] === 'new') {
       return { name: 'service-request', params: { kind: 'new', qs } };
     }
@@ -1760,8 +1770,23 @@ function appDialog(message, mode='notice') {
     if (segments[0] === 'dealer' && segments[1] === 'inspection' && segments[2]) {
       return { name: 'dealer/inspection', params: { id: segments[2] } };
     }
+    if (segments[0] === 'dealer' && segments[1] === 'request' && segments[2]) {
+      return { name: 'dealer/request', params: { id: segments[2], dealer: true } };
+    }
     if (segments[0] === 'dealer' && segments[1] === 'completion' && segments[2]) {
       return { name: 'dealer/completion', params: { id: segments[2] } };
+    }
+    if (segments[0] === 'dealer' && segments[1] === 'register') {
+      return { name: 'dealer/register', params: {} };
+    }
+    if (segments[0] === 'admin' && segments[1] === 'dealer-edit' && segments[2]) {
+      return { name: 'admin/dealer-edit', params: { id: segments[2] } };
+    }
+    if (segments[0] === 'admin' && segments[1] === 'service') {
+      return { name: 'admin/service', params: {} };
+    }
+    if (segments[0] === 'admin' && segments[1]) {
+      return { name: 'admin/' + segments[1], params: {} };
     }
     return { name: segments[0] || 'landing', params: {} };
   }
@@ -1819,6 +1844,19 @@ function appDialog(message, mode='notice') {
       if (r.ok) {
         const d = await r.json();
         me = d.user;
+        if (me) {
+          try {
+            const dm = await fetch('/api/dealer/me');
+            if (dm.ok) {
+              const payload = await dm.json();
+              me.dealer_count = (payload.data || []).length;
+              me.dealers = payload.data || [];
+            } else {
+              me.dealer_count = 0;
+              me.dealers = [];
+            }
+          } catch { me.dealer_count = 0; me.dealers = []; }
+        }
       } else {
         me = null;
       }
@@ -1834,9 +1872,12 @@ function appDialog(message, mode='notice') {
     } else {
       anonLinks.forEach((a) => a.style.display = 'none');
       const workspaceLink = me.role === 'admin'
-        ? '<a href="#/admin/shop" data-nav="admin-shop">訂購管理</a><a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/marketing" data-nav="admin-marketing">SEO</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
-        : '<a href="#/dealer" data-nav="dealer">車商後台</a>';
+        ? '<a href="#/admin/shop" data-nav="admin-shop">訂購管理</a><a href="#/admin/service" data-nav="admin-service">服務管理</a><a href="#/admin/dealers" data-nav="admin-dealers">車商</a><a href="#/admin/marketing" data-nav="admin-marketing">SEO</a><a href="#/admin/users" data-nav="admin-users">管理</a>'
+        : (me.dealer_count > 0
+            ? '<a href="#/dealer" data-nav="dealer">車商後台</a>'
+            : '');
       userEl.innerHTML = workspaceLink +
+        '<a href="#/notifications" data-nav="notifications">通知</a>' +
         '<span class="who">' + esc(me.display_name || me.email) +
         '<span class="role">' + esc(me.role) + '</span></span>' +
         '<button class="signout" id="signoutBtn">登出</button>' +
@@ -1846,7 +1887,7 @@ function appDialog(message, mode='notice') {
         await fetch('/api/auth/logout', { method: 'POST' });
         me = null;
         renderTopbar();
-        window.location.hash = sessionStorage.getItem('merchantInvite') ? '#/dealer' : '#/home';
+        window.location.hash = '#/home';
         window.location.reload();
       };
     }
@@ -2366,13 +2407,12 @@ function appDialog(message, mode='notice') {
   }
 
   async function renderAdminDealers(root) {
-    root.innerHTML = `<div class="wrap"><div class="top"><div><h1>車商管理</h1><p>新增、啟用車商，並邀請車商管理員。</p></div></div>
+    root.innerHTML = `<div class="wrap"><div class="top"><div><h1>車商管理</h1><p>建立車商、編輯資料、加入成員、暫停或啟用。</p><p>新車商管理員請到 <a href="#/dealer/register">車商自助註冊</a> 建立帳號後，管理員再用「編輯」加入成員。</p></div></div>
       <form id="dealerCreateForm" class="card form-card"><div class="form-grid">
-        <div class="field"><label>車商名稱</label><input id="dealerDisplayName" required placeholder="康程汽車服務"></div>
+        <div class="field"><label>車商名稱 *</label><input id="dealerDisplayName" required placeholder="康程汽車服務"></div>
         <div class="field"><label>公司名稱</label><input id="dealerLegalName"></div>
         <div class="field"><label>聯絡電話</label><input id="dealerPhone"></div>
         <div class="field"><label>聯絡電郵</label><input id="dealerEmail" type="email"></div>
-        <div class="field"><label>車商管理員電郵（可選）</label><input id="dealerOwnerEmail" type="email"></div>
         <div class="field"><label>第一間分店</label><input id="dealerBranchName" placeholder="澳門店"></div>
         <div class="field wide"><label>分店地址</label><input id="dealerBranchAddress"></div>
       </div>
@@ -2401,18 +2441,10 @@ function appDialog(message, mode='notice') {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { result.textContent = d.error?.message || '建立失敗'; return; }
       const dealerId = d.dealer.id;
-      let message = `車商已建立，已加入 ${d.services?.length || 0} 項服務。`;
-      const branchName = document.getElementById('dealerBranchName').value.trim();
-      if (branchName && !d.branch) message += ' 分店未建立，請檢查設定。';
-      const ownerEmail = document.getElementById('dealerOwnerEmail').value.trim();
-      if (ownerEmail) {
-        const invite = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, role: 'owner' }) });
-        const inviteData = await invite.json().catch(() => ({}));
-        if (inviteData.invite_url) message += ` ${inviteData.invitation_sent?'邀請已寄出':'可複製邀請連結（郵件未寄出）'}：${inviteData.invite_url}`;
-        else if (!invite.ok) message += ' 管理員邀請建立失敗。';
-        else message += ' 已加入現有帳號。';
-      }
-      form.reset(); result.textContent = message; await loadAdminDealers();
+      const message = `車商已建立，已加入 ${d.services?.length || 0} 項服務。` +
+        (document.getElementById('dealerBranchName').value.trim() && !d.branch ? ' 分店未建立，請檢查設定。' : '') +
+        ' 後續請至 <a href="#/admin/dealer-edit/' + encodeURIComponent(dealerId) + '">編輯</a> 加入成員。';
+      form.reset(); result.innerHTML = message; await loadAdminDealers();
     };
     await loadAdminDealers();
   }
@@ -2421,25 +2453,17 @@ function appDialog(message, mode='notice') {
     const list = document.getElementById('adminDealersList'); if (!list) return;
     const r = await fetch('/api/admin/dealers'); const d = await r.json().catch(() => ({}));
     if (!r.ok) { list.innerHTML = '<div class="row"><b>無法讀取車商</b></div>'; return; }
-    list.innerHTML = d.data?.length ? d.data.map((dealer) => `<div class="row"><span><b>${esc(dealer.display_name)}</b><small>${esc(dealer.status)} · ${dealer.branch_count} 分店 · ${dealer.member_count} 成員 · ${dealer.service_count} 服務 · ${dealer.fitment_count} 配對規則</small></span><span style="display:flex;gap:8px;align-items:center"><button type="button" class="kc-tab" data-dealer-status="${esc(dealer.id)}" data-next-status="${dealer.status === 'active' ? 'suspended' : 'active'}">${dealer.status === 'active' ? '暫停' : '啟用'}</button><button type="button" class="kc-tab" data-dealer-invite="${esc(dealer.id)}">邀請</button></span></div>`).join('') : '<div class="row"><b>尚未建立車商</b></div>';
+    list.innerHTML = d.data?.length ? d.data.map((dealer) => `<div class="row"><span><b>${esc(dealer.display_name)}</b><small>${esc(dealer.status)} · ${dealer.branch_count} 分店 · ${dealer.member_count} 成員 · ${dealer.service_count} 服務 · ${dealer.fitment_count} 配對規則</small></span><span style="display:flex;gap:8px;align-items:center"><button type="button" class="kc-tab" data-dealer-status="${esc(dealer.id)}" data-next-status="${dealer.status === 'active' ? 'suspended' : 'active'}">${dealer.status === 'active' ? '暫停' : '啟用'}</button><a href="#/admin/dealer-edit/${esc(dealer.id)}" class="kc-tab">編輯</a></span></div>`).join('') : '<div class="row"><b>尚未建立車商</b></div>';
     list.querySelectorAll('[data-dealer-status]').forEach((button) => { button.onclick = async () => { await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerStatus), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: button.dataset.nextStatus }) }); await loadAdminDealers(); }; });
-    list.querySelectorAll('[data-dealer-invite]').forEach((button) => { button.onclick = async () => { const inviteEmail = await appDialog('輸入車商管理員電郵','input'); if (!inviteEmail) return; const r = await fetch('/api/admin/dealers/' + encodeURIComponent(button.dataset.dealerInvite) + '/invites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'manager' }) }); const d = await r.json().catch(() => ({})); await appDialog(d.invite_url ? `${d.invitation_sent ? '邀請已寄出' : '郵件未寄出，請安全地分享邀請連結'}：${d.invite_url}` : (d.error?.message || '成員已加入')); }; });
   }
 
   /* 車商 portal */
   async function renderDealerPortal(root) {
-    const invited=new URLSearchParams(location.hash.split('?')[1]||'').get('invite');
-    if(invited&&/^[a-f0-9]{48}$/.test(invited)){sessionStorage.setItem('merchantInvite',invited);history.replaceState(null,'',location.pathname+'#/dealer');}
-    const inviteToken=sessionStorage.getItem('merchantInvite');
-    if(inviteToken){
-      root.innerHTML='<div class="wrap"><div class="card form-card"><h1>接受車商邀請</h1><p>已有帳號請先登入；首次使用請設定密碼。</p><a href="#/login">登入已有帳號</a><form id="inviteJoin"><label>顯示名稱<input name="name" autocomplete="name"></label><label>新帳號密碼（至少12字元）<input name="password" type="password" minlength="12" autocomplete="new-password"></label><button class="primary">'+(me?'接受邀請':'建立帳號並接受邀請')+'</button><p role="status"></p></form></div></div>';
-      const form=root.querySelector('form');form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('button');button.disabled=true;try{const response=await fetch(me?'/api/dealer/invites/accept':'/api/dealer/invites/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:inviteToken,display_name:form.elements.name.value,password:form.elements.password.value})});const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'邀請失敗');sessionStorage.removeItem('merchantInvite');location.reload();}catch(error){form.querySelector('[role=status]').textContent=error.message;button.disabled=false;}};return;
-    }
     root.innerHTML = '<div class="wrap"><div class="top"><div><h1>車商後台</h1><p>管理服務、車款配對與服務請求。</p></div></div><div id="dealerPortalBody"><div class="card form-card"><b>載入中…</b></div></div></div>';
     const body = document.getElementById('dealerPortalBody');
     const r = await fetch('/api/dealer/me'); const d = await r.json().catch(() => ({}));
     if (r.status === 401) { body.innerHTML = '<div class="card form-card"><p>請先登入車商帳號。</p><a href="#/login">前往登入</a></div>'; return; }
-    if (!r.ok || !d.data?.length) { body.innerHTML = '<div class="card form-card"><h2>尚未加入車商</h2><p>請由管理員先建立車商並邀請你的帳號。</p><form id="dealerInviteAccept"><div class="field"><label>邀請 token</label><input id="dealerInviteToken" required></div><button class="primary" type="submit">接受邀請</button><div class="ai-result" id="dealerInviteResult"></div></form></div>'; document.getElementById('dealerInviteAccept').onsubmit = async (e) => { e.preventDefault(); const result = document.getElementById('dealerInviteResult'); result.classList.add('show'); const x = await fetch('/api/dealer/invites/accept', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: document.getElementById('dealerInviteToken').value }) }); const v = await x.json().catch(() => ({})); result.textContent = x.ok ? '邀請已接受，請重新整理。' : (v.error?.message || '接受邀請失敗'); }; return; }
+    if (!r.ok || !d.data?.length) { body.innerHTML = '<div class="card form-card"><h2>尚未加入車商</h2><p>請透過 <a href="#/dealer/register">車商註冊</a> 建立你的車商帳號，或請管理員將你的帳號加入現有車商。</p></div>'; return; }
     const dealer = d.data[0];
     body.innerHTML = `<div class="section-title">車主授權的車輛</div><div id="dealerVehiclesList" class="card list"><div class="row"><b>載入中…</b></div></div><div class="card form-card"><div class="passport-head"><h2>${esc(dealer.display_name)}</h2><span class="state ${dealer.status === 'active' ? 'ok' : 'warn'}">${esc(dealer.role)} · ${esc(dealer.status)}</span></div><div class="form-grid"><div class="field"><label>服務項目 key</label><select id="dealerServiceKey" aria-label="服務項目"><option value="">載入服務目錄…</option></select></div><div class="field"><label>服務名稱</label><input id="dealerServiceName" placeholder="機油及機油隔更換"></div><div class="field"><label>適用品牌</label><input id="dealerFitMake" placeholder="Toyota"></div><div class="field"><label>適用車款</label><input id="dealerFitModel" placeholder="Corolla Cross"></div><div class="field"><label>年份起</label><input id="dealerFitYearFrom" type="number" placeholder="2020"></div><div class="field"><label>年份止</label><input id="dealerFitYearTo" type="number" placeholder="2025"></div></div><button class="primary" id="dealerAddService" type="button">新增服務與配對規則</button><div class="ai-result" id="dealerPortalResult"></div></div><div class="section-title">目前服務目錄</div><div id="dealerServicesList" class="card list"><div class="row"><b>載入中…</b></div></div><div class="section-title">服務請求</div><div id="dealerRequestsList" class="card list"><div class="row"><b>載入中…</b></div></div></div>`;
     const serviceKeySelect = document.getElementById('dealerServiceKey');
@@ -2514,6 +2538,270 @@ function appDialog(message, mode='notice') {
       result.textContent = '服務已新增。請在下方勾選提供此服務的分店並儲存。'; await loadPortal();
     };
     await loadPortal();
+  }
+
+  /* 車商註冊 — 隱藏入口，無公開 nav 連結 */
+  async function renderDealerRegister(root) {
+    document.title = '車商自助註冊｜無界啟程 BOOUNDLESS';
+    if (me) {
+      /* Already logged in: bounce to portal or home depending on membership. */
+      window.location.hash = me.dealer_count > 0 ? '#/dealer' : '#/home';
+      return;
+    }
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>車商自助註冊</h1><p>填寫以下資料即可建立車商帳號，並立刻進入後台。</p></div></div>' +
+      '<form id="dealerRegisterForm" class="card form-card"><div class="form-grid">' +
+      '<div class="field"><label>車商名稱 *</label><input id="regDealerName" required placeholder="康程汽車服務"></div>' +
+      '<div class="field"><label>公司名稱</label><input id="regLegalName" placeholder="康程汽車服務有限公司"></div>' +
+      '<div class="field"><label>商業登記編號</label><input id="regRegNo"></div>' +
+      '<div class="field"><label>聯絡電話</label><input id="regPhone" placeholder="+853-2882-0000"></div>' +
+      '<div class="field"><label>車商電郵</label><input id="regDealerEmail" type="email"></div>' +
+      '<div class="field"><label>車商網站</label><input id="regWebsite" placeholder="https://"></div>' +
+      '</div><hr><h3>第一間分店 *</h3><div class="form-grid">' +
+      '<div class="field"><label>分店名稱 *</label><input id="regBranchName" required placeholder="澳門店"></div>' +
+      '<div class="field wide"><label>分店地址 *</label><input id="regBranchAddress" required placeholder="澳門半島…"></div>' +
+      '<div class="field"><label>所屬區域</label><input id="regBranchDistrict" placeholder="例如：花地瑪堂區"></div>' +
+      '<div class="field"><label>分店電話</label><input id="regBranchPhone" placeholder="+853-2882-0000"></div>' +
+      '</div><hr><h3>管理員帳號 *</h3><div class="form-grid">' +
+      '<div class="field"><label>帳號電郵 *</label><input id="regEmail" type="email" required autocomplete="email"></div>' +
+      '<div class="field"><label>顯示名稱</label><input id="regDisplayName" autocomplete="name" placeholder="負責人姓名"></div>' +
+      '<div class="field"><label>密碼 *（至少 8 字元）</label><input id="regPassword" type="password" required minlength="8" autocomplete="new-password"></div>' +
+      '<div class="field"><label>再次輸入密碼 *</label><input id="regPasswordConfirm" type="password" required minlength="8" autocomplete="new-password"></div>' +
+      '</div>' +
+      '<label class="terms-consent"><input type="checkbox" id="regTerms" required> 我已閱讀並同意 <a href="/legal/terms.html" target="_blank" rel="noopener">《使用條款》</a> 及 <a href="/legal/privacy.html" target="_blank" rel="noopener">《隱私政策》</a></label>' +
+      '<button class="primary" type="submit">建立車商並登入</button><div class="ai-result" id="regResult"></div></form></div>';
+    const form = document.getElementById('dealerRegisterForm');
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const result = document.getElementById('regResult');
+      result.classList.remove('show');
+      const password = document.getElementById('regPassword').value;
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+      const termsChecked = document.getElementById('regTerms').checked;
+      if (password !== passwordConfirm) {
+        result.classList.add('show');
+        result.textContent = '兩次輸入的密碼不一致，請重新確認。';
+        return;
+      }
+      if (!termsChecked) {
+        result.classList.add('show');
+        result.textContent = '請先勾選同意《使用條款》及《隱私政策》。';
+        return;
+      }
+      result.classList.add('show'); result.textContent = '正在建立…';
+      const submitBtn = form.querySelector('button[type=submit]'); submitBtn.disabled = true;
+      const payload = {
+        email: document.getElementById('regEmail').value.trim(),
+        password,
+        display_name: document.getElementById('regDisplayName').value.trim(),
+        terms_version: 'v1-' + new Date().toISOString().slice(0, 10),
+        dealer: {
+          display_name: document.getElementById('regDealerName').value.trim(),
+          legal_name: document.getElementById('regLegalName').value.trim(),
+          registration_number: document.getElementById('regRegNo').value.trim(),
+          phone: document.getElementById('regPhone').value.trim(),
+          email: document.getElementById('regDealerEmail').value.trim(),
+          website: document.getElementById('regWebsite').value.trim(),
+          branch_name: document.getElementById('regBranchName').value.trim(),
+          branch_address: document.getElementById('regBranchAddress').value.trim(),
+          branch_district: document.getElementById('regBranchDistrict')?.value.trim() || '',
+          branch_phone: document.getElementById('regBranchPhone').value.trim(),
+        },
+      };
+      try {
+        const r = await fetch('/api/auth/register', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error?.message || '註冊失敗');
+        await fetchMe();
+        renderTopbar();
+        /* Show a brief success card with the dealer name and an explicit
+           continue button, so the user gets confirmation feedback before the
+           portal loads. Hash navigation triggers the SPA router — no full
+           reload needed. */
+        const dealerName = payload.dealer.display_name || '新車商';
+        root.innerHTML = '<div class="wrap"><div class="top"><div><h1>車商已建立</h1><p>歡迎，' + esc(dealerName) + '。帳號已自動登入，請按下方按鈕進入後台。</p></div></div>' +
+          '<div class="card form-card"><p>建立分店、加入成員、接單報價，都在車商後台內進行。</p>' +
+          '<button class="primary" id="enterDealerPortal">進入車商後台</button></div></div>';
+        document.getElementById('enterDealerPortal').onclick = () => {
+          window.location.hash = '#/dealer';
+        };
+      } catch (error) {
+        result.textContent = error.message;
+        submitBtn.disabled = false;
+      }
+    };
+  }
+
+  /* Admin dealer edit */
+  async function renderAdminDealerEdit(root, dealerId) {
+    document.title = '編輯車商｜無界啟程 BOOUNDLESS';
+    if (!me || me.role !== 'admin') {
+      window.location.hash = '#/login'; return;
+    }
+    root.innerHTML = '<div class="wrap"><div class="top"><div><h1>編輯車商</h1><p>更新基本資料、成員與狀態。</p><a href="#/admin/dealers">← 返回車商列表</a></div></div>' +
+      '<div id="dealerEditBody">載入中…</div></div>';
+    const body = document.getElementById('dealerEditBody');
+    let dealer, branches, members, services;
+    try {
+      const r = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId));
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error?.message || '載入失敗');
+      dealer = d.dealer; branches = d.branches; members = d.members; services = d.services;
+    } catch (error) { body.innerHTML = '<div class="card"><p>' + esc(error.message) + '</p></div>'; return; }
+
+    body.innerHTML = '<form id="dealerEditForm" class="card form-card"><div class="form-grid">' +
+      '<div class="field"><label>車商名稱 *</label><input id="editDisplayName" required value="' + esc(dealer.display_name) + '"></div>' +
+      '<div class="field"><label>公司名稱</label><input id="editLegalName" value="' + esc(dealer.legal_name || '') + '"></div>' +
+      '<div class="field"><label>商業登記編號</label><input id="editRegNo" value="' + esc(dealer.registration_number || '') + '"></div>' +
+      '<div class="field"><label>聯絡電話</label><input id="editPhone" value="' + esc(dealer.phone || '') + '"></div>' +
+      '<div class="field"><label>電郵</label><input id="editEmail" type="email" value="' + esc(dealer.email || '') + '"></div>' +
+      '<div class="field"><label>網站</label><input id="editWebsite" value="' + esc(dealer.website || '') + '"></div>' +
+      '</div><div class="form-grid"><div class="field"><label>狀態</label><select id="editStatus">' +
+      '<option value="draft"' + (dealer.status === 'draft' ? ' selected' : '') + '>草稿</option>' +
+      '<option value="active"' + (dealer.status === 'active' ? ' selected' : '') + '>啟用</option>' +
+      '<option value="suspended"' + (dealer.status === 'suspended' ? ' selected' : '') + '>暫停</option>' +
+      '</select></div></div>' +
+      '<button class="primary" type="submit">儲存變更</button><div class="ai-result" id="editResult"></div></form>' +
+      '<div class="section-title">成員 (' + members.length + ')</div>' +
+      '<div class="card list" id="editMembers"></div>' +
+      '<form id="memberAddForm" class="card form-card"><div class="form-grid">' +
+      '<div class="field"><label>現有用戶電郵，或新成員電郵</label><input id="memberEmail" type="email" required></div>' +
+      '<div class="field"><label>顯示名稱（僅新成員）</label><input id="memberDisplayName" placeholder="選填"></div>' +
+      '<div class="field"><label>角色</label><select id="memberRole">' +
+      '<option value="manager">經理 (manager)</option><option value="staff">員工 (staff)</option><option value="viewer">檢視者 (viewer)</option>' +
+      '</select></div></div>' +
+      '<details class="member-invite"><summary>新成員？展開設定臨時密碼</summary>' +
+      '<div class="form-grid" style="margin-top:12px"><div class="field"><label>臨時密碼（至少 8 字元）</label><input id="memberPassword" type="password" minlength="8" autocomplete="new-password"></div>' +
+      '<small style="color:var(--muted);grid-column:1/-1">若此電郵尚未註冊，請設定臨時密碼。系統會把密碼顯示給你，請以安全方式交給新成員，並請他們登入後立即修改。</small>' +
+      '</div></details>' +
+      '<button class="primary" type="submit">加入成員</button><div class="ai-result" id="memberAddResult"></div></form>' +
+      '<div class="section-title">分店 (' + branches.length + ')</div><div class="card list" id="editBranches"></div>' +
+      '<div class="section-title">服務 (' + services.length + ')</div><div class="card list" id="editServices"></div>';
+
+    const ROLE_LABEL = { owner: '負責人', manager: '經理', staff: '員工', viewer: '檢視者' };
+    const ownerCount = members.filter((m) => m.role === 'owner').length;
+
+    function renderMembers() {
+      const localOwnerCount = members.filter((m) => m.role === 'owner').length;
+      document.getElementById('editMembers').innerHTML = members.length
+        ? members.map((m) => {
+            const canRemove = !(m.role === 'owner' && localOwnerCount === 1);
+            const canPromote = m.role !== 'owner';
+            return '<div class="row"><span><b>' + esc(m.display_name || m.email) + '</b><small>' + esc(m.email) + ' · ' + esc(ROLE_LABEL[m.role] || m.role) + '</small></span>' +
+              (canPromote
+                ? '<span style="display:flex;gap:6px;align-items:center"><button class="kc-tab" data-promote-member="' + esc(m.user_id) + '">提升為負責人</button>' +
+                  (canRemove ? '<button class="kc-tab" data-remove-member="' + esc(m.user_id) + '">移除</button>' : '<small style="color:var(--muted)">唯一負責人</small>') +
+                  '</span>'
+                : (canRemove ? '<button class="kc-tab" data-remove-member="' + esc(m.user_id) + '">移除</button>' : '<small style="color:var(--muted)">唯一負責人</small>'));
+          }).join('')
+        : '<div class="row"><b>尚無成員</b></div>';
+      document.querySelectorAll('[data-remove-member]').forEach((button) => {
+        button.onclick = async () => {
+          const target = members.find((x) => x.user_id === button.dataset.removeMember);
+          const label = target?.display_name || target?.email || '此成員';
+          if (!(await appDialog('確定要將 ' + label + ' 從車商中移除？', 'confirm'))) return;
+          const r = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/members/' + encodeURIComponent(button.dataset.removeMember), { method: 'DELETE' });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            await appDialog(d.error?.message === 'Refusing to remove the last owner' ? '這是唯一的負責人，請先將另一位成員提升為負責人。' : (d.error?.message || '移除失敗'));
+            return;
+          }
+          members = members.filter((m) => m.user_id !== button.dataset.removeMember);
+          renderMembers();
+        };
+      });
+      document.querySelectorAll('[data-promote-member]').forEach((button) => {
+        button.onclick = async () => {
+          const target = members.find((x) => x.user_id === button.dataset.promoteMember);
+          const label = target?.display_name || target?.email || '此成員';
+          if (!(await appDialog('確定要將 ' + label + ' 提升為車商負責人？', 'confirm'))) return;
+          const r = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/members', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email: target.email, role: 'owner' }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { await appDialog(d.error?.message || '提升失敗'); return; }
+          target.role = 'owner';
+          renderMembers();
+        };
+      });
+    }
+    renderMembers();
+    document.getElementById('editBranches').innerHTML = branches.length
+      ? branches.map((b) => '<div class="row"><span><b>' + esc(b.name) + '</b><small>' + esc(b.address || '') + ' · ' + esc(b.district || '') + '</small></span><span>' + (b.is_active ? '啟用' : '停用') + '</span></div>').join('')
+      : '<div class="row"><b>尚無分店</b></div>';
+    document.getElementById('editServices').innerHTML = services.length
+      ? services.map((s) => '<div class="row"><span><b>' + esc(s.name) + '</b><small>' + esc(s.service_item_type_key) + ' · ' + s.fitment_count + ' 配對</small></span><span>' + (s.is_active ? '啟用' : '停用') + '</span></div>').join('')
+      : '<div class="row"><b>尚無服務</b></div>';
+
+    document.getElementById('dealerEditForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const result = document.getElementById('editResult'); result.classList.add('show'); result.textContent = '儲存中…';
+      const nextStatus = document.getElementById('editStatus').value;
+      const activeMembers = members.filter((m) => m.role !== 'viewer').length;
+      /* Suspending flips every member's user.is_active to false; warn the admin
+         before they trigger a forced-logout of every active member. */
+      if (nextStatus === 'suspended' && dealer.status !== 'suspended' && activeMembers > 0) {
+        const ok = await appDialog(
+          '此操作會將車商改為「暫停」，並同時停用 ' + activeMembers + ' 位成員帳號，他們會被強制登出。確定繼續？',
+          'confirm',
+        );
+        if (!ok) { result.textContent = '已取消。'; return; }
+      }
+      const body = JSON.stringify({
+        display_name: document.getElementById('editDisplayName').value.trim(),
+        legal_name: document.getElementById('editLegalName').value.trim(),
+        registration_number: document.getElementById('editRegNo').value.trim(),
+        phone: document.getElementById('editPhone').value.trim(),
+        email: document.getElementById('editEmail').value.trim(),
+        website: document.getElementById('editWebsite').value.trim(),
+        status: nextStatus,
+      });
+      const r = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { result.textContent = d.error?.message || '儲存失敗'; return; }
+      const msg = ['車商資料已更新'];
+      if (d.member_flip) msg.push(d.member_flip.count ? (d.member_flip.is_active ? `${d.member_flip.count} 位成員已重新啟用帳號` : `${d.member_flip.count} 位成員已停用帳號並強制登出`) : '成員帳號狀態無變更');
+      result.textContent = msg.join('；');
+    };
+    document.getElementById('memberAddForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const result = document.getElementById('memberAddResult'); result.classList.add('show'); result.textContent = '加入中…';
+      const payload = {
+        email: document.getElementById('memberEmail').value.trim(),
+        role: document.getElementById('memberRole').value,
+      };
+      const displayName = document.getElementById('memberDisplayName').value.trim();
+      if (displayName) payload.display_name = displayName;
+      const password = document.getElementById('memberPassword').value;
+      if (password) payload.password = password;
+      const r = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId) + '/members', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const code = d.error?.code || d.error?.message;
+        const friendly = code === 'inactive_user'
+          ? '此帳號已停用，請先到「用戶管理」啟用帳號。'
+          : (typeof code === 'string' && code.includes('臨時密碼'))
+            ? '此電郵尚未註冊，請展開「設定臨時密碼」並填入至少 8 字元的密碼。'
+            : (d.error?.message || '加入失敗');
+        result.textContent = friendly;
+        return;
+      }
+      let successLine = d.user_created ? '已建立新帳號並加入成員。' : '已加入成員。';
+      if (d.user_created && d.temporary_password) {
+        successLine += ' 臨時密碼：' + d.temporary_password + '（請以安全方式交給新成員，並提醒他們登入後立即修改）';
+      }
+      result.textContent = successLine;
+      const refetch = await fetch('/api/admin/dealers/' + encodeURIComponent(dealerId));
+      const refetchData = await refetch.json();
+      members = refetchData.members || [];
+      renderMembers();
+      document.getElementById('memberAddForm').reset();
+    };
   }
 
   /* Admin Users */

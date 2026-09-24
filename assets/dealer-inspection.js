@@ -47,11 +47,6 @@
     return { el: row, result: resultSel, notes: note, measureValue: measured, measureUnit: unitSel, action: action };
   }
 
-  async function loadTemplate() {
-    const list = (await fetch('/api/admin/service-orders').then((r) => r.json()).catch(() => ({}))).data || [];
-    return null; // template comes from local shared config
-  }
-
   async function view(host, requestId) {
     host.innerHTML = '';
     var r = await fetch('/api/service-requests/' + requestId).then(function (r) { return r.json(); });
@@ -59,7 +54,17 @@
     var draft = await fetch('/api/service-requests/' + requestId + '/inspection', { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : { data: null }; })
       .catch(function () { return { data: null }; });
-    var template = window.__svcInspectionTemplate || { key: 'baseline-v1', items: [] };
+    var template = (draft.data && draft.data.template) || { key: 'baseline-v1', items: [] };
+    var latestReport = (draft.data && draft.data.reports && draft.data.reports[0]) || null;
+    host.appendChild(ui.el('header', null, [
+      ui.el('span', { class: 'sheet__eyebrow' }, 'INSPECTION'),
+      ui.el('h1', null, template.label || '檢查報告'),
+      ui.el('p', { style: 'color:#5b6b80;' }, '逐項記錄結果；發布後車主即可檢視。'),
+    ]));
+    if (!template.items.length) {
+      host.appendChild(ui.el('div', { class: 'route-state' }, '此服務沒有檢查模板。'));
+      return;
+    }
     var rows = [];
     template.items.forEach(function (it) {
       var existing = (draft.data && draft.data.results || []).find(function (x) { return x.check_key === it.check_key; }) || {};
@@ -96,24 +101,27 @@
         method: 'PUT', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mileage_km: r.data.mileage_km || 42680,
+          mileage_km: r.data.mileage_km || 0,
           summary: r.data.summary || '',
           template_key: template.key,
           results: buildResults(),
         }),
       });
+      var payload = await rr.json().catch(function () { return {}; });
       saveBtn.disabled = false;
-      status.textContent = rr.ok ? '已儲存草稿' : '儲存失敗:' + (rr.body?.error?.message || rr.status);
+      if (rr.ok) latestReport = payload.data || latestReport;
+      status.textContent = rr.ok ? '已儲存草稿' : '儲存失敗：' + ((payload.error && payload.error.message) || rr.status);
     });
     pubBtn.addEventListener('click', async function () {
       pubBtn.disabled = true; status.textContent = '發布中…';
       var rr = await fetch('/api/service-requests/' + requestId + '/inspection/publish', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': ui.uuidV4() },
-        body: JSON.stringify({ results: buildResults() }),
+        body: JSON.stringify({ version: latestReport && latestReport.version }),
       });
+      var payload = await rr.json().catch(function () { return {}; });
       pubBtn.disabled = false;
-      status.textContent = rr.ok ? '已發布,通知車主檢視' : '發布失敗:' + (rr.body?.error?.message || rr.status);
+      status.textContent = rr.ok ? '已發布，車主現在可以檢視' : '發布失敗：' + ((payload.error && payload.error.message) || rr.status);
     });
   }
 

@@ -30,6 +30,7 @@ async function seed(c, suffix) {
   try {
     const adminId = `admin-${suffix}`;
     const ownerId = `owner-${suffix}`;
+    const dealerUserId = `dealer-user-${suffix}`;
     const dealerId = `dealer-${suffix}`;
     const branchId = `branch-${suffix}`;
     const vehicleId = `vehicle-${suffix}`;
@@ -37,9 +38,10 @@ async function seed(c, suffix) {
     const slotId = randomUUID();
     await c.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'admin','Admin',TRUE) ON CONFLICT DO NOTHING`, [adminId, `admin-${suffix}@e.test`, hash('a')]);
     await c.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','Owner',TRUE) ON CONFLICT DO NOTHING`, [ownerId, `owner-${suffix}@e.test`, hash('Owner-pw-2026!')]);
+    await c.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','Dealer',TRUE) ON CONFLICT DO NOTHING`, [dealerUserId, `dealer-${suffix}@e.test`, hash('Dealer-pw-2026!')]);
     await c.query(`INSERT INTO dealers (id,display_name,status,pilot_enabled) VALUES ($1,'Dealer','active',TRUE) ON CONFLICT DO NOTHING`, [dealerId]);
     await c.query(`INSERT INTO dealer_branches (id,dealer_id,name,timezone) VALUES ($1,$2,'Branch','Asia/Macau') ON CONFLICT DO NOTHING`, [branchId, dealerId]);
-    await c.query(`INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,'owner') ON CONFLICT DO NOTHING`, [dealerId, ownerId]);
+    await c.query(`INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,'owner') ON CONFLICT DO NOTHING`, [dealerId, dealerUserId]);
     await c.query(`INSERT INTO vehicles (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,created_by_user_id,onboarding_state,onboarding_completed_at) VALUES ($1,'Corolla Cross','Toyota',2021,'混能',$2,42680,'42680 km',$3,'ready',NOW()) ON CONFLICT DO NOTHING`, [vehicleId, `T-${suffix}`, ownerId]);
     await c.query(`INSERT INTO service_offers (id,dealer_id,branch_id,kind,name,description,currency,price_minor,pricing_mode,duration_minutes,checklist_version,active) VALUES ($1,$2,$3,'baseline','基線','d','MOP',28000,'fixed',45,'baseline-v1',TRUE)`, [offerId, dealerId, branchId]);
     /* dealer_service_items + service_offer_items so v1 quote allowlist matches. */
@@ -62,7 +64,7 @@ async function seed(c, suffix) {
     const starts = new Date(Date.now() + 3600_000);
     await c.query(`INSERT INTO booking_slots (id,branch_id,starts_at,ends_at,capacity,active) VALUES ($1,$2,$3,$4,1,TRUE)`, [slotId, branchId, starts.toISOString(), new Date(starts.getTime() + 3600_000).toISOString()]);
     await c.query('COMMIT');
-    return { adminId, ownerId, dealerId, branchId, vehicleId, offerId, slotId };
+    return { adminId, ownerId, dealerUserId, dealerId, branchId, vehicleId, offerId, slotId };
   } catch (e) { await c.query('ROLLBACK').catch(() => {}); throw e; }
 }
 
@@ -86,7 +88,7 @@ async function cleanup(c, suffix) {
   await c.query(`DELETE FROM dealer_branches WHERE id=$1`, [`branch-${suffix}`]);
   await c.query(`DELETE FROM dealers WHERE id=$1`, [`dealer-${suffix}`]);
   await c.query(`DELETE FROM vehicles WHERE id=$1`, [`vehicle-${suffix}`]);
-  await c.query(`DELETE FROM users WHERE id IN ($1,$2)`, [`admin-${suffix}`, `owner-${suffix}`]);
+  await c.query(`DELETE FROM users WHERE id IN ($1,$2,$3)`, [`admin-${suffix}`, `owner-${suffix}`, `dealer-user-${suffix}`]);
 }
 
 async function call(base, path, opts = {}) {
@@ -143,9 +145,9 @@ async function main() {
     log('create request', r.status === 200, `${r.status} ${r.body.error?.message || ''}`);
     const reqId = r.body.data.id;
     const ver0 = r.body.data.version;
-    // Dealer login (same user is also dealer member)
+    // Dealer login uses a separate account to preserve owner/operator separation.
     r = await call(base, '/api/auth/login', { method: 'POST',
-      body: { email: `owner-${suffix}@e.test`, password: 'Owner-pw-2026!' } });
+      body: { email: `dealer-${suffix}@e.test`, password: 'Dealer-pw-2026!' } });
     const dealerCookie = r.setCookie && r.setCookie.split(';')[0];
     // 3. Quote (v1 path uses indexes; v2 line_ids path requires select_line_ids)
     const lineId = randomUUID();

@@ -8,9 +8,25 @@
   'use strict';
   var ui = window.svcUI;
 
+  async function uploadEvidence(requestId,file,purpose){
+    if(!file)return null;
+    var intent=await ui.callApi('POST','/api/service-requests/'+encodeURIComponent(requestId)+'/attachments/upload',{mime_type:file.type,size_bytes:file.size,purpose:purpose},{idempotencyKey:ui.uuidV4()});
+    if(!intent.ok)throw new Error(intent.body.error?.message||'無法建立照片上傳');
+    var uploaded=await fetch(intent.body.data.upload_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+    if(!uploaded.ok)throw new Error('照片上傳失敗');
+    var finalized=await ui.callApi('POST','/api/service-requests/'+encodeURIComponent(requestId)+'/attachments/'+encodeURIComponent(intent.body.data.attachment_id)+'/finalize',{}, {idempotencyKey:ui.uuidV4()});
+    if(!finalized.ok)throw new Error(finalized.body.error?.message||'照片驗證失敗');
+    return finalized.body.data;
+  }
+
   async function view(host, requestId) {
     host.innerHTML = '';
-    var r = await fetch('/api/service-requests/' + requestId).then(function (r) { return r.json(); });
+    var response = await fetch('/api/service-requests/' + encodeURIComponent(requestId));
+    var r = await response.json().catch(function () { return {}; });
+    if (!response.ok || !r.data) {
+      host.appendChild(ui.el('div', { class: 'route-state' }, '無法載入完工資料。'));
+      return;
+    }
     var lines = (r.data && r.data.order_lines) || [];
     var mileage = (r.data && r.data.mileage_km) || 0;
     var startedAt = (r.data && r.data.scheduled_at) || new Date().toISOString();
@@ -31,6 +47,12 @@
     var inputNotes = ui.el('textarea', { rows: 3,
       style: 'width:100%;padding:8px;border-radius:8px;border:1px solid #dde5ee;box-sizing:border-box;' });
     host.appendChild(ui.el('div', null, [ui.el('b', null, '備註:'), ' ', inputNotes]));
+    var beforePhoto=ui.el('input',{type:'file',accept:'image/jpeg,image/png,image/webp'});
+    var afterPhoto=ui.el('input',{type:'file',accept:'image/jpeg,image/png,image/webp'});
+    host.appendChild(ui.el('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;'},[
+      ui.el('label',null,[ui.el('b',null,'施工前照片'),beforePhoto]),
+      ui.el('label',null,[ui.el('b',null,'施工後照片'),afterPhoto]),
+    ]));
 
     var inputs = [];
     lines.forEach(function (line) {
@@ -84,6 +106,13 @@
 
     submit.addEventListener('click', async function () {
       submit.disabled = true;
+      status.textContent='正在上傳證據照片…';
+      try {
+        if(beforePhoto.files[0])await uploadEvidence(requestId,beforePhoto.files[0],'before');
+        if(afterPhoto.files[0])await uploadEvidence(requestId,afterPhoto.files[0],'after');
+      } catch(error) {
+        submit.disabled=false;status.textContent=error.message;return;
+      }
       var completion = {
         mileage_km: Number(inputMileage.value),
         started_at: startedAt,
@@ -106,8 +135,9 @@
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': ui.uuidV4() },
         body: JSON.stringify({ action: 'complete', version: idx, completion }),
       });
+      var payload = await rr.json().catch(function () { return {}; });
       submit.disabled = false;
-      status.textContent = rr.ok ? '完工報告已送出,等待車主確認' : '送出失敗:' + (rr.body?.error?.message || rr.status);
+      status.textContent = rr.ok ? '完工報告已送出，等待車主確認' : '送出失敗：' + ((payload.error && payload.error.message) || rr.status);
     });
   }
 

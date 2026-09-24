@@ -19,7 +19,8 @@ async function loadAccess(client, requestId, userId) {
     `SELECT m.role FROM dealer_members m
        WHERE m.dealer_id=$1 AND m.user_id=$2 AND m.role IN ('owner','manager','staff')`, [r.dealer_id, userId]
   )).rows[0];
-  return { request: r, isOwner: r.user_id === userId, member };
+  const isOwner = r.user_id === userId;
+  return { request: r, isOwner, member: isOwner ? null : member };
 }
 
 export default async function handler(req, res) {
@@ -59,6 +60,10 @@ export default async function handler(req, res) {
          VALUES ($1, 'proposed', $2, $3::jsonb, $4::jsonb, $5, $6, NOW()) RETURNING *`,
         [requestId, reason, JSON.stringify(lines), JSON.stringify(lines), total, user.id]
       );
+      await client.query(`INSERT INTO notifications(user_id,request_id,event_id,type,title,body)
+        VALUES($1,$2,$3,'change_proposed','有追加項目待批准',$4)
+        ON CONFLICT(user_id,event_id,type) DO NOTHING`,
+        [r.user_id,requestId,`${requestId}:change:${ins.rows[0].id}`,reason]);
       await client.query('COMMIT');
       await audit({ actor: user, action: 'service_change.propose',
         targetType: 'service_change', targetId: ins.rows[0].id,
@@ -93,7 +98,7 @@ export default async function handler(req, res) {
       } else {
         // Approve: insert service_order_lines per change line, marked with change_id.
         const items = Array.isArray(ch.quote_lines) ? ch.quote_lines : (ch.items || []);
-        for (const line of items) {
+        for (const [lineIndex,line] of items.entries()) {
           await client.query(
             `INSERT INTO service_order_lines
                (request_id, change_id, change_line_index, description, service_keys, work_type,
@@ -101,7 +106,7 @@ export default async function handler(req, res) {
                 amount_minor, warranty_text, approved_by, approved_at)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
              ON CONFLICT DO NOTHING`,
-            [requestId, changeId, Number.isInteger(line.line_index) ? line.line_index : null,
+            [requestId, changeId, Number.isInteger(line.line_index) ? line.line_index : lineIndex,
              line.description, line.service_keys || [], line.work_type,
              Number.isInteger(line.quantity) ? line.quantity : 1,
              line.parts_brand || null, line.parts_spec || null, line.part_number || null,
@@ -115,6 +120,9 @@ export default async function handler(req, res) {
           [user.id, decisionNote, changeId]
         );
       }
+      if(ch.created_by!==user.id)await client.query(`INSERT INTO notifications(user_id,request_id,event_id,type,title,body)
+        VALUES($1,$2,$3,'change_decided',$4,$5) ON CONFLICT(user_id,event_id,type) DO NOTHING`,
+        [ch.created_by,requestId,`${requestId}:change-decision:${changeId}`,decision==='approve'?'追加項目已批准':'追加項目被拒絕',decisionNote||'車主已作出決定。']);
       await client.query('COMMIT');
       await audit({ actor: user, action: `service_change.${decision}`,
         targetType: 'service_change', targetId: changeId,

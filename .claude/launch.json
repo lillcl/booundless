@@ -7,6 +7,19 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "dealer-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-server.js"],
+      "port": 3116,
+      "env": {
+        "KC_DATABASE_URL": "postgresql://cll@127.0.0.1:5432/kc_carai",
+        "KC_AUTO_MIGRATE": "0",
+        "DEMO_SEED_ENABLED": "0",
+        "KC_ALLOW_NO_ORIGIN": "1",
+        "RESEND_API_KEY": ""
+      }
     }
   ]
 }

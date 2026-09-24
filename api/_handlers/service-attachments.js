@@ -7,13 +7,13 @@
    JPEG/PNG/WebP only, <=5MB per file, <=20 per request. Storage adapter
    abstracts Supabase / Vercel Blob / local for development.
 
-   This first slice ships a local-disk implementation under
-   SERVICE_EVIDENCE_DIR for dev, and a stub for cloud providers that
-   requires SUPABASE_STORAGE_BUCKET to be set. Production must configure
-   SUPABASE_SERVICE_KEY + SUPABASE_STORAGE_BUCKET to enable uploads. */
+   Local development uses SERVICE_EVIDENCE_DIR. Production can proxy a
+   private Supabase Storage bucket by configuring SUPABASE_URL,
+   SUPABASE_SERVICE_ROLE_KEY and SUPABASE_STORAGE_BUCKET; the service-role
+   credential is never exposed to the browser. */
 
 import { mkdir, writeFile, stat, readFile } from 'node:fs/promises';
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
 import { getDb } from '../_lib/db.js';
 import { requireUser } from '../_lib/auth.js';
@@ -38,14 +38,32 @@ function verifySig(url, exp, sig) {
   if (Number(exp) < Date.now()) return false;
   const expected = createHmac('sha256', SIGN_SECRET())
     .update(`${url}|${exp}`).digest('hex');
-  return expected === sig;
+  if (!/^[a-f0-9]{64}$/i.test(String(sig || ''))) return false;
+  return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(sig, 'hex'));
+}
+
+function detectMime(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer.length >= 8 && buffer.subarray(0,8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))) return 'image/png';
+  if (buffer.length >= 12 && buffer.subarray(0,4).toString('ascii') === 'RIFF' && buffer.subarray(8,12).toString('ascii') === 'WEBP') return 'image/webp';
+  return null;
 }
 
 function storage() {
-  // Returns { kind, root, signPut, signGet, exists, write }
-  // Local adapter only for first slice; cloud adapters added per env.
+  // Returns a private local or Supabase-backed storage adapter.
   if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_STORAGE_BUCKET) {
-    return { kind: 'supabase-stub', exists: async () => false, write: async () => { throw new Error('cloud upload not wired in this slice'); } };
+    const base=String(process.env.SUPABASE_URL||'').replace(/\/$/,'');
+    const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const bucket=process.env.SUPABASE_STORAGE_BUCKET;
+    if(!base)throw new Error('SUPABASE_URL is required for evidence storage');
+    const objectUrl=(objectKey,authenticated=false)=>`${base}/storage/v1/object/${authenticated?'authenticated/':''}${encodeURIComponent(bucket)}/${objectKey.split('/').map(encodeURIComponent).join('/')}`;
+    const headers={Authorization:`Bearer ${key}`,apikey:key};
+    return {
+      kind:'supabase',
+      async exists(objectKey){const response=await fetch(objectUrl(objectKey,true),{method:'HEAD',headers});return response.ok;},
+      async write(objectKey,buffer,mime){const response=await fetch(objectUrl(objectKey),{method:'POST',headers:{...headers,'Content-Type':mime||detectMime(buffer)||'application/octet-stream','x-upsert':'false'},body:buffer});if(!response.ok)throw new Error(`Storage upload failed (${response.status})`);},
+      async read(objectKey){const response=await fetch(objectUrl(objectKey,true),{headers});if(!response.ok)throw new Error('Not found');return Buffer.from(await response.arrayBuffer());},
+    };
   }
   const root = process.env.SERVICE_EVIDENCE_DIR || '/tmp/kc-evidence';
   return {
@@ -59,6 +77,7 @@ function storage() {
       await mkdir(join(root, objectKey.split('/').slice(0, -1).join('/')), { recursive: true }).catch(() => {});
       await writeFile(full, buffer);
     },
+    async read(objectKey){return readFile(join(root,objectKey));},
   };
 }
 
@@ -131,17 +150,20 @@ export default async function handler(req, res) {
       const store = storage();
       const exists = await store.exists(att.object_key);
       if (!exists) { await client.release(); return sendError(res, 422, 'unprocessable', 'Object not present in storage'); }
-      // Validate size matches declared; for local, just stat.
-      let actualSize = att.size_bytes;
-      if (store.kind === 'local') {
-        const s = await stat(join(store.root, att.object_key));
-        actualSize = s.size;
-      }
+      const buffer = await store.read(att.object_key);
+      const actualSize = buffer.length;
       if (actualSize !== att.size_bytes) {
         await client.query(`UPDATE service_attachments SET upload_state='failed' WHERE id=$1`, [att.id]);
         await client.release();
         return sendError(res, 422, 'unprocessable', 'size mismatch');
       }
+      if (detectMime(buffer) !== att.mime_type) {
+        await client.query(`UPDATE service_attachments SET upload_state='failed' WHERE id=$1`, [att.id]);
+        await client.release();
+        return sendError(res, 422, 'unprocessable', 'File signature does not match mime_type');
+      }
+      await client.query(`UPDATE service_attachments SET sha256=$1 WHERE id=$2`,
+        [createHash('sha256').update(buffer).digest('hex'), att.id]);
       await client.query(
         `UPDATE service_attachments SET upload_state='ready' WHERE id=$1`, [att.id]
       );
@@ -176,22 +198,36 @@ export default async function handler(req, res) {
 /* Internal endpoint to actually read / write the signed-URL target. Mounted by
    the internal router only. Not exposed under /api in production spec. */
 export async function internalEvidenceHandler(req, res, objectKey, mode, exp, sig) {
+  if (!/^requests\/[A-Za-z0-9_-]+\/[0-9a-f-]{36}$/i.test(objectKey)) {
+    res.statusCode = 400;
+    return res.end('Invalid object key');
+  }
   const url = `/api/internal/evidence/${encodeURIComponent(objectKey)}`;
   if (!verifySig(url, exp, sig)) {
     res.statusCode = 403;
     return res.end('Forbidden');
   }
   const store = storage();
-  if (store.kind !== 'local') {
-    res.statusCode = 503;
-    return res.end('Cloud storage adapter not yet wired.');
-  }
   if (mode === 'PUT') {
     let chunks = [];
-    req.on('data', (c) => chunks.push(c));
+    let total = 0;
+    req.on('data', (c) => {
+      total += c.length;
+      if (total > MAX_BYTES) {
+        chunks = [];
+        res.statusCode = 413;
+        res.end('File too large');
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
     req.on('end', async () => {
+      if (res.writableEnded) return;
       try {
-        await store.write(objectKey, Buffer.concat(chunks));
+        const buffer = Buffer.concat(chunks);
+        if (!detectMime(buffer)) { res.statusCode = 415; return res.end('Unsupported image'); }
+        await store.write(objectKey, buffer, detectMime(buffer));
         res.statusCode = 200; res.end('ok');
       } catch (e) { res.statusCode = 500; res.end(e.message); }
     });
@@ -199,11 +235,21 @@ export async function internalEvidenceHandler(req, res, objectKey, mode, exp, si
   }
   if (mode === 'GET') {
     try {
-      const buf = await readFile(join(store.root, objectKey));
-      res.setHeader('Content-Type', 'application/octet-stream');
+      const buf = await store.read(objectKey);
+      res.setHeader('Content-Type', detectMime(buf) || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'private, no-store');
       res.end(buf);
     } catch (e) { res.statusCode = 404; res.end('Not found'); }
     return;
   }
   res.statusCode = 405; res.end('Method not allowed');
+}
+
+export async function internalEvidenceRoute(req,res) {
+  const url=new URL(req.url||'','http://localhost');
+  const match=url.pathname.match(/^\/api\/internal\/evidence\/([^/]+)$/);
+  if(!match){res.statusCode=404;return res.end('Not found');}
+  let objectKey;
+  try{objectKey=decodeURIComponent(match[1]);}catch{res.statusCode=400;return res.end('Invalid object key');}
+  return internalEvidenceHandler(req,res,objectKey,req.method,url.searchParams.get('exp'),url.searchParams.get('sig'));
 }

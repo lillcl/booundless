@@ -1,9 +1,9 @@
 # PROGRESS.md
 
 ## Project Status
-- Current Phase: Phase 6 — Service MVP (T0–T8 done; T9 release runbook pending)
-- Overall Status: Web app live; 小程序 port complete; prod hardening shipped; Service MVP code + UI shipped (T0–T8); production migration + go-live pending real DB + owner actions.
-- Last Updated: 2026-09-23
+- Current Phase: Phase 7 — Dealer self-registration refactor (T7.1–T7.5 done; awaiting independent reviewer)
+- Overall Status: Service MVP shipped (Phase 6, 2026-09-23); Phase 7 refactor shipped (2026-09-24); invite-token flow retired; `dealer_invites` table dropped; admin can edit any dealer + add/remove members; suspension cascades to `users.is_active` for all members.
+- Last Updated: 2026-09-24
 - Orchestrator: `Lead / Orchestrator`
 
 ## Phase 0 — Initialization
@@ -499,6 +499,114 @@ Per the user's instruction of 2026-09-22 ("你授權我以 Orchestrator 身份�
 
 Approved By: `Lead / Orchestrator` @ 2026-09-23 (code-complete sign-off; operational gate tracked above)
 Signature: `Lead / Orchestrator` @ 2026-09-23
+
+## Phase 7 — Dealer self-registration refactor (2026-09-24)
+
+**Goal:** Replace the admin-invite-token dealer onboarding with a hidden self-registration page so a store owner can register and immediately use their dealer workspace. Admin gains full edit + member management + suspend that flips both `users.is_active=false` and `dealers.status='suspended'`.
+
+### Task 7.1 — DB migration
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `db/migrations/2026_09_dealer_self_register.sql` — `ALTER TABLE users ADD COLUMN terms_version TEXT; DROP TABLE IF EXISTS dealer_invites CASCADE;`
+  - [x] Migration auto-discovered via `db/migrations/*.sql` glob in `scripts/_lib/migrations.js:96-100`
+  - [x] Verified idempotent (`status: unchanged` on rerun)
+- Validation:
+  - [x] `node scripts/migrate.js` applied cleanly against Postgres 16 (`kc_carai`)
+  - [x] `\d users` shows `terms_version | text`
+  - [x] `\dt dealer_invites` reports "Did not find any relation"
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+### Task 7.2 — Backend refactor
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `api/_handlers/auth.js:48-200` — `POST /api/auth/register` extended with optional `dealer:{}` payload; wraps user + dealer + branch + member in one transaction
+  - [x] `users.terms_version` persisted when provided
+  - [x] `api/_handlers/dealers.js` — removed `acceptInvite`, `/api/dealer/invites/accept`, `/api/dealer/invites/register`, `/api/admin/dealers/:id/invites`
+  - [x] `api/_handlers/dealers.js` — `POST /api/admin/dealers/:id/members` (upsert by email; 404 `user_not_found`; 409 `inactive_user`)
+  - [x] `api/_handlers/dealers.js` — `DELETE /api/admin/dealers/:id/members/:userId` (422 `last_owner` guard)
+  - [x] `api/_handlers/dealers.js:208-280` — PATCH no longer gates activation; status flip cascades to `users.is_active` for all members (transactional); response includes `member_flip:{count,is_active}`
+  - [x] `audit_log` actions: `auth.register` for plain accounts, `dealer.self_register` (target_type=dealer) for self-registered dealers; `dealer.member.add`, `dealer.member.remove`; invite actions removed
+- Validation:
+  - [x] `node --test tests/*.test.js` 48/48 green
+  - [x] `node scripts/smoke-dealer-onboarding.js` 26/26 PASS
+  - [x] `node scripts/smoke-service-mvp.js` 16/16 PASS (no regression)
+  - [x] Old invite endpoints return 404; `dealer_invites` table no longer exists
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+### Task 7.3 — Frontend refactor
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `index.html` — added `dealer/register` and `admin/dealer-edit` routes + `parseHashRoute` handlers
+  - [x] `renderDealerRegister(root)` — hidden self-registration form (dealer + branch + admin account fields)
+  - [x] `renderAdminDealerEdit(root, dealerId)` — full edit form (legal_name/phone/email/website/registration_number/status) + member list + add/remove member
+  - [x] `fetchMe()` hydrates `me.dealer_count` from `/api/dealer/me` so topbar can gate `#/dealer` link on membership (not just non-admin role)
+  - [x] Topbar shows `#/dealer` only when `me.dealer_count > 0` (admin still gets the admin links)
+  - [x] `renderDealerPortal` stripped of `sessionStorage.merchantInvite` branch + invite-accept form
+  - [x] Logout no longer bounces to `#/dealer` based on stale invite flag
+  - [x] `loadAdminDealers` adds "編輯" link per row; old "邀請" button removed
+  - [x] Admin create form drops `dealerOwnerEmail` field + post-create invite trigger; points user to the edit screen
+- Validation:
+  - [x] Browser preview verified end-to-end: anonymous visits `#/dealer/register` → fills form → submits → lands on `#/dealer` with portal rendered, topbar shows "車商後台" link
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+### Task 7.4 — Tests
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `tests/e2e/dealer-onboarding.spec.js` rewritten: anonymous self-register → admin member add/remove/last_owner guard → suspend/reactivate cascade → invite endpoint removal
+  - [x] `tests/e2e/admin-dealers.spec.js` updated: reactivate no longer returns 422 (gate removed); expects 200 + DB active
+  - [x] `tests/merchant-marketing.integration.js:77-79` replaced with self-register assertions + invite-endpoint 404 checks
+  - [x] `scripts/smoke-dealer-onboarding.js` rewritten to walk the full self-register + member mgmt + suspend/reactivate cycle (26 checks)
+- Validation:
+  - [x] `tests/e2e/dealer-access.spec.js`, `dealer-portal.spec.js` untouched and use the existing DB seed bypass
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+### Task 7.5 — Documentation sync
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] `docs/API.md` — `POST /api/admin/dealers/:id/members` + DELETE; `PATCH` cascade documented; `POST /api/auth/register` extended with `dealer:{}` payload section; `dealer/invites/register` retired
+  - [x] `docs/DATABASE_SCHEMA.md` — `dealer_invites` row removed
+  - [x] `docs/SHARED_KEYS.md` — `DealerStatus` + `DealerMemberRole` enums; `termsVersion` + `dealerStatus` + `dealerMemberRole` registry rows; full audit-log producer table including `dealer.self_register`; note that `dealer.invite.create`/`dealer.invite.accept` are retired
+  - [x] `docs/tasks/15_Dealer_Self_Registration.md` created
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+### Task 7.6 — UX audit pass + create-on-add member flow
+- Status: ✅ Done (2026-09-24)
+- Agent: `Lead / Orchestrator`
+- Trigger: independent UX audit surfaced P0/P1/P2 issues in Phase 7 self-registration + admin dealer-edit flows.
+- Deliverables:
+  - [x] `api/_handlers/dealers.js` — `POST /api/admin/dealers/:id/members` accepts optional `password` + `display_name`. When email is unknown, the handler creates a `users` row in the same transaction and returns `user_created:true` plus the plaintext password once via `temporary_password` so admin can relay out-of-band. Audit action split into `dealer.member.add` (existing user) and `dealer.member.create_and_add` (new user).
+  - [x] `index.html` `renderDealerRegister` — added 再次輸入密碼 field with client-side mismatch check; terms-consent checkbox linking to `/legal/terms.html` + `/legal/privacy.html` blocks submission when unchecked; `terms_version` stamped as `v1-YYYY-MM-DD`; added `所屬區域` field so backend `branch_district` is reachable; replaced post-submit `window.location.reload()` with an in-place "車商已建立" welcome card + "進入車商後台" button that triggers SPA hash routing.
+  - [x] `index.html` `renderAdminDealerEdit` — suspending dealer to 暫停 now shows a confirm dialog with active-member count before flipping `users.is_active`; member role labels translated (負責人 / 經理 / 員工 / 檢視者); 唯一負責人 hint replaces the remove button when only one owner remains; "提升為負責人" button added on every non-owner member so ownership handover is one click; member-add form gained `顯示名稱` + collapsible `設定臨時密碼` field; `inactive_user` 409 surfaces "請先到「用戶管理」啟用帳號"; missing-password-on-create surfaces "請展開「設定臨時密碼」…" When a new user is created, the response `temporary_password` is shown once for the admin to copy.
+  - [x] `scripts/smoke-dealer-onboarding.js` — replaced the obsolete "404 user_not_found" assertion with three checks: 422 when no password supplied, 200 + `user_created=true` + role correct when password supplied.
+  - [x] `docs/API.md` — POST members section updated with create-on-add payload + response shape and DELETE guidance for ownership handover.
+  - [x] `docs/SHARED_KEYS.md` — registered `audit_log:dealer.member.create_and_add`; widened `dealer.member.add` payload to include `user_created` flag.
+- Validation:
+  - [x] Unit suite 48/48 green
+  - [x] `scripts/smoke-dealer-onboarding.js` 28/28 PASS
+  - [x] Browser-verified end-to-end: password mismatch → friendly error; terms unchecked → friendly error; happy path → welcome card → SPA routes to portal with topbar updated (no reload)
+- Open / follow-ups:
+  - Pre-existing schema.sql vs migration ordering: `db/schema.sql` still has `CREATE TABLE IF NOT EXISTS dealer_invites`; the Phase 7 migration drops it once but the ledger prevents re-runs, so subsequent cold starts recreate the table. Recommend deleting the schema.sql block or rewriting the migration as run-each-cold-start with a guard. Currently mitigated by manual `DROP TABLE` in the smoke script — flakiness risk for CI.
+  - Admin seed-account password is not documented; preview tests had to skip admin-edit verification because no admin credential was available. Add an admin password to `.env.example` or seed script for local development.
+
+### Phase 7 Gate
+- [x] DB migration applied + idempotent
+- [x] Unit suite green (48/48)
+- [x] Smoke (26/26 new) + Service MVP smoke (16/16) both pass
+- [x] Integration test rewritten to drop invite references
+- [x] Playwright e2e updated + still skips when no test DB
+- [x] Browser-verified self-register end-to-end
+- [x] Docs synchronized
+- [x] Old invite endpoints return 404; `dealer_invites` table dropped
+- [ ] Independent review (next agent / owner)
+- Approved By: `Lead / Orchestrator` @ 2026-09-24
+- Signature: `Lead / Orchestrator` @ 2026-09-24
+
+---
 
 ## Cross-Agent Handoff
 - Read the latest phase before starting.

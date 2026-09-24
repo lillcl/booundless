@@ -22,8 +22,14 @@ async function fetchOfferRow(db, offerId) {
   return r.rows[0] || null;
 }
 
+function pilotAllows(dealerId) {
+  if (String(process.env.SERVICE_MVP_ENABLED || 'true').toLowerCase() === 'false') return false;
+  const configured=String(process.env.SERVICE_MVP_DEALER_IDS || '').split(',').map((value)=>value.trim()).filter(Boolean);
+  return !configured.length || configured.includes(dealerId);
+}
+
 export default async function handler(req, res) {
-  const url = (req.url || '').replace(/\/+$/, '');
+  const url = new URL(req.url || '/', 'http://localhost').pathname.replace(/\/+$/, '');
   const db = await getDb();
 
   try {
@@ -39,7 +45,7 @@ export default async function handler(req, res) {
           WHERE so.active=true AND d.status='active' AND d.pilot_enabled=true
           ORDER BY so.created_at DESC LIMIT 100`
       )).rows;
-      return sendJSON(res, 200, { data: rows });
+      return sendJSON(res, 200, { data: rows.filter((offer)=>pilotAllows(offer.dealer_id)) });
     }
 
     // From here on, all routes require auth (dealer-side workspace).
@@ -49,7 +55,7 @@ export default async function handler(req, res) {
     let m = url.match(/^\/api\/service-offers\/([^/?#]+)\/?$/);
     if (req.method === 'GET' && m) {
       const offer = await fetchOfferRow(db, m[1]);
-      if (!offer || !offer.active) return sendError(res, 404, 'not_found', 'Offer not found');
+      if (!offer || !offer.active || !pilotAllows(offer.dealer_id)) return sendError(res, 404, 'not_found', 'Offer not found');
       return sendJSON(res, 200, { data: offer });
     }
 
@@ -65,15 +71,18 @@ export default async function handler(req, res) {
 
     // Create draft offer
     if (req.method === 'POST' && url === '/api/dealer/offers') {
-      if (user.role !== 'admin') {
-        const m2 = await db.query(
-          `SELECT dealer_id, role FROM dealer_members WHERE user_id=$1 AND role IN ('owner','manager') LIMIT 1`, [user.id]);
-        if (!m2.rowCount) return sendError(res, 403, 'forbidden', 'Owner/manager required');
-      }
       const body = await readBody(req);
-      const dealerId = body.dealer_id || (await db.query(
-        `SELECT dealer_id FROM dealer_members WHERE user_id=$1 AND role IN ('owner','manager') LIMIT 1`, [user.id])).rows[0]?.dealer_id;
+      const membership = (await db.query(
+        `SELECT dealer_id FROM dealer_members WHERE user_id=$1 AND role IN ('owner','manager') LIMIT 1`, [user.id])).rows[0];
+      if (user.role !== 'admin' && !membership) return sendError(res, 403, 'forbidden', 'Owner/manager required');
+      const dealerId = user.role === 'admin' ? body.dealer_id : membership.dealer_id;
       if (!dealerId) return sendError(res, 422, 'unprocessable', 'dealer_id required');
+      const dealer = (await db.query(`SELECT status FROM dealers WHERE id=$1`, [dealerId])).rows[0];
+      if (!dealer) return sendError(res, 404, 'not_found', 'Dealer not found');
+      if (body.branch_id) {
+        const branch = await db.query(`SELECT 1 FROM dealer_branches WHERE id=$1 AND dealer_id=$2`, [body.branch_id, dealerId]);
+        if (!branch.rowCount) return sendError(res, 422, 'unprocessable', 'branch_id must belong to dealer');
+      }
       const name = String(body.name || '').slice(0, 120);
       if (!name) return sendError(res, 422, 'unprocessable', 'name required (1-120 chars)');
       const kind = String(body.kind || '');
@@ -93,6 +102,13 @@ export default async function handler(req, res) {
       if ((kind === 'baseline' || kind === 'second_opinion') && !body.checklist_version) {
         return sendError(res, 422, 'unprocessable', 'checklist_version required for baseline/second_opinion');
       }
+      const itemIds = Array.isArray(body.service_item_ids) ? [...new Set(body.service_item_ids)] : [];
+      let validItems = [];
+      if (itemIds.length) {
+        const valid = await db.query(`SELECT id FROM dealer_service_items WHERE dealer_id=$1 AND is_active=true AND id=ANY($2::text[])`, [dealerId, itemIds]);
+        if (valid.rowCount !== itemIds.length) return sendError(res, 422, 'unprocessable', 'Every service item must be active and belong to the dealer');
+        validItems = valid.rows;
+      }
       const offerId = randomUUID();
       await db.query(
         `INSERT INTO service_offers
@@ -102,6 +118,7 @@ export default async function handler(req, res) {
         [offerId, dealerId, body.branch_id || null, kind, name, description, currency,
          priceMinor, pricingMode, duration, body.checklist_version || null]
       );
+      for (const row of validItems) await db.query(`INSERT INTO service_offer_items(offer_id,dealer_service_item_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [offerId,row.id]);
       const offer = await fetchOfferRow(db, offerId);
       await audit({ actor: user, action: 'dealer.offer.create', targetType: 'dealer', targetId: dealerId,
         payload: { offer_id: offerId, kind, pricing_mode: pricingMode } });
@@ -119,6 +136,21 @@ export default async function handler(req, res) {
         if (!mem.rowCount) return sendError(res, 403, 'forbidden', 'Owner/manager only');
       }
       const body = await readBody(req);
+      if (body.active === true) {
+        const candidate = { ...offer, ...body };
+        const dealer = (await db.query(`SELECT status,pilot_enabled FROM dealers WHERE id=$1`, [offer.dealer_id])).rows[0];
+        if (!dealer || dealer.status !== 'active' || !dealer.pilot_enabled || !pilotAllows(offer.dealer_id)) {
+          return sendError(res, 409, 'conflict', 'Dealer is not enabled for the service pilot');
+        }
+        if (!candidate.branch_id) return sendError(res, 422, 'unprocessable', 'A branch is required before publishing');
+        const branch = await db.query(`SELECT 1 FROM dealer_branches WHERE id=$1 AND dealer_id=$2 AND is_active=true`, [candidate.branch_id, offer.dealer_id]);
+        if (!branch.rowCount) return sendError(res, 422, 'unprocessable', 'The selected branch is not active');
+        if (!['baseline','maintenance','second_opinion'].includes(candidate.kind)) return sendError(res, 422, 'unprocessable', 'Invalid offer kind');
+        if (['baseline','second_opinion'].includes(candidate.kind) && !candidate.checklist_version) return sendError(res, 422, 'unprocessable', 'Checklist required before publishing');
+        if (candidate.pricing_mode === 'fixed' && (!Number.isInteger(Number(candidate.price_minor)) || Number(candidate.price_minor) < 0)) return sendError(res, 422, 'unprocessable', 'Valid fixed price required');
+        const items = await db.query(`SELECT 1 FROM service_offer_items soi JOIN dealer_service_items dsi ON dsi.id=soi.dealer_service_item_id WHERE soi.offer_id=$1 AND dsi.dealer_id=$2 AND dsi.is_active=true`, [offer.id, offer.dealer_id]);
+        if (!items.rowCount) return sendError(res, 422, 'unprocessable', 'At least one active service item is required before publishing');
+      }
       const sets = [], vals = []; let p = 1;
       for (const [col, max] of [['name', 120], ['description', 2000]]) {
         if (body[col] != null) { sets.push(`${col}=$${p++}`); vals.push(String(body[col]).slice(0, max)); }

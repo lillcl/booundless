@@ -167,22 +167,36 @@ test('full service-request workflow: new → quoted → accepted → scheduled �
     expect(scheduled.status, JSON.stringify(scheduled.body)).toBe(200);
     expect(scheduled.body.request.status).toBe('scheduled');
 
-    /* ── Dealer marks completed ────────────────────────────────────── */
+    /* ── Dealer starts work and submits the v2 completion ─────────── */
     /* Bounce to re-render with the new status. */
     await dealerPage.goto('/#/dealer');
     await dealerPage.goto('/#/requests');
     await dealerPage.waitForLoadState('networkidle');
     await expect(dealerPage.locator('#requestFlow')).toContainText('提交完工紀錄', { timeout: 10_000 });
-    const completed = await dealerPage.evaluate(async ({ requestId }) => {
+    const started = await dealerPage.evaluate(async ({ requestId }) => {
       const list = await (await fetch('/api/service-requests')).json();
       const version = list.data.find((d) => d.id === requestId).version;
       const r = await fetch(`/api/service-requests/${encodeURIComponent(requestId)}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'complete', version, service_keys: ['oil_filter'], mileage_km: 42680, total_minor: 45000, notes: '已更換機油及機油隔' }),
+        body: JSON.stringify({ action: 'start', version }),
       });
       return { status: r.status, body: await r.json() };
     }, { requestId });
+    expect(started.status, JSON.stringify(started.body)).toBe(200);
+    const lineId = (await db.query('SELECT id FROM service_order_lines WHERE request_id=$1', [requestId])).rows[0].id;
+    const completed = await dealerPage.evaluate(async ({ requestId, lineId }) => {
+      const list = await (await fetch('/api/service-requests')).json();
+      const version = list.data.find((d) => d.id === requestId).version;
+      const now = new Date().toISOString();
+      const r = await fetch(`/api/service-requests/${encodeURIComponent(requestId)}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action:'complete', version, completion:{ mileage_km:42680,
+          started_at:now, finished_at:now, duration_minutes:45, technician_name:'E2E Tech',
+          notes:'已更換機油及機油隔', lines:[{ order_line_id:lineId, outcome:'completed', next_due_km:50000 }] } }),
+      });
+      return { status:r.status, body:await r.json() };
+    }, { requestId, lineId });
     expect(completed.status, JSON.stringify(completed.body)).toBe(200);
     expect(completed.body.request.status).toBe('completed');
 
@@ -221,6 +235,9 @@ test('full service-request workflow: new → quoted → accepted → scheduled �
     expect(history.rows[0]).toMatchObject({ source: 'service_request', service_keys: ['oil_filter'], mileage_km: 42680, request_id: requestId });
   } finally {
     if (requestId) {
+      await retryDeadlock(() => db.query(`DELETE FROM service_completion_lines WHERE completion_id IN (SELECT id FROM service_completions WHERE request_id=$1)`, [requestId]));
+      await retryDeadlock(() => db.query(`DELETE FROM service_completions WHERE request_id=$1`, [requestId]));
+      await retryDeadlock(() => db.query(`DELETE FROM service_order_lines WHERE request_id = $1`, [requestId]));
       await retryDeadlock(() => db.query(`DELETE FROM dealer_quotes WHERE request_id = $1`, [requestId]));
       await retryDeadlock(() => db.query(`DELETE FROM dealer_request_items WHERE request_id = $1`, [requestId]));
       await retryDeadlock(() => db.query(`DELETE FROM dealer_request_events WHERE request_id = $1`, [requestId]));

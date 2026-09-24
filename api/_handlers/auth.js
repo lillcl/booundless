@@ -17,6 +17,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72; // bcrypt input cap
 
+function field(value, max = 500) {
+  if (value == null || value === '') return null;
+  const result = String(value).trim();
+  return result ? result.slice(0, max) : null;
+}
+
 function userPayload(u) {
   return {
     id: u.id,
@@ -52,6 +58,8 @@ export default async function handler(req, res) {
     const display_name = body?.display_name
       ? String(body.display_name).trim().slice(0, 80) || null
       : null;
+    const terms_version = body?.terms_version ? String(body.terms_version).trim().slice(0, 40) || null : null;
+    const dealerPayload = body?.dealer && typeof body.dealer === 'object' ? body.dealer : null;
 
     if (!email || !EMAIL_RE.test(email)) {
       return sendError(res, 422, 'unprocessable', 'Valid email required');
@@ -64,6 +72,27 @@ export default async function handler(req, res) {
       return sendError(res, 422, 'unprocessable', `Password must be at most ${PASSWORD_MAX} bytes`);
     }
 
+    /* Validate dealer self-registration payload up front so we don't leave a
+       half-registered user on a typo. Branch address is required so the new
+       dealer can immediately accept service requests at one location. */
+    let dealerCreate = null;
+    if (dealerPayload) {
+      const legal_name = field(dealerPayload.legal_name, 200);
+      const display_name_d = field(dealerPayload.display_name, 160);
+      const registration_number = field(dealerPayload.registration_number, 100);
+      const phone = field(dealerPayload.phone, 60);
+      const website = field(dealerPayload.website, 500);
+      const dealer_email = field(dealerPayload.email, 240) || email;
+      const branch_name = field(dealerPayload.branch_name, 160);
+      const branch_address = field(dealerPayload.branch_address, 300);
+      const branch_district = field(dealerPayload.branch_district, 100);
+      const branch_phone = field(dealerPayload.branch_phone, 60);
+      if (!display_name_d) return sendError(res, 422, 'unprocessable', 'dealer.display_name is required');
+      if (!branch_name) return sendError(res, 422, 'unprocessable', 'dealer.branch_name is required');
+      if (!branch_address) return sendError(res, 422, 'unprocessable', 'dealer.branch_address is required');
+      dealerCreate = { legal_name, display_name: display_name_d, registration_number, phone, email: dealer_email, website, branch_name, branch_address, branch_district, branch_phone };
+    }
+
     const db = await getDb();
     const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rowCount > 0) {
@@ -73,26 +102,63 @@ export default async function handler(req, res) {
       return sendError(res, 409, 'conflict', 'Email already in use');
     }
 
-    const id = `u-${randomUUID()}`;
+    const userId = `u-${randomUUID()}`;
     const password_hash = await hashPassword(password);
-    const r = await db.query(
-      `INSERT INTO users (id, email, password_hash, role, display_name)
-       VALUES ($1, $2, $3, 'user', $4)
-       RETURNING id, email, role, display_name, is_active`,
-      [id, email, password_hash, display_name],
-    );
-    const user = r.rows[0];
+    const client = await db.connect();
+    let user; let dealer; let branch;
+    try {
+      await client.query('BEGIN');
+      const u = await client.query(
+        `INSERT INTO users (id, email, password_hash, role, display_name, terms_version)
+         VALUES ($1, $2, $3, 'user', $4, $5)
+         RETURNING id, email, role, display_name, is_active, terms_version`,
+        [userId, email, password_hash, display_name, terms_version],
+      );
+      user = u.rows[0];
+      if (dealerCreate) {
+        const dealerId = `dealer-${randomUUID()}`;
+        const branchId = `branch-${randomUUID()}`;
+        const d = await client.query(
+          `INSERT INTO dealers
+             (id, legal_name, display_name, registration_number, phone, email, website, status, created_by_user_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'active',$8) RETURNING *`,
+          [dealerId, dealerCreate.legal_name, dealerCreate.display_name, dealerCreate.registration_number,
+           dealerCreate.phone, dealerCreate.email, dealerCreate.website, userId],
+        );
+        dealer = d.rows[0];
+        const b = await client.query(
+          `INSERT INTO dealer_branches (id, dealer_id, name, address, district, phone, opening_hours, timezone)
+           VALUES ($1, $2, $3, $4, $5, $6, '{}'::jsonb, 'Asia/Macau') RETURNING *`,
+          [branchId, dealerId, dealerCreate.branch_name, dealerCreate.branch_address,
+           dealerCreate.branch_district, dealerCreate.branch_phone],
+        );
+        branch = b.rows[0];
+        await client.query(
+          `INSERT INTO dealer_members (dealer_id, user_id, role) VALUES ($1, $2, 'owner')
+           ON CONFLICT (dealer_id, user_id) DO UPDATE SET role = EXCLUDED.role`,
+          [dealerId, userId],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
     const token = await signSession(user);
     setSessionCookie(res, token);
     await audit({
       actor: { id: user.id, email: user.email },
-      action: 'auth.register',
-      targetType: 'user',
-      targetId: user.id,
-      payload: { email: user.email, display_name: user.display_name },
+      action: dealerCreate ? 'dealer.self_register' : 'auth.register',
+      targetType: dealerCreate ? 'dealer' : 'user',
+      targetId: dealerCreate ? dealer.id : user.id,
+      payload: { email: user.email, display_name: user.display_name, terms_version, dealer_id: dealer?.id },
       req,
     });
-    return sendJSON(res, 201, { user: userPayload(user) });
+    const responseBody = { user: userPayload(user) };
+    if (dealerCreate) responseBody.dealer_id = dealer.id;
+    return sendJSON(res, 201, responseBody);
   }
 
   /* POST /api/auth/login */

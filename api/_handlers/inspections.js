@@ -13,7 +13,8 @@ import { audit } from '../_lib/auth.js';
 
 async function loadRequestOr404(client, requestId) {
   const r = (await client.query(
-    `SELECT * FROM dealer_service_requests WHERE id=$1`, [requestId]
+    `SELECT r.*,v.fuel_type FROM dealer_service_requests r
+       JOIN vehicles v ON v.id=r.vehicle_id WHERE r.id=$1`, [requestId]
   )).rows[0];
   if (!r) return null;
   return r;
@@ -45,7 +46,9 @@ export default async function handler(req, res) {
     if (!r) { await client.release(); return sendError(res, 404, 'not_found', 'Request not found'); }
     const member = await loadMember(client, r.dealer_id, user.id);
     const isOwner = r.user_id === user.id;
-    const isOperator = !!member;
+    // Ownership wins over dealer membership for this request. This prevents a
+    // dual-role account from producing and then accepting its own evidence.
+    const isOperator = !isOwner && !!member;
 
     if (action === 'inspection' && req.method === 'GET') {
       if (!canRead(r, member, user.id)) {
@@ -61,8 +64,18 @@ export default async function handler(req, res) {
           [reports.map((x) => x.id)]
         )).rows;
       }
+      const selectedTemplate = reports.length
+        ? getTemplate(reports[0].template_key)
+        : templateFor({ kind: r.service_kind, fuel_type: r.fuel_type });
       await client.release();
-      return sendJSON(res, 200, { data: { reports, results } });
+      return sendJSON(res, 200, { data: {
+        reports, results,
+        template: selectedTemplate ? {
+          key:selectedTemplate.key,label:selectedTemplate.label,
+          items:selectedTemplate.items.map((item)=>({check_key:item.check_key,label:item.label,service_keys:item.service_keys})),
+        } : null,
+        templates:listTemplates(),
+      } });
     }
 
     if (action === 'inspection' && req.method === 'PUT') {
@@ -175,6 +188,10 @@ export default async function handler(req, res) {
           );
         }
       }
+      await client.query(`INSERT INTO notifications(user_id,request_id,event_id,type,title,body)
+        VALUES($1,$2,$3,'inspection_published','檢查報告已發布','車行已完成檢查，請查看逐項結果。')
+        ON CONFLICT(user_id,event_id,type) DO NOTHING`,
+        [r.user_id,requestId,`${requestId}:inspection:${report.id}`]);
       await client.query('COMMIT');
       await audit({ actor: user, action: 'inspection.publish',
         targetType: 'inspection_report', targetId: report.id,

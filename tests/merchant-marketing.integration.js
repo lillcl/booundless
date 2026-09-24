@@ -74,14 +74,20 @@ try {
   assert.equal((await call('/api/marketing/conversions','POST',{consent:true,event_name:'vehicle_created',business_id:vehicleId})).body.recorded,false);
   assert.equal((await call('/api/marketing/conversions','POST',{consent:true,event_name:'vehicle_created',business_id:vehicleId},managerCookie)).status,422);
   await db.query('UPDATE marketing_integrations SET config=$1 WHERE id=TRUE',[{enabled:false}]);
-  const invited=await call('/api/admin/dealers/'+created.body.dealer.id+'/invites','POST',{email:randomUUID()+'@example.test',role:'owner'});assert.equal(invited.status,201);assert.equal(invited.body.delivery_status,'not_configured');
-  const registered=await call('/api/dealer/invites/register','POST',{token:invited.body.invite_token,password:'Long-test-password-2026'},false);assert.equal(registered.status,201);assert.equal(registered.body.user.role,'user');
-  assert.equal((await call('/api/dealer/invites/register','POST',{token:invited.body.invite_token,password:'Long-test-password-2026'},false)).status,422);
+  const ownerEmail='selfreg-'+randomUUID().slice(0,8)+'@example.test';
+  const selfRegistered=await call('/api/auth/register','POST',{email:ownerEmail,password:'Long-test-password-2026',display_name:'Self-Reg Owner',terms_version:'v1',dealer:{display_name:'Self Reg Workshop',legal_name:'Self Reg Ltd',registration_number:'SR-1',phone:'+853-2882-0000',email:ownerEmail,branch_name:'澳門店',branch_address:'澳門半島測試路 1 號',branch_district:'澳門半島'}},false);
+  assert.equal(selfRegistered.status,201);
+  assert.ok(selfRegistered.body.dealer_id);
+  assert.equal((await db.query(`SELECT status FROM dealers WHERE id=$1`,[selfRegistered.body.dealer_id])).rows[0].status,'active');
+  assert.equal((await db.query(`SELECT role FROM dealer_members WHERE dealer_id=$1`,[selfRegistered.body.dealer_id])).rows[0].role,'owner');
+  assert.equal((await call('/api/auth/register','POST',{email:ownerEmail,password:'Long-test-password-2026',terms_version:'v1',dealer:{display_name:'Dup',branch_name:'Dup',branch_address:'Dup'}},false)).status,409);
+  assert.equal((await call('/api/admin/dealers/'+selfRegistered.body.dealer_id+'/invites','POST',{email:'irrelevant@example.test'})).status,404);
+  assert.equal((await call('/api/dealer/invites/register','POST',{token:'a'.repeat(32),password:'Long-test-password-2026'},false)).status,404);
   await db.query(`INSERT INTO dealer_item_fitments(id,dealer_service_item_id,make_norm) VALUES($1,$2,'Tesla')`,['fit-'+randomUUID(),created.body.services[0].id]);
   assert.equal((await call('/api/vehicles/'+vehicleId+'/service-requests','POST',{...request,request_key:randomUUID()})).status,422);
   const revision=(await db.query('SELECT id FROM marketing_revisions WHERE page_path=$1 ORDER BY id DESC LIMIT 1',['/'])).rows[0];
   assert.equal((await call('/api/admin/marketing/pages','POST',{path:'/',version:published.body.page.version,revision_id:revision.id})).status,200);
   const {getOwnedVehicle}=await import('../api/_lib/tool-utils.js');
   await assert.rejects(()=>getOwnedVehicle(db,'not-owner',vehicleId));
-  console.log('PASS: auth/ownership, merchant transaction, full quote-to-history lifecycle, campaign draft/publish/sitemap, consent/deduplication, invitation registration/reuse prevention, SEO rollback');
+  console.log('PASS: auth/ownership, merchant transaction, full quote-to-history lifecycle, campaign draft/publish/sitemap, consent/deduplication, dealer self-registration + duplicate prevention + invite endpoint removal, SEO rollback');
 } finally {await closeDb();}

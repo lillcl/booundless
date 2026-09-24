@@ -124,7 +124,6 @@ export async function cleanupDealer(db, dealerId) {
   await retryDeadlock(() => db.query(`DELETE FROM dealer_package_items WHERE package_id IN (SELECT id FROM dealer_service_packages WHERE dealer_id = $1)`, [dealerId]));
   await retryDeadlock(() => db.query(`DELETE FROM dealer_service_packages WHERE dealer_id = $1`, [dealerId]));
   await retryDeadlock(() => db.query(`DELETE FROM dealer_branches WHERE dealer_id = $1`, [dealerId]));
-  await retryDeadlock(() => db.query(`DELETE FROM dealer_invites WHERE dealer_id = $1`, [dealerId]));
   await retryDeadlock(() => db.query(`DELETE FROM dealer_members WHERE dealer_id = $1`, [dealerId]));
   await retryDeadlock(() => db.query(`DELETE FROM vehicle_item_matches WHERE dealer_id = $1`, [dealerId]));
   await retryDeadlock(() => db.query(`DELETE FROM dealers WHERE id = $1`, [dealerId]));

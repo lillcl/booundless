@@ -14,13 +14,21 @@ Authenticated user. Returns `{data:[{key,category,display_names}]}` for active D
 
 ### POST /api/admin/dealers
 
-Admin. Body: `display_name` required; optional legal_name, registration_number, phone, email, website, service_item_type_keys array (maximum 30 processed), and `branch:{name,address,district,phone}`. All new merchants are drafts regardless of client status.
+Admin. Body: `display_name` required; optional legal_name, registration_number, phone, email, website, service_item_type_keys array (maximum 30 processed), and `branch:{name,address,district,phone}`. Admin-created dealers start as `status='draft'`; the new dealer self-registration flow (`POST /api/auth/register` with `dealer:{}`) is the canonical way to create an active dealer and its first branch in one call.
 
-Returns 201 `{dealer,services,branch}`. `branch` is null if no branch name supplied. Creation of dealer, initial branch, initial services and branch-service associations is transactional; invalid/inactive service keys return 422 and roll back. Invitation is a separate existing `/api/admin/dealers/:id/invites` operation; no automatic email delivery is implemented. Create requests are not yet idempotent: do not automatically retry uncertain successful submissions.
+Returns 201 `{dealer,services,branch}`. `branch` is null if no branch name supplied. Creation of dealer, initial branch, initial services and branch-service associations is transactional; invalid/inactive service keys return 422 and roll back. Create requests are not yet idempotent: do not automatically retry uncertain successful submissions.
 
 ### PATCH /api/admin/dealers/:id
 
-Admin. Existing fields plus status draft/active/suspended. Activation now requires contact phone/email, active branch with an address, and an active service. Failure: 422 `incomplete_setup`. Returns `{dealer}`. Explicit branch offerings and fitments are still required for useful confirmed matching.
+Admin. Editable fields: `legal_name`, `display_name`, `registration_number`, `phone`, `email`, `website`, `status` (`draft` | `active` | `suspended`). The activation gate (branch address + service + contact) was removed in Phase 7 — admins can flip any dealer to `active` directly. Status changes to `suspended` cascade to all member accounts: `users.is_active` is flipped to `false` for every user with a row in `dealer_members` for that dealer, which forces `requireUser` to return 401 on subsequent requests. `status='active'` re-enables any member whose `is_active` was previously flipped. The response includes `{dealer, member_flip:{count, is_active}}` so callers know how many sessions were invalidated.
+
+### POST /api/admin/dealers/:id/members
+
+Admin. Body `{email, role, password?, display_name?}` where `role` ∈ `owner | manager | staff | viewer`. **Create-on-add:** if the email does not match any `users` row, the handler will create a new `user` (role forced to `user`) provided `password` is at least 8 characters. `display_name` is optional and persisted on the new user. The plaintext password is returned **once** in `temporary_password` so the admin can relay it out-of-band; it is never logged and never stored in plaintext. 422 `unprocessable` if the email is unknown and the password is missing/too short. 409 `inactive_user` if a matching user exists but `is_active=false` (caller should re-activate via `/api/users/:id` first). Upserts `dealer_members` (existing membership has its role updated, new membership is created). Returns `{membership, user_created:boolean, temporary_password?}` and writes audit `dealer.member.add` or `dealer.member.create_and_add`.
+
+### DELETE /api/admin/dealers/:id/members/:userId
+
+Admin. Removes a single `dealer_members` row. Refuses with 422 `last_owner` when removing a user whose role is `owner` would leave the dealer with zero owners. 404 `not_found` when the membership does not exist. Writes audit `dealer.member.remove`. To hand over ownership: `POST` with `role='owner'` to promote another member first, then `DELETE` the original owner.
 
 ### GET /api/dealer/branches?dealer_id=:id
 
@@ -76,7 +84,7 @@ Successful page cache: `public, max-age=0, s-maxage=60`. Publishing may take up 
 - `POST /api/vehicles/:id/service-requests` additionally accepts `service_ids` (up to 30, same branch/merchant) and optional `request_key`. First creation returns 201; identical keyed retry returns 200; changed payload with same key returns 409. Items are snapshotted transactionally.
 - `GET /api/service-requests`: authenticated owner or authorized merchant list, latest 100; returns items, quotes and `can_manage`.
 - `POST /api/service-requests/:id`: `{action,version,...}` with optimistic version checking (409). Actions: quote (operator, integer minor-unit items/currency/expiry), accept_quote (owner, quote_id), schedule (operator, scheduled_at), complete (operator), confirm_completion (owner), cancel, decline (operator). Status transitions are enforced server-side. Customer confirmation writes service history once and resolves requested needs. Legacy direct status PATCH is rejected.
-- `POST /api/dealer/invites/register`: valid single-use token, display_name and password (12 characters minimum, 72 bytes maximum). Email and merchant role come only from the invite. Creates user/membership/session atomically. Existing users sign in and accept instead. Invitation responses distinguish email delivery from manual invite links; delivery requires RESEND_API_KEY and INVITATION_FROM_EMAIL.
+- `POST /api/dealer/invites/register` is removed (Phase 7). Dealers self-register via the `dealer:{}` payload on `POST /api/auth/register`.
 - Marketing page paths additionally support `/campaigns/:slug`. POST `action:create` creates a draft; `action:unpublish` with version removes a campaign publication. Draft content adds headline (160), copy (3000), cta_label (60). Existing publish/rollback version rules apply.
 - `GET /campaigns/:slug`: published server-rendered HTML only; draft/missing 404, database failure 503. `GET /sitemap.xml` includes published indexable pages.
 - `GET /api/marketing/config`: public non-secret tracking settings. `GET/PATCH /api/admin/marketing/tracking`: admin versioned settings and 90-day conversion counts. Enabled defaults false; accepts validated GA4/Google Ads IDs and conversion labels, never arbitrary scripts.
@@ -97,53 +105,74 @@ The WeChat Mini Program (小程序) reuses every route above via two additive ch
 
 These are documented separately so the web app's cookie contract is not confused with the mobile Bearer contract. See `server-patch/README.md` for the apply steps and the full handler source.
 
-## Self-service registration — 2026-09-17
+## Self-service registration — 2026-09-17 (Phase 7 extended 2026-09-24)
 
-The web app now exposes a public `POST /api/auth/register` endpoint that creates a `users` row with `role='user'`, signs in the new account immediately, and writes an `auth.register` audit row. It complements the existing admin-create, dealer-invite, and WeChat flows.
+The web app exposes a public `POST /api/auth/register` endpoint that creates a `users` row with `role='user'` (default) or — when the `dealer:{}` payload is supplied — also creates an active `dealers` row + one `dealer_branches` row + an `owner` `dealer_members` row for the new user, all in one transaction. Self-registration signs the new account in immediately and writes either `auth.register` (plain account) or `dealer.self_register` (dealer account) to the audit log. Admin `/api/users` POST remains the canonical path for admin-created accounts, and `/api/auth/wechat` continues to handle WeChat Mini Program login.
 
 ### POST /api/auth/register
 
-**Purpose:** Create a self-service account with email + password and start a session in the same response.
+**Purpose:** Create a self-service account with email + password (optionally bootstrapping a new active dealer) and start a session in the same response.
 
 **Auth:** None required (this is the entry point for new users).
 
-**Permission:** Anonymous. Self-registered accounts always receive `role='user'`. Existing account emails return 409.
+**Permission:** Anonymous. Self-registered accounts always receive `role='user'`. Existing account emails return 409. When the optional `dealer:{}` payload is supplied, an active dealer is created and the new user is added as its owner; admins can later add or remove members via `/api/admin/dealers/:id/members`.
 
-#### Request
+#### Request — plain account
 ```json
 {
   "email": "string, required — RFC-shaped email, lowercased server-side",
   "password": "string, required — 8–72 bytes (bcrypt input cap)",
-  "display_name": "string, optional — up to 80 chars, trimmed"
+  "display_name": "string, optional — up to 80 chars, trimmed",
+  "terms_version": "string, optional — up to 40 chars, persisted on the user row"
+}
+```
+
+#### Request — with dealer self-registration
+```json
+{
+  "email": "string, required",
+  "password": "string, required — 8–72 bytes",
+  "display_name": "string, optional",
+  "terms_version": "string, optional",
+  "dealer": {
+    "display_name": "string, required",
+    "legal_name": "string, optional — up to 200 chars",
+    "registration_number": "string, optional — up to 100 chars",
+    "phone": "string, optional — up to 60 chars",
+    "email": "string, optional — defaults to the account email when omitted",
+    "website": "string, optional — up to 500 chars",
+    "branch_name": "string, required",
+    "branch_address": "string, required",
+    "branch_district": "string, optional",
+    "branch_phone": "string, optional"
+  }
 }
 ```
 
 #### Success Response — 201
+Plain account:
 ```json
-{
-  "user": {
-    "id": "u-<uuid>",
-    "email": "you@example.com",
-    "role": "user",
-    "display_name": "..."
-  }
-}
+{ "user": { "id": "u-<uuid>", "email": "...", "role": "user", "display_name": "..." } }
 ```
-Response also sets `Set-Cookie: kc_session=<jwt>; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800` (`Secure` in production) so the browser is signed in immediately.
+Dealer self-registration also returns `dealer_id`:
+```json
+{ "user": { "id": "u-<uuid>", "email": "...", "role": "user", "display_name": "..." }, "dealer_id": "dealer-<uuid>" }
+```
+Response sets `Set-Cookie: kc_session=<jwt>; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800` (`Secure` in production) so the browser is signed in immediately.
 
 #### Errors
 | Code | HTTP | Meaning | Retryable |
 |---|---:|---|---|
-| `unprocessable` | 422 | Missing/invalid email or password outside the 8–72 byte range | No (client) |
+| `unprocessable` | 422 | Missing/invalid email, password outside 8–72 bytes, missing `dealer.display_name` / `dealer.branch_name` / `dealer.branch_address` when `dealer:{}` is provided | No (client) |
 | `conflict` | 409 | Email already exists; a constant-time bcrypt run is performed before responding so timing does not betray existence | No (client) |
 | `method_not_allowed` | 405 | Non-POST | No |
 
 #### Notes
 - Idempotency: Not idempotent — repeating with the same email returns 409.
-- Side effects: Inserts one `users` row and one `audit_log` row (`auth.register`). Email-collision attempts also write `auth.register.conflict` with reason `email_taken`.
+- Side effects: Plain account inserts one `users` row. Dealer self-registration additionally inserts one `dealers` row (`status='active'`), one `dealer_branches` row (timezone=`Asia/Macau`), and one `dealer_members` row (`role='owner'`), all in a single transaction. Audit rows: `auth.register` for plain accounts, `dealer.self_register` (target_type=`dealer`) for dealer accounts. Email-collision attempts also write `auth.register.conflict` with reason `email_taken`.
 - Password policy: 8-character minimum, 72-byte ceiling. Passwords longer than 72 bytes are silently truncated by bcrypt; the handler rejects them with 422 instead.
-- Frontend: `#/register` renders the form; success auto-redirects to `#/home`. The login page links to it via "建立新帳號".
-- Existing flows: Admin `/api/users` POST, dealer `/api/dealer/invites/register`, and `/api/auth/wechat` remain unchanged and continue to be the canonical paths for non-self-service accounts.
+- Frontend: `#/register` renders the plain form; `#/dealer/register` (no nav link) renders the dealer form. Both auto-redirect on success — plain to `#/home`, dealer to `#/dealer`.
+- Existing flows: Admin `/api/users` POST and `/api/auth/wechat` remain unchanged and continue to be the canonical paths for non-self-service accounts.
 
 ### POST /api/auth/wechat
 

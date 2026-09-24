@@ -11,7 +11,7 @@ import inspections from './_handlers/inspections.js';
 import marketing, { publicPage } from './_handlers/marketing.js';
 import me from './_handlers/me.js';
 import requests from './_handlers/requests.js';
-import serviceAttachments from './_handlers/service-attachments.js';
+import serviceAttachments, { internalEvidenceRoute } from './_handlers/service-attachments.js';
 import serviceChanges from './_handlers/service-changes.js';
 import serviceOffers from './_handlers/service-offers.js';
 import serviceOperations from './_handlers/service-operations.js';
@@ -50,6 +50,7 @@ function withGuards(target, opts = {}) {
 
 export function resolveHandler(path) {
   // exposed for tests; same as the internal resolve
+  if (/^\/api\/internal\/evidence\/[^/]+$/.test(path)) return internalEvidenceRoute;
   if (/^\/api\/(?:admin\/)?shop(?:\/|$)/.test(path)) return shop;
   if(path==='/api/admin/marketing/tracking'||/^\/api\/marketing\/(config|conversions)$/.test(path))return tracking;
   if (/^\/api\/service-requests\/[^/]+\/(?:inspection|inspection\/publish|follow-up|changes(?:\/[^/]+\/decision)?|attachments(?:\/[^/]+(?:\/(?:upload|finalize))?)?|cases)\/?$/.test(path)) {
@@ -62,9 +63,10 @@ export function resolveHandler(path) {
   }
   if (/^\/api\/dealer\/booking-slots(?:\/[^/]+)?\/?$/.test(path)) return bookingSlots;
   if (/^\/api\/dealer\/cases\/[^/]+\/?$/.test(path)) return serviceOperations;
+  if (/^\/api\/admin\/cases(?:\/[^/]+)?\/?$/.test(path)) return serviceOperations;
   if (/^\/api\/dealer\/service-orders\/[^/]+\/payment\/?$/.test(path)) return serviceOperations;
   if (/^\/api\/admin\/service-orders\/?$/.test(path) || /^\/api\/admin\/service-orders\/[^/]+\/refund\/?$/.test(path)) return serviceOperations;
-  if (/^\/api\/admin\/commissions\/?$/.test(path)) return serviceOperations;
+  if (/^\/api\/admin\/commissions(?:\/settle)?\/?$/.test(path)) return serviceOperations;
   if (/^\/api\/notifications(?:\/[^/]+\/read)?\/?$/.test(path)) return serviceOperations;
   if (path === '/api/csp-report') return cspReport;
   if (/^\/api\/admin\/csp-reports(\/summary)?\/?$/.test(path)) return adminCspReports;

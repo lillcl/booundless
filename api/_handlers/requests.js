@@ -2,6 +2,7 @@ import { getDb } from '../_lib/db.js';
 import { requireUser } from '../_lib/auth.js';
 import { readBody,sendJSON,sendError } from '../_lib/http.js';
 import { createServiceRecordTx } from '../_lib/service-records.js';
+import { randomUUID } from 'node:crypto';
 import {
   acceptQuoteV2, rejectQuoteV2, scheduleSlotV2,
   startService, submitCompletion, confirmCompletionV2,
@@ -36,6 +37,28 @@ export function selectedQuoteLines(items, indexes) {
     new Set(selected).size!==selected.length)throw new Error('Select at least one valid quote line');
   return selected.map(index=>({ index, ...items[index] }));
 }
+async function notifyParticipants(client,r,actorId,action,version){
+  const labels={
+    quote:['quote_ready','新報價已準備','車行已提交報價，請檢視並決定。'],
+    accept_quote:['quote_accepted','車主已批准報價','車主已批准所選服務項目。'],
+    reject_quote:['quote_rejected','車主拒絕報價','車主已拒絕本次報價。'],
+    schedule:['booking_confirmed','預約已確認','服務時段已確認。'],
+    start:['service_started','服務已開始','車行已開始處理車輛。'],
+    complete:['completion_submitted','完工報告待確認','車行已提交完工報告，請檢視。'],
+    confirm_completion:['completion_confirmed','完工已確認','車主已確認完工紀錄。'],
+    cancel:['request_cancelled','服務請求已取消','服務請求已取消。'],
+    decline:['request_declined','車行未能接單','車行已婉拒本次服務請求。'],
+  };
+  const info=labels[action];if(!info)return;
+  const recipients=(await client.query(`SELECT $1::text AS user_id UNION SELECT user_id FROM dealer_members
+    WHERE dealer_id=$2 AND role IN ('owner','manager','staff')`,[r.user_id,r.dealer_id])).rows;
+  for(const recipient of recipients){
+    if(recipient.user_id===actorId)continue;
+    await client.query(`INSERT INTO notifications(user_id,request_id,event_id,type,title,body)
+      VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(user_id,event_id,type) DO NOTHING`,
+      [recipient.user_id,r.id,`${r.id}:${action}:${version}`,info[0],info[1],info[2]]);
+  }
+}
 export default async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
   const user=await requireUser(req,res);if(!user)return;
@@ -52,7 +75,46 @@ export default async function handler(req,res) {
       FROM dealer_service_requests r JOIN dealers d ON d.id=r.dealer_id JOIN vehicles v ON v.id=r.vehicle_id
       WHERE (r.user_id=$1 OR EXISTS(SELECT 1 FROM dealer_members m WHERE m.dealer_id=r.dealer_id AND m.user_id=$1 AND d.status='active'))
       AND ($2::text IS NULL OR r.id=$2) ORDER BY r.created_at DESC LIMIT 100`,[user.id,match[1]||null]);
-    return sendJSON(res,200,{data:result.rows});
+    if(!match[1]) return sendJSON(res,200,{data:result.rows});
+    if(!result.rowCount) return sendError(res,404,'not_found','Request not found');
+    const detail=result.rows[0];
+    const [booking,changes,reports,completion,attachments,cases]=await Promise.all([
+      db.query(`SELECT sb.id,sb.slot_id,sb.status,bs.starts_at,bs.ends_at,bs.branch_id
+        FROM service_bookings sb JOIN booking_slots bs ON bs.id=sb.slot_id
+        WHERE sb.request_id=$1 ORDER BY sb.created_at DESC LIMIT 1`,[detail.id]),
+      db.query(`SELECT * FROM service_changes WHERE request_id=$1 ORDER BY created_at DESC`,[detail.id]),
+      db.query(`SELECT ir.*,
+        COALESCE((SELECT json_agg(x ORDER BY x.check_key) FROM inspection_results x WHERE x.report_id=ir.id),'[]') AS results
+        FROM inspection_reports ir WHERE ir.request_id=$1 ORDER BY ir.revision DESC`,[detail.id]),
+      db.query(`SELECT sc.*,
+        COALESCE((SELECT json_agg(cl ORDER BY sol.quote_line_index,sol.change_line_index)
+          FROM service_completion_lines cl JOIN service_order_lines sol ON sol.id=cl.order_line_id
+          WHERE cl.completion_id=sc.id),'[]') AS lines
+        FROM service_completions sc WHERE sc.request_id=$1 ORDER BY sc.revision DESC LIMIT 1`,[detail.id]),
+      db.query(`SELECT id,mime_type,size_bytes,purpose,inspection_result_id,order_line_id,upload_state,created_at
+        FROM service_attachments WHERE request_id=$1 AND upload_state='ready' ORDER BY created_at`,[detail.id]),
+      db.query(`SELECT id,kind,description,status,resolution,created_at,updated_at
+        FROM service_cases WHERE request_id=$1 ORDER BY created_at DESC`,[detail.id]),
+    ]);
+    detail.booking=booking.rows[0]||null;
+    detail.changes=changes.rows;
+    detail.inspection_reports=reports.rows;
+    detail.completion=completion.rows[0]||null;
+    detail.attachments=attachments.rows;
+    detail.cases=cases.rows;
+    detail.has_pending_change=detail.changes.some(change=>change.status==='proposed');
+    const isOwner=detail.user_id===user.id;
+    if(isOwner)detail.can_manage=false;
+    detail.viewer_role=isOwner?'owner':(detail.can_manage?'operator':'viewer');
+    detail.action_options=[];
+    if(isOwner&&detail.status==='quoted')detail.action_options.push('accept_quote','reject_quote');
+    if(isOwner&&detail.status==='accepted')detail.action_options.push('schedule');
+    if(isOwner&&detail.has_pending_change)detail.action_options.push('decide_change');
+    if(isOwner&&detail.work_state==='completion_submitted')detail.action_options.push('confirm_completion','open_case');
+    if(detail.can_manage&&['new','quoted'].includes(detail.status))detail.action_options.push('quote');
+    if(detail.can_manage&&detail.status==='scheduled'&&detail.work_state!=='in_progress')detail.action_options.push('start');
+    if(detail.can_manage&&detail.work_state==='in_progress')detail.action_options.push('inspect','propose_change','complete');
+    return sendJSON(res,200,{data:detail});
   }
   if(req.method!=='POST'||!match[1])return sendError(res,405,'method_not_allowed','Use GET or POST to a request ID');
   const body=await readBody(req);
@@ -63,7 +125,10 @@ export default async function handler(req,res) {
     if(!r){await client.query('ROLLBACK');return sendError(res,404,'not_found','Request not found');}
     const member=(await client.query(`SELECT m.role FROM dealer_members m JOIN dealers d ON d.id=m.dealer_id WHERE m.dealer_id=$1 AND m.user_id=$2 AND d.status='active'`,[r.dealer_id,user.id])).rows[0];
     const customer=r.user_id===user.id;
-    const operator=member&&['owner','manager','staff'].includes(member.role);
+    // A user may belong to a dealer while also owning this request. Keep the
+    // two sides separate so one account cannot quote, perform and approve its
+    // own work.
+    const operator=!customer&&member&&['owner','manager','staff'].includes(member.role);
     if(!customer&&!operator){await client.query('ROLLBACK');return sendError(res,403,'forbidden','Request access denied');}
     if(body.version!==r.version){await client.query('ROLLBACK');return sendError(res,409,'conflict','Request changed; refresh before trying again');}
     let next=r.status;
@@ -74,7 +139,7 @@ export default async function handler(req,res) {
       const storedItems = items.map((it, i) => {
         const raw = Array.isArray(body.items) ? body.items[i] : null;
         return raw && typeof raw === 'object'
-          ? { ...it, line_id: raw.line_id || it.line_id || null, quantity: raw.quantity ?? 1,
+          ? { ...it, line_id: raw.line_id || it.line_id || randomUUID(), quantity: raw.quantity ?? 1,
               parts_unit_minor: raw.parts_unit_minor ?? 0, labour_minor: raw.labour_minor ?? it.amount_minor,
               parts_brand: raw.parts_brand ?? null, parts_spec: raw.parts_spec ?? null,
               part_number: raw.part_number ?? null, work_type: raw.work_type ?? 'service',
@@ -94,7 +159,11 @@ export default async function handler(req,res) {
       if(!q||q.id!==body.quote_id)throw new Error('Quote has changed; refresh and try again');
       if(new Date(q.expires_at)<=new Date())throw new Error('Quote has expired');
       if(r.workflow_version>=2){
-        await acceptQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:q.id, selectedLineIds:body.selected_line_ids||[] });
+        let selectedLineIds=body.selected_line_ids;
+        if(!Array.isArray(selectedLineIds)&&Array.isArray(body.selected_line_indexes)){
+          selectedLineIds=selectedQuoteLines(q.items,body.selected_line_indexes).map((line)=>line.line_id).filter(Boolean);
+        }
+        await acceptQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:q.id, selectedLineIds:selectedLineIds||[] });
       } else {
         const approved=selectedQuoteLines(q.items,body.selected_line_indexes);
         await client.query('UPDATE dealer_quotes SET accepted_at=NOW() WHERE id=$1',[q.id]);
@@ -174,12 +243,17 @@ export default async function handler(req,res) {
         await client.query('UPDATE dealer_service_requests SET completion_confirmed_at=NOW() WHERE id=$1',[r.id]);
       }
     } else if(body.action==='cancel') {
-      if(['completed','cancelled','declined'].includes(r.status))throw new Error('Request is already closed');next='cancelled';
+      if(['completed','cancelled','declined'].includes(r.status))throw new Error('Request is already closed');
+      if(r.started_at||['in_progress','awaiting_approval','completion_submitted'].includes(r.work_state))throw new Error('Started work cannot be cancelled; open a case instead');
+      await client.query(`UPDATE service_bookings SET status='cancelled',cancelled_at=NOW()
+        WHERE request_id=$1 AND status='confirmed'`,[r.id]);
+      next='cancelled';
     } else if(body.action==='decline') {
       if(!operator||!['new','quoted'].includes(r.status))throw new Error('Cannot decline this request');next='declined';
     } else throw new Error('Unknown action');
     const updated=await client.query('UPDATE dealer_service_requests SET status=$1,version=version+1,updated_at=NOW() WHERE id=$2 RETURNING *',[next,r.id]);
     await client.query('INSERT INTO dealer_request_events(request_id,actor_id,action) VALUES($1,$2,$3)',[r.id,user.id,body.action]);
+    await notifyParticipants(client,r,user.id,body.action,updated.rows[0].version);
     await client.query('COMMIT');return sendJSON(res,200,{request:updated.rows[0]});
   } catch(error){await client.query('ROLLBACK');return sendError(res,422,'unprocessable',error.message);}
   finally{client.release();}

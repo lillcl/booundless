@@ -36,6 +36,9 @@
 | 07 | Security Review | P0 | 02,04,05 | 06 | Security Agent | `tasks/07_Security.md` |
 | 08 | Release / Hardening | P1 | 06,07 | — | Orchestrator | `tasks/08_Release.md` |
 
+## Phase 7 — Dealer Self-Registration Refactor (2026-09-24)
+Task file: [`tasks/15_Dealer_Self_Registration.md`](tasks/15_Dealer_Self_Registration.md). Replaces the admin-invite-token flow with a hidden `#/dealer/register` page. Self-register creates user + active dealer + first branch + owner membership in one transaction. Admin gains full edit + member management + suspend that cascades to `users.is_active` for every member. `dealer_invites` table dropped; invite endpoints removed.
+
 ## Recommended Execution Waves
 - **Wave 1 — Foundation:** 01
 - **Wave 2 — Parallel Foundations:** 02 / 03

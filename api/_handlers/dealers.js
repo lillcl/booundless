@@ -1,10 +1,9 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { getDb } from '../_lib/db.js';
-import { audit, requireAdmin, requireUser, hashPassword, signSession, setSessionCookie } from '../_lib/auth.js';
+import { audit, hashPassword, requireAdmin, requireUser } from '../_lib/auth.js';
 import { getOwnedVehicle } from '../_lib/tool-utils.js';
 import { calculateDealerMatches, rankBranches } from '../_lib/dealer-matcher.js';
 import { readBody, sendError, sendJSON } from '../_lib/http.js';
-import { sendInvitation } from '../_lib/invitation-mail.js';
 import {vehicleNeeds} from '../_lib/vehicle-needs.js';
 import { createServiceRecord, updateServiceRecord } from '../_lib/service-records.js';
 
@@ -160,26 +159,97 @@ async function adminDealerRoute(req, res, admin, rest) {
 
   const dealerId = id(rest[0], 'dealer_id');
   const dealer = await getDealer(db, dealerId);
-  if (rest[1] === 'invites' && req.method === 'POST') {
-    const body = await readBody(req);
-    const inviteEmail = email(body.email);
-    const role = DEALER_ROLES.has(body.role) ? body.role : 'staff';
-    const existing = await db.query('SELECT id, email FROM users WHERE email = $1 AND is_active = TRUE', [inviteEmail]);
-    if (existing.rowCount) {
-      await db.query(`INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,$3)
-        ON CONFLICT (dealer_id,user_id) DO UPDATE SET role=EXCLUDED.role`, [dealerId, existing.rows[0].id, role]);
-      await audit({ actor: admin, action: 'dealer.member.add', targetType: 'dealer', targetId: dealerId, payload: { email: inviteEmail, role }, req });
-      return sendJSON(res, 201, { membership: { dealer_id: dealerId, user_id: existing.rows[0].id, role }, invitation_sent: false });
+  if (rest[1] === 'members' && (req.method === 'POST' || req.method === 'DELETE')) {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      const locked = await client.query('SELECT status FROM dealers WHERE id=$1 FOR UPDATE', [dealerId]);
+      if (!locked.rowCount) { await client.query('ROLLBACK'); return sendError(res, 404, 'not_found', 'Dealer not found'); }
+      const body = req.method === 'DELETE' ? {} : await readBody(req);
+      if (req.method === 'POST') {
+        const targetEmail = email(body.email);
+        const role = DEALER_ROLES.has(body.role) ? body.role : 'staff';
+        const userRes = await client.query('SELECT id, is_active FROM users WHERE lower(email)=lower($1)', [targetEmail]);
+        let targetUser = userRes.rows[0];
+        let userCreated = false;
+        let tempPassword = '';
+        if (!targetUser) {
+          /* Optional create-on-add: admin provides a temporary password (≥8 chars)
+             which we hand back so they can relay it out-of-band. We never store
+             the plaintext after this response. */
+          tempPassword = body.password ? String(body.password) : '';
+          if (tempPassword.length < 8) {
+            await client.query('ROLLBACK');
+            return sendError(res, 422, 'unprocessable', '帳號不存在，請提供至少 8 字元的臨時密碼以建立新帳號');
+          }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+            await client.query('ROLLBACK');
+            return sendError(res, 422, 'unprocessable', 'Email 格式不正確');
+          }
+          const newUserId = `u-${randomUUID()}`;
+          const displayName = body.display_name ? String(body.display_name).trim().slice(0, 80) || null : null;
+          await client.query(
+            `INSERT INTO users (id, email, password_hash, role, display_name, is_active)
+             VALUES ($1, $2, $3, 'user', $4, TRUE)`,
+            [newUserId, targetEmail, await hashPassword(tempPassword), displayName],
+          );
+          targetUser = { id: newUserId, is_active: true };
+          userCreated = true;
+        }
+        if (!targetUser.is_active) {
+          await client.query('ROLLBACK');
+          return sendError(res, 409, 'inactive_user', '此帳號已停用，請先在用戶管理啟用');
+        }
+        const r = await client.query(
+          `INSERT INTO dealer_members (dealer_id, user_id, role) VALUES ($1, $2, $3)
+           ON CONFLICT (dealer_id, user_id) DO UPDATE SET role = EXCLUDED.role
+           RETURNING dealer_id, user_id, role`,
+          [dealerId, targetUser.id, role],
+        );
+        await client.query('COMMIT');
+        await audit({
+          actor: admin,
+          action: userCreated ? 'dealer.member.create_and_add' : 'dealer.member.add',
+          targetType: 'dealer',
+          targetId: dealerId,
+          payload: { email: targetEmail, user_id: targetUser.id, role, user_created: userCreated },
+          req,
+        });
+        const responseBody = { membership: r.rows[0], user_created: userCreated };
+        if (userCreated) responseBody.temporary_password = tempPassword;
+        return sendJSON(res, 200, responseBody);
+      }
+      /* DELETE: /api/admin/dealers/:id/members/:userId */
+      const userId = rest[2] ? id(rest[2], 'user_id') : id(body.user_id, 'user_id');
+      const ownerCount = await client.query(
+        `SELECT COUNT(*)::int AS owners FROM dealer_members WHERE dealer_id=$1 AND role='owner'`,
+        [dealerId],
+      );
+      const targetRole = await client.query(
+        `SELECT role FROM dealer_members WHERE dealer_id=$1 AND user_id=$2`,
+        [dealerId, userId],
+      );
+      if (targetRole.rowCount && targetRole.rows[0].role === 'owner' && ownerCount.rows[0].owners <= 1) {
+        await client.query('ROLLBACK');
+        return sendError(res, 422, 'last_owner', 'Refusing to remove the last owner');
+      }
+      const r = await client.query(
+        `DELETE FROM dealer_members WHERE dealer_id=$1 AND user_id=$2 RETURNING user_id`,
+        [dealerId, userId],
+      );
+      if (!r.rowCount) {
+        await client.query('ROLLBACK');
+        return sendError(res, 404, 'not_found', 'Membership not found');
+      }
+      await client.query('COMMIT');
+      await audit({ actor: admin, action: 'dealer.member.remove', targetType: 'dealer', targetId: dealerId, payload: { user_id: userId }, req });
+      return sendJSON(res, 200, { removed: true });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
     }
-    const token = randomBytes(24).toString('hex');
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    const r = await db.query(`INSERT INTO dealer_invites (dealer_id,email,role,token_hash,expires_at,created_by_user_id)
-      VALUES ($1,$2,$3,$4,NOW()+INTERVAL '7 days',$5) RETURNING id,email,role,expires_at`, [dealerId, inviteEmail, role, tokenHash, admin.id]);
-    await audit({ actor: admin, action: 'dealer.invite.create', targetType: 'dealer', targetId: dealerId, payload: { email: inviteEmail, role, invite_id: r.rows[0].id }, req });
-    const inviteUrl='https://www.booundless.com/#/dealer?invite='+token;
-    const delivery=await sendInvitation({email:inviteEmail,link:inviteUrl,id:r.rows[0].id});
-    await db.query('UPDATE dealer_invites SET delivery_status=$1,delivery_id=$2 WHERE id=$3',[delivery.status,delivery.id||null,r.rows[0].id]);
-    return sendJSON(res, 201, { invite: r.rows[0], invite_token: token, invite_url:inviteUrl, delivery_status:delivery.status, invitation_sent:delivery.status==='sent' });
   }
 
   if (rest[1] === 'branches' && (req.method === 'GET' || req.method === 'POST')) {
@@ -211,50 +281,62 @@ async function adminDealerRoute(req, res, admin, rest) {
     for (const [field, max] of [['legal_name', 200], ['display_name', 160], ['registration_number', 100], ['phone', 60], ['email', 240], ['website', 500]]) {
       if (body[field] !== undefined) { fields.push(`${field}=$${values.length + 1}`); values.push(text(body[field], null, max)); }
     }
+    let statusFlip = null;
     if (body.status !== undefined) {
       if (!['draft', 'active', 'suspended'].includes(body.status)) return sendError(res, 422, 'unprocessable', 'Invalid dealer status');
-      if (body.status === 'active') {
-        const ready = await db.query(`SELECT
-          EXISTS(SELECT 1 FROM dealer_branches WHERE dealer_id=$1 AND is_active AND address IS NOT NULL) AS branch,
-          EXISTS(SELECT 1 FROM dealer_service_items WHERE dealer_id=$1 AND is_active) AS service`, [dealerId]);
-        if (!(body.phone || dealer.phone || body.email || dealer.email) || !ready.rows[0].branch || !ready.rows[0].service)
-          return sendError(res, 422, 'incomplete_setup', 'Add contact information, a branch address and at least one service before activation');
+      if (body.status === dealer.status) {
+        /* keep current status, still allow other field edits */
+      } else {
+        statusFlip = body.status;
+        fields.push(`status=$${values.length + 1}`); values.push(body.status);
       }
-      fields.push(`status=$${values.length + 1}`); values.push(body.status);
     }
     if (!fields.length) return sendJSON(res, 200, { dealer });
-    values.push(dealerId);
-    const r = await db.query(`UPDATE dealers SET ${fields.join(',')},updated_at=NOW() WHERE id=$${values.length} RETURNING *`, values);
-    await audit({ actor: admin, action: 'dealer.update', targetType: 'dealer', targetId: dealerId, payload: { before: dealer, after: r.rows[0] }, req });
-    return sendJSON(res, 200, { dealer: r.rows[0] });
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      values.push(dealerId);
+      const r = await client.query(
+        `UPDATE dealers SET ${fields.join(',')},updated_at=NOW() WHERE id=$${values.length} RETURNING *`,
+        values,
+      );
+      if (!r.rowCount) { await client.query('ROLLBACK'); return sendError(res, 404, 'not_found', 'Dealer not found'); }
+      let memberFlip = null;
+      if (statusFlip === 'suspended') {
+        const m = await client.query(
+          `UPDATE users SET is_active = FALSE, updated_at = NOW()
+             WHERE id IN (SELECT user_id FROM dealer_members WHERE dealer_id = $1)
+               AND is_active = TRUE
+           RETURNING id`,
+          [dealerId],
+        );
+        memberFlip = { count: m.rowCount, is_active: false };
+      } else if (statusFlip === 'active') {
+        const m = await client.query(
+          `UPDATE users SET is_active = TRUE, updated_at = NOW()
+             WHERE id IN (SELECT user_id FROM dealer_members WHERE dealer_id = $1)
+               AND is_active = FALSE
+           RETURNING id`,
+          [dealerId],
+        );
+        memberFlip = { count: m.rowCount, is_active: true };
+      }
+      await client.query('COMMIT');
+      await audit({ actor: admin, action: 'dealer.update', targetType: 'dealer', targetId: dealerId, payload: { before: dealer, after: r.rows[0], member_flip: memberFlip }, req });
+      return sendJSON(res, 200, { dealer: r.rows[0], member_flip: memberFlip });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
   return sendError(res, 404, 'not_found', 'Dealer route not found');
-}
-
-async function acceptInvite(req, res, user) {
-  const body = await readBody(req);
-  const token = text(body.token, null, 200);
-  if (!token) return sendError(res, 422, 'unprocessable', 'Invite token is required');
-  const hash = createHash('sha256').update(token).digest('hex');
-  const db = await getDb();
-  const client=await db.connect();
-  try {
-  await client.query('BEGIN');
-  const r = await client.query(`SELECT * FROM dealer_invites WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at > NOW() AND lower(email)=lower($2) FOR UPDATE`, [hash, user.email]);
-  if (!r.rowCount) {await client.query('ROLLBACK');return sendError(res, 400, 'invalid_invite', 'Invite is invalid, expired, or not for this account');}
-  const invite = r.rows[0];
-  await client.query('INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,$3) ON CONFLICT (dealer_id,user_id) DO UPDATE SET role=EXCLUDED.role', [invite.dealer_id, user.id, invite.role]);
-  await client.query('UPDATE dealer_invites SET accepted_at=NOW() WHERE id=$1', [invite.id]);
-  await client.query('COMMIT');
-  await audit({ actor: user, action: 'dealer.invite.accept', targetType: 'dealer', targetId: invite.dealer_id, payload: { invite_id: invite.id }, req });
-  sendJSON(res, 200, { ok: true, dealer_id: invite.dealer_id, role: invite.role });
-  } catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
 }
 
 async function dealerPortalRoute(req, res, path, query) {
   const user = await requireUser(req, res);
   if (!user) return;
-  if (path === '/api/dealer/invites/accept' && req.method === 'POST') return acceptInvite(req, res, user);
   const db = await getDb();
 
   if (path === '/api/dealer/me' && req.method === 'GET') {
@@ -511,6 +593,9 @@ async function vehicleRoute(req, res, path) {
       const offerRes = await db.query(`SELECT * FROM service_offers WHERE id=$1 AND active=true`, [offerId]);
       if (!offerRes.rowCount) return sendError(res, 404, 'not_found', 'Offer not found or inactive');
       const offer = offerRes.rows[0];
+      if(String(process.env.SERVICE_MVP_ENABLED||'true').toLowerCase()==='false')return sendError(res,503,'service_unavailable','Service pilot is temporarily closed');
+      const pilotIds=String(process.env.SERVICE_MVP_DEALER_IDS||'').split(',').map((value)=>value.trim()).filter(Boolean);
+      if(pilotIds.length&&!pilotIds.includes(offer.dealer_id))return sendError(res,404,'not_found','Offer not found or inactive');
       if (!user) return sendError(res, 401, 'unauthorized', 'Sign in required');
       const ownership = await db.query('SELECT 1 FROM vehicles WHERE id=$1 AND created_by_user_id=$2 AND archived_at IS NULL', [vehicleId, user.id]);
       if (!ownership.rowCount) return sendError(res, 403, 'forbidden', 'Vehicle does not belong to you');
@@ -625,23 +710,6 @@ async function vehicleRoute(req, res, path) {
 export default async function handler(req, res) {
   try {
     const { pathname, query } = pathInfo(req);
-    if(pathname==='/api/dealer/invites/register'&&req.method==='POST'){
-      const body=await readBody(req);
-      if(typeof body.token!=='string'||!/^[a-f0-9]{48}$/.test(body.token)||typeof body.password!=='string'||body.password.length<12||Buffer.byteLength(body.password)>72)return sendError(res,422,'unprocessable','Valid invitation and password of 12–72 bytes required');
-      const db=await getDb();const client=await db.connect();
-      try{
-        await client.query('BEGIN');
-        const invite=(await client.query('SELECT * FROM dealer_invites WHERE token_hash=$1 AND accepted_at IS NULL AND expires_at>NOW() FOR UPDATE',[createHash('sha256').update(body.token).digest('hex')])).rows[0];
-        if(!invite)throw new Error('Invitation is invalid or expired');
-        if((await client.query('SELECT id FROM users WHERE lower(email)=lower($1)',[invite.email])).rowCount)throw new Error('Account already exists; sign in to accept the invitation');
-        const user={id:randomUUID(),email:invite.email,role:'user'};
-        await client.query('INSERT INTO users(id,email,password_hash,role,display_name) VALUES($1,$2,$3,$4,$5)',[user.id,user.email,await hashPassword(body.password),user.role,text(body.display_name,'車商成員',100)]);
-        await client.query('INSERT INTO dealer_members(dealer_id,user_id,role) VALUES($1,$2,$3)',[invite.dealer_id,user.id,invite.role]);
-        await client.query('UPDATE dealer_invites SET accepted_at=NOW() WHERE id=$1',[invite.id]);
-        const session=await signSession(user);
-        await client.query('COMMIT');setSessionCookie(res,session);return sendJSON(res,201,{user,dealer_id:invite.dealer_id});
-      }catch(error){await client.query('ROLLBACK');return sendError(res,422,'unprocessable',error.message);}finally{client.release();}
-    }
     if (pathname === '/api/service-item-types' && req.method === 'GET') {
       if (!await requireUser(req, res)) return;
       const db = await getDb();

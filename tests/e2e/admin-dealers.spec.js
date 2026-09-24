@@ -47,16 +47,15 @@ test('admin suspends and reactivates a dealer', async ({ browser }) => {
     expect(suspended.rows[0].status).toBe('suspended');
     await expect(adminPage.locator(`button[data-dealer-status="${dealerId}"]`)).toHaveAttribute('data-next-status', 'active');
 
-    /* Reactivate is gated by the handler until contact info + branch + a
-       service exist (422 'incomplete_setup'). We seed none of those, so the
-       UI shows an error toast instead of the DB update — assert the call
-       comes back 422 and the DB stays suspended. */
+    /* Reactivate. The activation gate (branch address + service + contact) was
+       removed in Phase 7 — registration creates an active dealer immediately,
+       so reactivation is a no-op flip that always succeeds. */
     const activateResp = adminPage.waitForResponse((r) =>
       r.url().includes(`/api/admin/dealers/${dealerId}`) && r.request().method() === 'PATCH');
     await adminPage.locator(`button[data-dealer-status="${dealerId}"]`).click();
-    expect((await activateResp).status()).toBe(422);
-    const stillSuspended = await db.query(`SELECT status FROM dealers WHERE id = $1`, [dealerId]);
-    expect(stillSuspended.rows[0].status).toBe('suspended');
+    expect((await activateResp).status()).toBe(200);
+    const reactivated = await db.query(`SELECT status FROM dealers WHERE id = $1`, [dealerId]);
+    expect(reactivated.rows[0].status).toBe('active');
   } finally {
     await cleanupDealer(db, dealerId);
     await cleanupUsers(db, [adminEmail]);

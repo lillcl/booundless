@@ -54,6 +54,7 @@ export function validateQuoteLineV2(line, idx) {
   if (keys.some((k) => typeof k !== 'string' || !SERVICE_KEY_RE.test(k))) throw new Error(`Line ${idx}: invalid service_key`);
   const amountMinor = quantity * partsUnit + labour;
   return {
+    line_index: idx,
     line_id: line.line_id || null, // UUID; assigned by caller if missing
     description, quantity, parts_unit_minor: partsUnit, labour_minor: labour,
     work_type: workType, service_keys: [...new Set(keys)],
@@ -192,7 +193,10 @@ export async function scheduleSlotV2(client, { requestId, userId, slotId, operat
   );
   const canSchedule = isOwner || (operator && isMember.rowCount);
   if (!canSchedule) throw new Error('Not allowed to schedule this request');
-  if (!['accepted', 'scheduled', 'quoted'].includes(r.status)) throw new Error('Quote not yet accepted');
+  if (!['accepted', 'scheduled'].includes(r.status) || !r.accepted_quote_id) throw new Error('Quote not yet accepted');
+  if (slot.dealer_id !== r.dealer_id || slot.branch_id !== r.branch_id) {
+    throw new Error('Slot does not belong to this request dealer and branch');
+  }
   const count = await client.query(
     `SELECT COUNT(*)::int AS n FROM service_bookings
        WHERE slot_id=$1 AND status='confirmed' AND request_id <> $2`,
@@ -242,13 +246,47 @@ export async function submitCompletion(client, { requestId, userId, completion }
   if (!r) throw new Error('Request not found');
   if (r.status !== 'scheduled') throw new Error('Request must be scheduled before completion');
   if (r.work_state !== 'in_progress') throw new Error('Service must be started first');
+  const pendingChange = await client.query(
+    `SELECT 1 FROM service_changes WHERE request_id=$1 AND status='proposed' LIMIT 1`, [requestId]
+  );
+  if (pendingChange.rowCount) throw new Error('Resolve pending changes before completion');
+  if (['baseline','second_opinion'].includes(r.service_kind)) {
+    const published = await client.query(
+      `SELECT 1 FROM inspection_reports WHERE request_id=$1 AND status='published' LIMIT 1`, [requestId]
+    );
+    if (!published.rowCount) throw new Error('Publish the inspection report before completion');
+  }
+  if (process.env.NODE_ENV === 'production' || process.env.SERVICE_EVIDENCE_REQUIRED === 'true') {
+    const evidence = await client.query(
+      `SELECT purpose,COUNT(*)::int AS n FROM service_attachments
+       WHERE request_id=$1 AND upload_state='ready' AND purpose IN ('before','after') GROUP BY purpose`, [requestId]
+    );
+    const purposes = new Set(evidence.rows.filter((row)=>row.n>0).map((row)=>row.purpose));
+    if (!purposes.has('before') || !purposes.has('after')) {
+      throw new Error('Before and after evidence photos are required');
+    }
+  }
   // Verify each completion line targets an approved line in this request.
   const orderLines = (await client.query(
     `SELECT * FROM service_order_lines WHERE request_id=$1`, [requestId]
   )).rows;
   const orderById = new Map(orderLines.map((l) => [l.id, l]));
+  if (!Array.isArray(completion.lines) || completion.lines.length !== orderLines.length) {
+    throw new Error('Every approved order line must have an outcome');
+  }
+  const submittedIds = completion.lines.map((line) => line.order_line_id);
+  if (new Set(submittedIds).size !== submittedIds.length) throw new Error('Duplicate completion line');
   for (const line of completion.lines) {
     if (!orderById.has(line.order_line_id)) throw new Error(`Unknown order line ${line.order_line_id}`);
+    if (!['completed','not_performed'].includes(line.outcome)) throw new Error('Invalid completion outcome');
+    if (line.outcome === 'not_performed' && !String(line.not_performed_reason || '').trim()) {
+      throw new Error('A reason is required for work not performed');
+    }
+    const approved = orderById.get(line.order_line_id);
+    const changedPart = ['actual_parts_brand','actual_parts_spec','actual_part_number'].some((field) =>
+      line[field] && approved[field] && String(line[field]).trim() !== String(approved[field]).trim()
+    );
+    if (changedPart) throw new Error('Changed parts require an approved change order');
   }
   // Compute final total: only completed lines bill; not_performed don't.
   const completedSum = completion.lines
@@ -442,8 +480,13 @@ async function writeCommissionEntry(client, { requestId, completionId, dealerId,
   // unknown origin: do not accrue; freeze until admin rules.
   if (origin === 'unknown') return;
   if (rateBps === 0) return;
+  if (terms && terms.free_completed_orders > 0) {
+    const prior = await client.query(`SELECT COUNT(*)::int AS n FROM commission_entries
+      WHERE dealer_id=$1 AND entry_type='accrual' AND terms_id=$2`,[dealerId,terms.id]);
+    if (prior.rows[0].n < terms.free_completed_orders) return;
+  }
   // Integer math: basis × bps / 10000, rounded.
-  const feeMinor = Math.floor((basisMinor * rateBps) / 10000);
+  const feeMinor = Math.round((basisMinor * rateBps) / 10000);
   if (feeMinor <= 0) return;
   await client.query(
     `INSERT INTO commission_entries

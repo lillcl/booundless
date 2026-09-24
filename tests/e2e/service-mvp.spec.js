@@ -5,8 +5,9 @@
 
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { hashPassword } from '../../api/_lib/auth.js';
 import {
-  openDb, closeDb, seedUser, cleanupUsers, login, request as apiRequest,
+  openDb, closeDb, seedUser, cleanupUsers, login,
 } from './_helpers/auth.js';
 
 const HAS_DB = !!process.env.TEST_DATABASE_URL || !!process.env.KC_DATABASE_URL;
@@ -18,19 +19,24 @@ async function seedBaselineWorld(db, suffix) {
   const ids = {
     adminId: `admin-${suffix}`,
     ownerId: `owner-${suffix}`,
+    dealerUserId: `dealer-user-${suffix}`,
     dealerId: `dealer-${suffix}`,
     branchId: `branch-${suffix}`,
     vehicleId: `vehicle-${suffix}`,
     offerId: randomUUID(),
     slotId: randomUUID(),
   };
+  const ownerPasswordHash = await hashPassword('Owner-pw-2026!');
+  const dealerPasswordHash = await hashPassword('Dealer-pw-2026!');
+  const adminPasswordHash = await hashPassword(ADMIN_PASSWORD);
   await db.query('BEGIN');
   try {
-    await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'admin','Admin',TRUE) ON CONFLICT DO NOTHING`, [ids.adminId, ADMIN_EMAIL, '$2b$10$dummy.hash.for.test.placeholder.only']);
-    await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','Owner',TRUE) ON CONFLICT DO NOTHING`, [ids.ownerId, `owner-${suffix}@e.test`, '$2b$10$dummy.hash.for.test.placeholder.only']);
+    await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'admin','Admin',TRUE) ON CONFLICT DO NOTHING`, [ids.adminId, ADMIN_EMAIL, adminPasswordHash]);
+    await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','Owner',TRUE) ON CONFLICT DO NOTHING`, [ids.ownerId, `owner-${suffix}@e.test`, ownerPasswordHash]);
+    await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','Dealer',TRUE) ON CONFLICT DO NOTHING`, [ids.dealerUserId, `dealer-${suffix}@e.test`, dealerPasswordHash]);
     await db.query(`INSERT INTO dealers (id,display_name,status,pilot_enabled) VALUES ($1,'D','active',TRUE) ON CONFLICT DO NOTHING`, [ids.dealerId]);
     await db.query(`INSERT INTO dealer_branches (id,dealer_id,name,timezone) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`, [ids.branchId, ids.dealerId, 'B', 'Asia/Macau']);
-    await db.query(`INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,'owner') ON CONFLICT DO NOTHING`, [ids.dealerId, ids.ownerId]);
+    await db.query(`INSERT INTO dealer_members (dealer_id,user_id,role) VALUES ($1,$2,'owner') ON CONFLICT DO NOTHING`, [ids.dealerId, ids.dealerUserId]);
     await db.query(`INSERT INTO vehicles (id,model,make,year,fuel_type,plate,mileage_km,mileage_label,created_by_user_id,onboarding_state) VALUES ($1,'Corolla Cross','Toyota',2021,'混能',$2,42680,'42680 km',$3,'ready') ON CONFLICT DO NOTHING`, [ids.vehicleId, `T-${suffix}`, ids.ownerId]);
     await db.query(`INSERT INTO service_offers (id,dealer_id,branch_id,kind,name,description,currency,price_minor,pricing_mode,duration_minutes,checklist_version,active) VALUES ($1,$2,$3,'baseline','基線','d','MOP',28000,'fixed',45,'baseline-v1',TRUE)`, [ids.offerId, ids.dealerId, ids.branchId]);
     for (const k of ['engine_oil','oil_filter','transmission_fluid','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter']) {
@@ -69,7 +75,7 @@ async function cleanupWorld(db, suffix) {
   await db.query(`DELETE FROM dealer_branches WHERE id=$1`, [`branch-${suffix}`]);
   await db.query(`DELETE FROM dealers WHERE id=$1`, [`dealer-${suffix}`]);
   await db.query(`DELETE FROM vehicles WHERE id=$1`, [`vehicle-${suffix}`]);
-  await db.query(`DELETE FROM users WHERE id IN ($1,$2)`, [`admin-${suffix}`, `owner-${suffix}`]);
+  await db.query(`DELETE FROM users WHERE id IN ($1,$2,$3)`, [`admin-${suffix}`, `owner-${suffix}`, `dealer-user-${suffix}`]);
 }
 
 async function api(request, baseUrl, path, opts = {}) {
@@ -95,15 +101,20 @@ test.describe('Service MVP pilot scenarios (§11)', () => {
     let deletedUserEmails = [];
     try {
       const seed = await seedBaselineWorld(db, suffix);
-      deletedUserEmails = [`admin-${suffix}@e.test`, `owner-${suffix}@e.test`];
+      deletedUserEmails = [`admin-${suffix}@e.test`, `owner-${suffix}@e.test`, `dealer-${suffix}@e.test`];
       // Log in via the UI to exercise click/fill flows for the most critical
       // owner actions per spec §11 ("UI 主流程一定用 click/fill/submit 推進").
       await login(page, `owner-${suffix}@e.test`, 'Owner-pw-2026!');
-      // API-only for the dealer-side actions (login as same user — owner is
-      // also a dealer member in seed).
+      // Keep owner and dealer sessions separate so the flow also verifies
+      // that a dual-role account cannot self-approve service work.
       const cookies = await page.context().cookies();
       const sessionCookie = cookies.find((c) => c.name === 'kc_session');
       const cookieHeader = sessionCookie ? `kc_session=${sessionCookie.value}` : '';
+      const dealerLogin = await api(request, baseURL, '/api/auth/login', {
+        method: 'POST', body: { email: `dealer-${suffix}@e.test`, password: 'Dealer-pw-2026!' },
+      });
+      expect(dealerLogin.status).toBe(200);
+      const dealerCookie = (dealerLogin.setCookie || '').split(';')[0];
       // Create request via API (v2 path uses offer_id)
       const create = await api(request, baseURL,
         `/api/vehicles/${seed.vehicleId}/service-requests`,
@@ -118,8 +129,18 @@ test.describe('Service MVP pilot scenarios (§11)', () => {
       const lineId = randomUUID();
       const items = [{ line_id: lineId, description: '基線', amount_minor: 28000, work_type: 'inspect',
         service_keys: ['engine_oil','oil_filter','transmission_fluid','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter'] }];
+      // Even if the owner also appears in dealer_members, ownership wins for
+      // this request and the account cannot quote its own vehicle.
+      await db.query(`INSERT INTO dealer_members(dealer_id,user_id,role) VALUES($1,$2,'staff') ON CONFLICT DO NOTHING`, [seed.dealerId, seed.ownerId]);
+      const selfQuote = await api(request, baseURL, `/api/service-requests/${reqId}`, {
+        method:'POST', cookie:cookieHeader,
+        body:{ action:'quote', version:ver0, currency:'MOP', items,
+          expires_at:new Date(Date.now()+7*86400000).toISOString() },
+        idempotencyKey:randomUUID(),
+      });
+      expect(selfQuote.status).toBe(422);
       const quote = await api(request, baseURL, `/api/service-requests/${reqId}`,
-        { method: 'POST', cookie: cookieHeader,
+        { method: 'POST', cookie: dealerCookie,
           body: { action: 'quote', version: ver0, currency: 'MOP', items,
                   expires_at: new Date(Date.now() + 7 * 86400000).toISOString() },
           idempotencyKey: randomUUID() });
@@ -143,18 +164,18 @@ test.describe('Service MVP pilot scenarios (§11)', () => {
       // Start + draft inspection (via UI to satisfy "click/fill/submit" rule)
       const afterS = (await db.query(`SELECT version FROM dealer_service_requests WHERE id=$1`, [reqId])).rows[0];
       const start = await api(request, baseURL, `/api/service-requests/${reqId}`,
-        { method: 'POST', cookie: cookieHeader, body: { action: 'start', version: afterS.version },
+        { method: 'POST', cookie: dealerCookie, body: { action: 'start', version: afterS.version },
           idempotencyKey: randomUUID() });
       expect(start.status).toBe(200);
       const allResults = ['engine_oil_and_filter','transmission_oil','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter']
         .map((k) => ({ check_key: k, result: 'normal', service_keys: [], notes: 'ok', measurement_method: 'visual' }));
       const draft = await api(request, baseURL, `/api/service-requests/${reqId}/inspection`,
-        { method: 'PUT', cookie: cookieHeader,
+        { method: 'PUT', cookie: dealerCookie,
           body: { mileage_km: 42680, summary: 'ok', template_key: 'baseline-v1', results: allResults } });
       expect(draft.status).toBe(200);
       const afterDraft = (await db.query(`SELECT version FROM inspection_reports WHERE id=$1`, [draft.body.data.id])).rows[0];
       const publish = await api(request, baseURL, `/api/service-requests/${reqId}/inspection/publish`,
-        { method: 'POST', cookie: cookieHeader,
+        { method: 'POST', cookie: dealerCookie,
           body: { version: afterDraft.version, results: allResults },
           idempotencyKey: randomUUID() });
       expect(publish.status).toBe(200);
@@ -171,7 +192,7 @@ test.describe('Service MVP pilot scenarios (§11)', () => {
       };
       const afterPub = (await db.query(`SELECT version FROM dealer_service_requests WHERE id=$1`, [reqId])).rows[0];
       const comp = await api(request, baseURL, `/api/service-requests/${reqId}`,
-        { method: 'POST', cookie: cookieHeader, body: { action: 'complete', version: afterPub.version, completion },
+        { method: 'POST', cookie: dealerCookie, body: { action: 'complete', version: afterPub.version, completion },
           idempotencyKey: randomUUID() });
       expect(comp.status).toBe(200);
       const afterC = (await db.query(`SELECT version FROM dealer_service_requests WHERE id=$1`, [reqId])).rows[0];
@@ -197,8 +218,9 @@ test.describe('Service MVP pilot scenarios (§11)', () => {
     const suffixA = `a-${randomUUID().slice(0, 6)}`;
     const suffixB = `b-${randomUUID().slice(0, 6)}`;
     try {
-      await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','A',TRUE) ON CONFLICT DO NOTHING`, [`owner-${suffixA}`, `oa-${suffixA}@e.test`, 'x']);
-      await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','B',TRUE) ON CONFLICT DO NOTHING`, [`owner-${suffixB}`, `ob-${suffixB}@e.test`, 'x']);
+      const passwordHash = await hashPassword('Owner-pw-2026!');
+      await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','A',TRUE) ON CONFLICT DO NOTHING`, [`owner-${suffixA}`, `oa-${suffixA}@e.test`, passwordHash]);
+      await db.query(`INSERT INTO users (id,email,password_hash,role,display_name,is_active) VALUES ($1,$2,$3,'user','B',TRUE) ON CONFLICT DO NOTHING`, [`owner-${suffixB}`, `ob-${suffixB}@e.test`, passwordHash]);
       const va = `vehicle-${suffixA}`;
       const vb = `vehicle-${suffixB}`;
       await db.query(`INSERT INTO vehicles (id,model,plate,created_by_user_id,onboarding_state) VALUES ($1,'C','A',$2,'ready')`, [va, `owner-${suffixA}`]);
