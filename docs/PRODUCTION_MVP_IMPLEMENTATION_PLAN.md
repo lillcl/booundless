@@ -1,4 +1,4 @@
-# 康程／BOOUNDLESS：三角色生產 MVP 實作計劃
+# 無界啟程 BOOUNDLESS：三角色生產 MVP 實作計劃
 
 編寫日期：2026-09-22。目標：2026-09-23（Asia/Hong_Kong）上線受控試點。
 

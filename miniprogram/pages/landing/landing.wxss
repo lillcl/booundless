@@ -1,180 +1,76 @@
-/* Landing 页面样式 — 复刻 web 端的 landing__hero + landing__features */
-
 .kc-landing {
   min-height: 100vh;
-  background: linear-gradient(180deg, #073568 0%, #0c4880 100%);
-  color: #fff;
-  padding: 32rpx 32rpx 96rpx;
+  padding: 88rpx 40rpx 56rpx;
   box-sizing: border-box;
+  background: var(--bg);
+  color: var(--ink);
 }
 
-.kc-landing__hero {
-  position: relative;
-  height: 480rpx;
-  margin-top: 32rpx;
-}
-
-.kc-landing__beam {
-  position: absolute;
-  top: 0;
-  left: -10%;
-  width: 60%;
-  height: 480rpx;
-  background: linear-gradient(180deg, rgba(200,155,75,0.45), rgba(200,155,75,0));
-  transform: skewX(-18deg);
-  filter: blur(8rpx);
-  border-radius: 32rpx;
-}
-
-.kc-landing__beam--b {
-  left: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
-}
-
-.kc-landing__car {
-  position: absolute;
-  left: 50%;
-  bottom: 80rpx;
-  transform: translateX(-50%);
-  width: 360rpx;
-  height: 160rpx;
-}
-
-.kc-landing__car-body {
-  position: absolute;
-  bottom: 0;
-  left: 30rpx;
-  right: 30rpx;
-  height: 70rpx;
-  background: #c89b4b;
-  border-radius: 24rpx 24rpx 16rpx 16rpx;
-  box-shadow: 0 12rpx 32rpx rgba(0,0,0,0.25);
-}
-
-.kc-landing__car-top {
-  position: absolute;
-  bottom: 50rpx;
-  left: 90rpx;
-  right: 90rpx;
-  height: 50rpx;
-  background: rgba(255,255,255,0.92);
-  border-radius: 16rpx 16rpx 0 0;
-}
-
-.kc-landing__car-window {
-  position: absolute;
-  bottom: 56rpx;
-  left: 110rpx;
-  right: 110rpx;
-  height: 36rpx;
-  background: #073568;
-  border-radius: 8rpx;
-}
-
-.kc-landing__car-wheel {
-  position: absolute;
-  bottom: -16rpx;
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background: #1a2233;
-  border: 6rpx solid #c89b4b;
-}
-
-.kc-landing__car-wheel--l { left: 60rpx; }
-.kc-landing__car-wheel--r { right: 60rpx; }
-
-.kc-landing__badges {
-  position: absolute;
-  inset: 0;
-}
-
-.kc-landing__badge {
-  position: absolute;
+.kc-landing__intro {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 12rpx 18rpx;
-  background: rgba(255,255,255,0.16);
-  border: 1rpx solid rgba(255,255,255,0.28);
-  border-radius: 999rpx;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 8rpx 40rpx;
+}
+
+.kc-landing__eyebrow {
+  margin-bottom: 20rpx;
+  color: var(--brand);
   font-size: 24rpx;
-  backdrop-filter: blur(8rpx);
+  font-weight: 600;
 }
 
-.kc-landing__badge-icon {
+.kc-landing__title {
+  font-size: 48rpx;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.kc-landing__description {
+  margin-top: 16rpx;
+  color: var(--muted);
   font-size: 28rpx;
-}
-
-.kc-landing__badge--ruler { top: 60rpx; left: 32rpx; }
-.kc-landing__badge--clipboard { top: 30rpx; right: 32rpx; }
-.kc-landing__badge--camera { bottom: 32rpx; right: 60rpx; }
-
-.kc-landing__brand {
-  text-align: center;
-  margin-top: 48rpx;
-}
-
-.kc-landing__brand-cn {
-  font-size: 64rpx;
-  font-weight: 700;
-  letter-spacing: 4rpx;
-}
-
-.kc-landing__brand-sub {
-  font-size: 26rpx;
-  opacity: 0.78;
-  margin-top: 12rpx;
+  line-height: 1.6;
 }
 
 .kc-landing__features {
-  display: flex;
-  gap: 20rpx;
-  margin: 56rpx 0 64rpx;
+  overflow: hidden;
+  border-top: 1rpx solid var(--line);
+  border-bottom: 1rpx solid var(--line);
+  background: var(--card);
 }
 
 .kc-landing__feature {
-  flex: 1;
-  background: rgba(255,255,255,0.10);
-  border: 1rpx solid rgba(255,255,255,0.18);
-  border-radius: 24rpx;
-  padding: 24rpx 16rpx;
-  text-align: center;
-  backdrop-filter: blur(8rpx);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 24rpx 20rpx;
+  border-bottom: 1rpx solid var(--line);
 }
 
-.kc-landing__feature-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40rpx;
-  margin: 0 auto 16rpx;
+.kc-landing__feature:last-child {
+  border-bottom: 0;
 }
 
 .kc-landing__feature-title {
   font-size: 28rpx;
   font-weight: 600;
-  margin-bottom: 8rpx;
 }
 
 .kc-landing__feature-hint {
-  font-size: 22rpx;
-  opacity: 0.7;
-  line-height: 1.4;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.5;
 }
 
 .kc-landing__cta {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  margin-top: 32rpx;
 }
 
 .kc-landing__footer {
-  text-align: center;
+  display: block;
+  margin: 36rpx 8rpx 0;
+  color: var(--muted);
   font-size: 22rpx;
-  opacity: 0.55;
-  margin-top: 48rpx;
+  text-align: center;
 }

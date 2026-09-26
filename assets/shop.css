@@ -17,3 +17,20 @@
 @media(max-width:1000px){.shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.shop-layout{grid-template-columns:1fr 300px}.shop-admin-grid{grid-template-columns:1fr}.shop-admin__stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.shop-page{padding-top:18px}.shop-head{grid-template-columns:1fr 130px;min-height:132px;border-radius:20px}.shop-head__copy{padding:22px}.shop-head__copy h1{font-size:34px}.shop-head__copy p{font-size:12px}.shop-passport{align-items:flex-start}.shop-passport__summary{display:grid;gap:3px}.shop-passport__summary small{white-space:normal}.shop-passport label{display:grid}.shop-passport select{width:145px;min-width:0}.shop-discovery{grid-template-columns:1fr auto}.shop-search{grid-column:1/-1}.shop-compatible-toggle{min-height:42px}.shop-discovery>strong{align-self:center;padding:0}.shop-toolbar{display:block}.shop-layout{grid-template-columns:1fr;gap:16px}.shop-grid{grid-template-columns:1fr 1fr;gap:10px}.shop-cart{position:relative;top:auto;margin-top:0;border-radius:18px;box-shadow:none;background:#fff}.shop-cart__head{padding:14px 16px}.shop-cart__head h2{font-size:16px}.shop-cart__body{padding:6px 16px 14px}.shop-cart-item{padding:9px 0}.shop-cart-item__image{width:46px;height:46px}.shop-product__body{padding:14px}.shop-product p{display:-webkit-box;min-height:0;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}.shop-admin__stats{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.shop-grid{grid-template-columns:1fr}.shop-order__head,.shop-order__foot{display:grid;gap:8px}}
+/* Match the plain, information-first styles used across BOOUNDLESS. */
+.shop-page{color:#172b35}
+.shop-head{display:block;min-height:0;border-radius:10px;background:#fff}
+.shop-head__copy{padding:26px 28px}
+.shop-head__copy h1{letter-spacing:0}
+.shop-head__art{display:none}
+.shop-controls{border-radius:10px;box-shadow:none}
+.shop-passport select,.shop-category-select select,.shop-search input,.shop-compatible-toggle{border-radius:7px}
+.shop-product{border-radius:10px;box-shadow:none;transition:border-color .15s ease}
+.shop-product:hover{transform:none;box-shadow:none;border-color:#9aadb2}
+.shop-fit{border-radius:6px;box-shadow:none}
+.shop-add,.shop-checkout,.shop-signin,.shop-form-actions button{border-radius:7px}
+.shop-cart{border-radius:10px;box-shadow:none;background:#fff}
+.shop-specs span{border-radius:5px}
+.shop-cart-item__image{border-radius:6px}
+.shop-count{border-radius:6px}
+.shop-checkout-form input,.shop-checkout-form select,.shop-checkout-form textarea,.shop-admin input,.shop-admin select,.shop-admin textarea{border-radius:7px}

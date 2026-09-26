@@ -1,7 +1,7 @@
 # MASTER_PLAN.md
 
 ## Project
-- Name: `康程 CarAI — Service V10 Interactive`
+- Name: `無界啟程 BOOUNDLESS — Service V10 Interactive`
 - Source Requirements: `reference/kangcheng_v10_4/index.html` (V10.4 prototype) + `reference/kangcheng_v10_4/README.txt`
 - Last Updated: `2026-09-02`
 
@@ -13,7 +13,7 @@
 
 ## Open Questions (must resolve before Phase 1)
 1. Target stack — is the production build a vanilla HTML/JS/CSS app matching the prototype, or a framework rebuild (React/Vue/Svelte/etc.)?
-2. Backend requirements — does 康程 need a real backend (auth, vehicle data persistence, booking) or is this a static interactive prototype?
+2. Backend requirements — does 無界啟程 need a real backend (auth, vehicle data persistence, booking) or is this a static interactive prototype?
 3. Persistence — do garage/calendar/profile data need to be stored (DB) or remain local-only as in the current prototype?
 4. Deployment target — web-only, or also wrapped for mobile (PWA / native shell)?
 

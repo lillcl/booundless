@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>首頁｜無界啟程 BOOUNDLESS</title>
-<meta name="description" content="無界啟程 BOOUNDLESS：管理車輛、查看保養提醒、規劃琴澳行程，透過 CarAI 協助整理車況與服務需求。">
+<title>無界啟程 BOOUNDLESS｜車輛及保養紀錄</title>
+<meta name="description" content="無界啟程 BOOUNDLESS 協助車主記錄車款、里程與保養日期，查看保養提醒、車行服務資料及琴澳自駕資訊。">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#073568">
 <link rel="icon" type="image/png" href="assets/icons/booundless-car.png">
@@ -13,22 +13,22 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="zh_HK">
 <meta property="og:site_name" content="無界啟程 BOOUNDLESS">
-<meta property="og:title" content="無界啟程 BOOUNDLESS｜CarAI 車輛與保養管理">
-<meta property="og:description" content="管理車輛、保養提醒與琴澳行程，讓 CarAI 協助整理服務需求。">
+<meta property="og:title" content="無界啟程 BOOUNDLESS｜車輛及保養紀錄">
+<meta property="og:description" content="記錄車款、里程和保養日期，查看待辦提醒及琴澳自駕資訊。">
 <meta property="og:url" content="https://www.booundless.com/">
 <meta property="og:image" content="https://www.booundless.com/assets/booundless-social.png">
 <meta property="og:image:width" content="1254">
 <meta property="og:image:height" content="1254">
 <meta property="og:image:alt" content="無界啟程 BOOUNDLESS 標誌：藍色道路與汽車">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="無界啟程 BOOUNDLESS｜CarAI 車輛與保養管理">
-<meta name="twitter:description" content="管理車輛、保養提醒與琴澳行程。">
+<meta name="twitter:title" content="無界啟程 BOOUNDLESS｜車輛及保養紀錄">
+<meta name="twitter:description" content="記錄車款、里程和保養日期，查看待辦提醒及琴澳自駕資訊。">
 <meta name="twitter:image" content="https://www.booundless.com/assets/booundless-social.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"CarAI","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"車輛管理、保養提醒與琴澳行程規劃。"}
+{"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"BOOUNDLESS","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"記錄車款、里程及保養日期，查看保養提醒、車行服務資料及琴澳自駕資訊。","publisher":{"@type":"Organization","name":"澳門聯校科學展覽青年協會","alternateName":"Macao Joint School Science Exhibition Youth Association","url":"https://mjsseya.org/"}}
 </script>
 <script src="assets/site-metadata.js" defer></script>
 <script src="assets/marketing-tracking.js" defer></script>
@@ -41,8 +41,6 @@
 <script src="assets/dealer-inspection.js" defer></script>
 <script src="assets/dealer-completion.js" defer></script>
 <script src="assets/passport-cta.js" defer></script>
-<script src="assets/vendor/gsap.min.js" defer></script>
-<script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <link rel="stylesheet" href="assets/shop.css">
 <link rel="stylesheet" href="assets/passport.css">
 <style>
@@ -356,15 +354,14 @@ button,input{font:inherit}.app{display:flex;min-height:100vh;flex-direction:colu
 @media(max-width:420px){.landing__terms-grid{grid-template-columns:1fr 1fr;gap:8px}.landing__term{padding:14px 12px;font-size:13px}.landing__passport{padding:17px}.landing__passport-car{height:185px}.landing__passport-model h2{font-size:22px}}
 
 /* Vehicle-passport landing hero — adapted from the approved 1440×700 concept. */
-.passport-hero{position:relative;display:grid;grid-template-columns:minmax(320px,.82fr) minmax(520px,1.18fr);align-items:center;gap:clamp(18px,3vw,58px);overflow:hidden;min-height:650px;padding:58px clamp(24px,6vw,92px);background:radial-gradient(circle at 76% 45%,rgba(52,142,255,.09),transparent 30%),linear-gradient(135deg,#fff 0%,#f8fbfc 100%);color:#14283e}
-.passport-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(23,107,145,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(23,107,145,.028) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.5),transparent 88%);pointer-events:none}
-.passport-hero:after{content:"";position:absolute;width:52vw;height:52vw;min-width:620px;min-height:620px;border:1px solid rgba(23,107,145,.08);border-radius:50%;right:-20vw;bottom:-38vw;box-shadow:0 0 0 28px rgba(23,107,145,.025),0 0 0 58px rgba(23,107,145,.018),0 0 0 96px rgba(23,107,145,.012);pointer-events:none}
+.passport-hero{position:relative;display:grid;grid-template-columns:minmax(320px,.82fr) minmax(520px,1.18fr);align-items:center;gap:clamp(18px,3vw,58px);overflow:hidden;min-height:570px;padding:48px clamp(24px,6vw,92px);background:#f5f7f7;color:#14283e}
+.passport-hero:before,.passport-hero:after{content:none}
 .passport-hero__copy{position:relative;z-index:8;max-width:520px}.passport-hero__copy .landing__eyebrow{font-size:13px}.passport-hero__copy h1{font-size:clamp(44px,5.2vw,76px);line-height:1.04;letter-spacing:-.06em;margin:20px 0 22px}.passport-hero__copy h1 em{font-style:normal;color:#176b91}.passport-hero__copy .landing__lead{max-width:500px}.passport-hero__copy .landing__actions{margin-top:30px}.passport-hero__copy .landing__primary,.passport-hero__copy .landing__secondary{min-height:52px;width:auto}
 .passport-hero__visual{position:relative;z-index:4;width:100%;max-width:900px;aspect-ratio:3/2;margin:0 auto;isolation:isolate}
-.passport-hero__visual:before{content:"";position:absolute;z-index:-1;left:11%;right:4%;top:12%;bottom:4%;border-radius:50%;background:radial-gradient(circle,rgba(61,181,221,.16),rgba(31,112,166,.05) 48%,transparent 72%);filter:blur(16px)}
-.passport-hero__art{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 24px 32px rgba(19,55,86,.14));animation:passportArtFloat 7s ease-in-out infinite}
+.passport-hero__visual:before{content:none}
+.passport-hero__art{display:block;width:100%;height:100%;object-fit:contain;filter:none;animation:none}
 .passport-hero__signals{position:absolute;left:4%;right:5%;bottom:1%;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;z-index:2}
-.passport-signal{display:flex;align-items:center;gap:9px;min-height:48px;padding:10px 13px;border:1px solid rgba(195,218,228,.9);border-radius:15px;background:rgba(255,255,255,.82);box-shadow:0 12px 26px rgba(35,81,111,.09);backdrop-filter:blur(14px);color:#29445e;font-size:12px;font-weight:650}
+.passport-signal{display:flex;align-items:center;gap:9px;min-height:42px;padding:8px 11px;border:1px solid #d9e1e3;border-radius:8px;background:#fff;box-shadow:none;backdrop-filter:none;color:#29445e;font-size:12px;font-weight:600}
 .passport-signal:before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#36a5c7;box-shadow:0 0 0 4px rgba(54,165,199,.12)}
 .passport-signal:nth-child(2):before{background:#438f72;box-shadow:0 0 0 4px rgba(67,143,114,.12)}
 .passport-signal:nth-child(3):before{background:#d59b32;box-shadow:0 0 0 4px rgba(213,155,50,.12)}
@@ -375,7 +372,7 @@ button,input{font:inherit}.app{display:flex;min-height:100vh;flex-direction:colu
 @media(max-width:520px){.passport-hero__signals{grid-template-columns:1fr}.passport-signal{min-height:42px}.passport-hero__visual{aspect-ratio:auto}.passport-hero__art{height:auto}}
 @media(prefers-reduced-motion:reduce){.passport-hero__art,.auth-visual__art{animation:none}}
 
-.landing__terms h2{margin-top:14px;font-weight:650;letter-spacing:-.035em;line-height:1.3}.landing__section-note{font-size:12px;color:#637d89;white-space:nowrap}.landing__terms-cta a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:99px;background:#173c4d;color:white}.landing__terms-cta a:focus-visible{outline:3px solid #329dbc;outline-offset:4px}.landing__passport{transform:none}.landing__passport-head{padding-right:65px}.landing__passport:hover{transform:translateY(-3px)}
+.landing__terms h2{margin-top:14px;font-weight:600;letter-spacing:0;line-height:1.35}.landing__section-note{font-size:12px;color:#637d89;white-space:nowrap}.landing__terms-cta a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:8px;background:#173c4d;color:white}.landing__terms-cta a:focus-visible{outline:3px solid #329dbc;outline-offset:4px}.landing__passport{transform:none}.landing__passport-head{padding-right:65px}.landing__passport:hover{transform:translateY(-2px)}
 @media(max-width:760px){.landing__section-note{display:none}.landing__terms-cta{align-items:stretch;padding:16px;gap:14px}.landing__terms-cta a{justify-content:center}.landing__terms h2{font-size:32px}}
 @media(prefers-reduced-motion:reduce){.landing__passport{transition:none}.landing__passport:hover{transform:none}}
 /* Airier Traditional Chinese typography, including native form controls. */
@@ -385,15 +382,67 @@ button,input,select,textarea{font-family:inherit}
 .journey-stage h3,.journey-step b{font-weight:600;letter-spacing:0}
 .landing__lead,.landing__terms p{font-weight:400;line-height:1.85}
 .landing__actions a,.landing__terms-cta a,.landing__passport-head b,.landing__passport-link{font-weight:600}
+.mjsse-affiliation{display:grid;grid-template-columns:160px minmax(0,1fr) auto;align-items:center;gap:28px;margin:44px auto 8px;padding:27px 30px;border:1px solid #d1e2e8;border-radius:24px;background:linear-gradient(112deg,#edf7fa,#fff 56%,#f1f7f2);box-shadow:0 18px 44px rgba(26,72,92,.07)}
+.mjsse-affiliation__logo{display:grid;place-items:center;min-height:105px;background:#fff;border:1px solid #e7eef0;border-radius:17px;padding:10px}.mjsse-affiliation__logo img{display:block;width:100%;height:auto;object-fit:contain}
+.mjsse-affiliation__eyebrow{color:#1d7692;font-size:11px;font-weight:850;letter-spacing:.13em}.mjsse-affiliation h2{margin:4px 0 7px;color:#17384b;font-size:clamp(21px,2.7vw,29px);letter-spacing:-.035em;line-height:1.3}.mjsse-affiliation p{margin:0;color:#536d79;font-size:14px;line-height:1.7;max-width:650px}
+.mjsse-affiliation__steps{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}.mjsse-affiliation__steps span{padding:5px 10px;border-radius:99px;background:#fff;border:1px solid #d8e7e9;color:#315c6d;font-size:12px;font-weight:750}.mjsse-affiliation__link{white-space:nowrap;text-decoration:none;color:#fff;background:#173f54;padding:12px 15px;border-radius:12px;font-size:13px;font-weight:750}.mjsse-affiliation__link:hover{background:#1d7692}
+.site-footer__association{display:flex;align-items:center;gap:11px;margin-right:auto;color:#526c78;font-size:12px;line-height:1.4}.site-footer__association img{width:55px;height:31px;object-fit:contain;background:#fff;border-radius:5px}
+@media(max-width:760px){.mjsse-affiliation{grid-template-columns:88px minmax(0,1fr);gap:16px;margin-top:28px;padding:18px}.mjsse-affiliation__logo{min-height:66px;padding:6px}.mjsse-affiliation__link{grid-column:1/-1;text-align:center}.site-footer__association{width:100%;margin-bottom:4px}}
+/* Product UI: one restrained visual language across customer screens. */
+:root{--radius:12px;--shadow:0 2px 8px rgba(18,23,28,.035)}
+.card{border-radius:12px;box-shadow:var(--shadow)}
+.primary{background:#173c4d;border-radius:8px}
+.secondary{border-radius:8px}
+.iconbtn{border-radius:8px;background:#173c4d}
+.landing{background:#f7f8f8}
+.passport-hero{display:block;min-height:0;padding:clamp(46px,7vw,78px) 24px;background:#f5f7f7}
+.passport-hero:before,.passport-hero:after,.passport-hero__visual:before{content:none}
+.passport-hero__copy{max-width:980px;margin:0 auto}
+.passport-hero__copy h1{font-weight:600;letter-spacing:0;line-height:1.2}
+.landing__actions a{border-radius:8px;font-weight:600}
+.landing__terms{padding-top:58px}
+.landing__terms:before{content:none}
+.journey-flow{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:25px;padding:0}
+.journey-flow__rail{display:none}
+.journey-stage__node{width:30px;height:30px;margin:0 0 14px;border:0;border-radius:6px;background:#e5efed;color:#315e55;box-shadow:none;font-size:12px}
+.journey-stage__card{min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.journey-stage:hover .journey-stage__card{transform:none;border-color:transparent;box-shadow:none}
+.journey-stage__eyebrow{font-size:11px;letter-spacing:.03em}
+.journey-stage h3{min-height:0;margin:7px 0 8px;font-size:18px}
+.journey-stage__card p{margin:0;color:#5e6c71;font-size:14px;line-height:1.65}
+.landing__passport{border-radius:12px;box-shadow:0 4px 16px rgba(24,57,65,.07);transform:none}
+.landing__passport:after{content:none}
+.landing__passport:hover{transform:none;box-shadow:0 4px 16px rgba(24,57,65,.07)}
+.landing__passport-car{border-radius:8px}
+.landing__status{border-radius:8px}
+.mjsse-affiliation{grid-template-columns:130px minmax(0,1fr) auto;gap:22px;padding:22px 24px;border-radius:10px;background:#fff;box-shadow:none}
+.mjsse-affiliation__logo{min-height:88px;border-radius:6px}
+.mjsse-affiliation__steps{display:none}
+.mjsse-affiliation__link{border-radius:7px;font-weight:650}
+.onboarding__top{margin-bottom:22px}
+.onboarding__hero{display:block;min-height:0;border:1px solid #dce3e4;border-radius:12px;background:#fff;box-shadow:none;color:#17242a}
+.onboarding__hero:after{content:none}
+.onboarding__copy{padding:30px}
+.onboarding__step{border-radius:6px;border-color:#dce3e4;color:#425960}
+.onboarding__copy h2{letter-spacing:0}
+.onboarding__copy p{color:#5e6c71}
+.onboarding__actions .primary{background:#173c4d;color:#fff;border-radius:8px}
+.onboarding__passport,.onboarding__steps{display:none}
+.empty-state__visual{display:none}
+.auth-visual{display:none}
+.nav{border-radius:10px;box-shadow:0 4px 14px rgba(20,25,30,.09);backdrop-filter:none}
+.site-footer__links a{border-radius:7px}
+@media(max-width:760px){.passport-hero{padding:40px 20px 34px}.journey-flow{grid-template-columns:1fr;gap:20px;padding-left:42px}.journey-stage__node{position:absolute;left:-42px;top:0;width:28px;height:28px;margin:0}.journey-stage__card{padding:0}.landing__terms{padding-top:42px}.mjsse-affiliation{grid-template-columns:70px minmax(0,1fr);gap:14px}.mjsse-affiliation__logo{min-height:58px;padding:5px}.mjsse-affiliation__link{grid-column:1/-1;text-align:center}}
 </style>
 </head>
 <body>
 <div class="app">
 
 <header class="kc-topbar">
-  <a class="kc-topbar__brand" href="#/landing" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="assets/icons/booundless-car.png" width="36" height="34" alt=""><b>BOOUNDLESS</b></a>
+  <a class="kc-topbar__brand" href="#/landing" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="assets/icons/booundless-car.png" width="36" height="34" alt=""><b>無界啟程</b></a>
   <nav class="kc-topbar__nav">
     <a href="#/landing" data-nav="landing">首頁</a>
+    <a href="qinao-guide.html" target="_blank" rel="noopener">琴澳自駕指南</a>
     <a href="#/shop" data-nav="shop">訂購</a>
     <a href="#/garage" data-nav="garage">我的車</a>
     <a href="#/profile" data-nav="profile">我的</a>
@@ -406,36 +455,30 @@ button,input,select,textarea{font-family:inherit}
 <div class="kc-content">
 <section class="screen" id="landing">
   <main class="landing">
-    <section class="passport-hero" aria-label="從車輛資料建立車輛護照，再匹配合適車行">
+    <section class="passport-hero" aria-label="無界啟程車輛資料與保養記錄">
       <div class="passport-hero__copy">
-        <span class="landing__eyebrow">BOOUNDLESS CAR PASSPORT</span>
+        <span class="landing__eyebrow">無界啟程 · 車輛管理</span>
         <h1>建立你的<br><em>車輛護照</em></h1>
-        <p class="landing__lead">把車況、保養紀錄和下一步，放進一張清楚易懂的車輛護照。再幫你匹配合適的車行，讓每次保養都有方向。</p>
-        <p class="landing__note">由照片辨識或手動輸入開始，幾分鐘內整理好你的車。</p>
-        <div class="landing__actions"><a class="landing__primary" href="#/demo">查看示範車輛護照</a><a class="landing__secondary" href="#/home">探索 CarAI</a></div>
-      </div>
-      <div class="passport-hero__visual" aria-label="車輛資料建立數碼護照，並連接合適車行的示意圖">
-        <img class="passport-hero__art" src="assets/vehicle-passport-hero-v2.png" width="1536" height="1024" alt="深藍色汽車、數碼車輛護照與服務車行">
-        <div class="passport-hero__signals" aria-hidden="true">
-          <span class="passport-signal">AI 車況辨識</span>
-          <span class="passport-signal">保養紀錄已整理</span>
-          <span class="passport-signal">匹配合適車行</span>
-        </div>
+        <p class="landing__lead">記錄車款、里程和保養日期，查看待辦提醒。需要維修時，可按車款和服務項目查看車行資料。</p>
+        <p class="landing__note">資料可手動輸入；照片辨識結果會先讓你確認。</p>
+        <div class="landing__actions"><a class="landing__primary" href="#/demo">查看車輛記錄示範</a><a class="landing__secondary" href="#/home">建立車輛記錄</a></div>
       </div>
     </section>
     <div class="wrap">
       <section class="landing__terms" aria-labelledby="landingTermsTitle">
-        <div class="landing__terms-head"><div><span class="sheet__eyebrow">YOUR CAR, IN CONTEXT</span><h2 id="landingTermsTitle">關於你的車，<br>都在一本護照裡。</h2><p>從認識愛車，到找到合適車行。8 個關鍵詞，串起每一步。</p></div><span class="landing__section-note">01 — 04 / 用車旅程</span></div>
-        <div class="journey-flow" id="journeyFlow" aria-label="由建立車輛資料到連接服務的四步流程">
-          <div class="journey-flow__rail" aria-hidden="true"><span class="journey-flow__fill"></span><i class="journey-flow__pulse"></i></div>
-          <article class="journey-stage"><div class="journey-stage__node">01</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">建立資料</span><h3>先認識你的車</h3><div class="journey-stage__steps"><div class="journey-step"><span>01</span><b>車款識別</b></div><div class="journey-step"><span>02</span><b>保養紀錄</b></div></div><p>車輛身份與過往紀錄，集中保存。</p></div></article>
-          <article class="journey-stage"><div class="journey-stage__node">02</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">掌握車況</span><h3>知道何時該保養</h3><div class="journey-stage__steps"><div class="journey-step"><span>03</span><b>目前里程</b></div><div class="journey-step"><span>04</span><b>車況提醒</b></div></div><p>從里程到保養項目，清楚掌握。</p></div></article>
-          <article class="journey-stage"><div class="journey-stage__node">03</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">輕鬆整理</span><h3>用你習慣的方式</h3><div class="journey-stage__steps"><div class="journey-step"><span>05</span><b>AI 辨識</b></div><div class="journey-step"><span>06</span><b>手動填寫</b></div></div><p>上傳照片，或親手補上車輛資料。</p></div></article>
-          <article class="journey-stage"><div class="journey-stage__node">04</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">連接服務</span><h3>找到合適的車行</h3><div class="journey-stage__steps"><div class="journey-step"><span>07</span><b>匹配車行</b></div><div class="journey-step"><span>08</span><b>服務請求</b></div></div><p>由車輛需要，連接相應服務。</p></div></article>
+        <div class="landing__terms-head"><div><span class="sheet__eyebrow">使用方式</span><h2 id="landingTermsTitle">車輛資料和保養紀錄，集中在一起。</h2><p>先建立車輛資料，再逐次補上保養紀錄；沒有紀錄的項目會標示為未知。</p></div><span class="landing__section-note">車主使用流程</span></div>
+        <div class="journey-flow" id="journeyFlow" aria-label="新增車輛、記錄保養和查看服務的三個步驟">
+          <article class="journey-stage"><div class="journey-stage__node">01</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">新增車輛</span><h3>輸入車款和里程</h3><p>可手動填寫，亦可用照片協助辨識。儲存前請核對資料。</p></div></article>
+          <article class="journey-stage"><div class="journey-stage__node">02</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">記錄保養</span><h3>補上日期和服務項目</h3><p>查看已記錄的保養項目；未有資料時會顯示「狀態未知」。</p></div></article>
+          <article class="journey-stage"><div class="journey-stage__node">03</div><div class="journey-stage__card"><span class="journey-stage__eyebrow">查看車行</span><h3>確認服務是否適用</h3><p>查看車行提供的服務範圍，預約前直接向車行確認車款和報價。</p></div></article>
         </div>
-        <div class="landing__terms-cta"><span>8 個資料點，匯成 1 張車輛護照</span><a href="#/demo">探索示範護照 <span aria-hidden="true">→</span></a></div>
       </section>
-      <button class="landing__passport" type="button" onclick="window.location.hash='#/demo'" aria-label="開啟 Toyota Corolla Cross 示範車輛護照"><div class="landing__passport-head"><img class="landing__passport-mark" src="assets/icons/booundless-car.png" alt=""><div><b>示範車輛護照</b><small>由現有 Toyota Corolla Cross 展示</small></div></div><img class="landing__passport-car" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>機油及機油隔 · 接近建議保養時間</div><span class="landing__passport-link">查看車輛護照 <span aria-hidden="true">→</span></span></button>
+      <button class="landing__passport" type="button" onclick="window.location.hash='#/demo'" aria-label="開啟示範車輛資料"><div class="landing__passport-head"><img class="landing__passport-mark" src="assets/icons/booundless-car.png" alt=""><div><b>示範車輛資料</b><small>示範內容，非實際車況判斷</small></div></div><img class="landing__passport-car" src="assets/vehicle-toyota.jpg" alt="Toyota Corolla Cross 示範車輛"><div class="landing__passport-model"><div><h2>Toyota Corolla Cross</h2><small>2021 · Hybrid</small></div><b>42,680 km</b></div><div class="landing__status"><i></i>示例提醒：機油及機油隔接近建議保養時間</div><span class="landing__passport-link">查看示範記錄 <span aria-hidden="true">→</span></span></button>
+      <aside class="mjsse-affiliation" aria-labelledby="mjsseAffiliationTitle">
+        <a class="mjsse-affiliation__logo" href="https://mjsseya.org/" target="_blank" rel="noopener" aria-label="前往澳門聯校科學展覽青年協會官方網站"><img src="assets/icons/mjsseya-logo.png" width="213" height="119" alt="澳門聯校科學展覽青年協會標誌 MJSSEYA"></a>
+        <div><span class="mjsse-affiliation__eyebrow">項目背景</span><h2 id="mjsseAffiliationTitle">由澳門聯校科學展覽青年協會推動</h2><p>無界啟程 BOOUNDLESS 是協會的青年科創實踐項目，提供車輛資料、保養紀錄及琴澳自駕資訊。</p></div>
+        <a class="mjsse-affiliation__link" href="https://mjsseya.org/" target="_blank" rel="noopener">認識協會 <span aria-hidden="true">↗</span></a>
+      </aside>
     </div>
   </main>
 </section>
@@ -443,27 +486,22 @@ button,input,select,textarea{font-family:inherit}
   <div class="wrap">
     <section class="onboarding" id="homeOnboarding" aria-labelledby="homeGreeting">
       <div class="onboarding__top">
-        <div><span class="onboarding__eyebrow">歡迎來到 BOOUNDLESS</span><h1 id="homeGreeting">你好</h1><p>先建立你的第一本車輛護照，之後的保養提醒與車行匹配都會更準確。</p></div>
+        <div><span class="onboarding__eyebrow">無界啟程</span><h1 id="homeGreeting">你好</h1><p>建立車輛資料後，可記錄里程和保養項目。</p></div>
         <button class="iconbtn" id="addCarBtn" aria-label="新增車輛">＋</button>
       </div>
       <div class="onboarding__hero">
         <div class="onboarding__copy">
-          <span class="onboarding__step">第一步 · 建立車輛護照</span>
-          <h2>讓每一次保養，<br>都有完整脈絡。</h2>
-          <p>拍一張愛車照片讓 CarAI 協助辨識，或直接手動填寫。你可以隨時更正資料。</p>
-          <div class="onboarding__actions"><button class="primary" id="onboardingAddVehicleBtn">開始建立車輛護照 <span>→</span></button><small>約 2 分鐘完成</small></div>
-        </div>
-        <div class="onboarding__passport" aria-hidden="true">
-          <div class="onboarding__orb"><svg viewBox="0 0 240 145" fill="none"><path d="M29 86h181l-9-31-32-12-24-25H96L67 49 39 56z" fill="#0b3979"/><path d="M97 23h45l20 22H77z" fill="#eaf4ff"/><rect x="24" y="82" width="192" height="26" rx="10" fill="#0b3979"/><circle cx="69" cy="107" r="23" fill="#0b3979"/><circle cx="69" cy="107" r="14" fill="white"/><circle cx="176" cy="107" r="23" fill="#0b3979"/><circle cx="176" cy="107" r="14" fill="white"/></svg></div>
-          <b>車輛護照</b><span>YOUR CAR, IN CONTEXT</span><i></i><small>BOOUNDLESS</small>
+          <span class="onboarding__step">車輛資料</span>
+          <h2>新增第一輛車</h2>
+          <p>輸入車款和里程，或用照片協助填寫。所有辨識結果都可在儲存前修改。</p>
+          <div class="onboarding__actions"><button class="primary" id="onboardingAddVehicleBtn">新增車輛</button></div>
         </div>
       </div>
-      <div class="onboarding__steps" aria-label="建立車輛護照流程"><div><span>01</span><b>選車輛類別</b><small>建立正確保養範圍</small></div><div><span>02</span><b>選能源</b><small>燃油、純電或油電</small></div><div><span>03</span><b>確認品牌</b><small>縮小車型範圍</small></div><div><span>04</span><b>AI 協助辨識</b><small>最後確認再建立</small></div></div>
     </section>
 
     <div class="home-dashboard" id="homeDashboard" hidden>
     <div class="top">
-      <div><h1 id="homeGreeting">你好</h1><p>康程只告訴你現在最重要的事。</p></div>
+      <div><h1 id="homeGreeting">你好</h1><p>查看車輛資料、保養紀錄和待辦提醒。</p></div>
       <button class="iconbtn" id="addCarBtn">＋</button>
     </div>
 
@@ -471,12 +509,12 @@ button,input,select,textarea{font-family:inherit}
       <div class="card vehicle">
         <div class="vehicle-photo"><img src="assets/vehicle-placeholder-ai.png" alt="你的車輛照片"></div>
         <div class="vehicle-body">
-          <div class="eyebrow">YOUR CAR PASSPORT</div>
+          <div class="eyebrow">車輛資料</div>
           <h2>尚未建立車輛</h2>
           <div class="meta">登入後新增你的第一台車</div>
           <div class="status">
             <h3>建立你的第一台車</h3>
-            <p>CarAI 會從照片或手動資料開始，幫你整理車況與保養紀錄。</p>
+            <p>輸入車款和里程，之後逐次補上保養日期與服務項目。</p>
           </div>
           <button class="primary" id="homeAddVehicleBtn">新增車輛</button>
           <button class="secondary" data-go="car">查看我的車</button>
@@ -489,9 +527,9 @@ button,input,select,textarea{font-family:inherit}
           <div class="row visual-row"><span class="record-copy"><b>載入中…</b><small>正在取得最近保養紀錄</small></span></div>
         </div>
         <div class="feature-grid">
-          <button class="feature-link" type="button" data-route="service"><b>保養與服務</b><small>查看提醒並詢問 CarAI</small></button>
-          <button class="feature-link" type="button" data-route="qinao"><b>琴澳行程</b><small>規劃路線與出發檢查</small></button>
-          <button class="feature-link" type="button" data-route="videos"><b>影片</b><small>快速了解保養重點</small></button>
+          <button class="feature-link" type="button" data-route="service"><b>保養與服務</b><small>查看紀錄和待辦提醒</small></button>
+          <button class="feature-link" type="button" data-route="qinao"><b>琴澳行程</b><small>儲存澳門與橫琴行程</small></button>
+          <button class="feature-link" type="button" data-route="videos"><b>保養影片</b><small>查看車輛保養與安全資訊</small></button>
         </div>
       </div>
     </div>
@@ -517,7 +555,7 @@ button,input,select,textarea{font-family:inherit}
     </div>
 
     <div class="mycar-list" id="mycarList">
-      <div class="empty-state empty-state--garage"><img class="empty-state__visual" src="assets/garage-empty-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="白色車輛與數碼車輛護照"><b>你還未建立車輛護照</b><small>登入後新增你的第一台車，開始整理車況與保養紀錄。</small></div>
+      <div class="empty-state empty-state--garage"><b>尚未新增車輛</b><small>新增車款和目前里程，之後可補上保養紀錄。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>
     </div>
   </div>
 </section>
@@ -538,8 +576,8 @@ button,input,select,textarea{font-family:inherit}
       <div class="row"><span><b>火花塞</b><small>尚未接近週期</small></span><span class="state ok">正常</span></div>
       <div class="row"><span><b>塵格</b><small>4 個月前更換</small></span><span class="state ok">正常</span></div>
     </div>
-    <button class="primary" id="detailFixBtn">幫我搞掂需要處理的項目</button>
-    <button class="secondary" id="dealerMatchBtn" type="button">查看車商服務配對</button>
+    <button class="primary" id="detailFixBtn">查看可提供服務的車行</button>
+    <button class="secondary" id="dealerMatchBtn" type="button">查看車行服務範圍</button>
     <div class="section-title">保養紀錄</div>
     <div class="card list records" id="detailRecords">
       <div class="row"><span class="record-copy"><b>載入中…</b><small>正在取得保養紀錄</small></span></div>
@@ -549,9 +587,9 @@ button,input,select,textarea{font-family:inherit}
 
 <section class="screen" id="service">
   <div class="wrap">
-    <div class="top"><div><h1>保養與服務</h1><p>先處理最重要的車況。</p></div></div>
+    <div class="top"><div><h1>保養與服務</h1><p>查看已記錄的保養項目和下一次提醒。</p></div></div>
     <div class="card list" id="serviceList"><div class="row"><b>載入中…</b></div></div>
-    <div class="section-title">問 CarAI</div>
+    <div class="section-title">保養建議</div>
     <form class="card form-card" id="serviceAiForm">
       <div class="form-grid"><div class="field"><label>車輛</label><select id="serviceVehicle"></select></div><div class="field"><label>問題</label><input id="serviceQuestion" value="我應該先處理甚麼？"></div></div>
       <button class="primary" type="submit">取得保養建議</button><div class="ai-result" id="serviceAiResult"></div>
@@ -561,29 +599,29 @@ button,input,select,textarea{font-family:inherit}
 
 <section class="screen" id="qinao">
   <div class="wrap">
-    <div class="top"><div><h1>琴澳行程</h1><p>儲存行程，出發前讓 CarAI 幫你檢查。</p></div></div>
+    <div class="top"><div><h1>琴澳行程</h1><p>儲存澳門與橫琴之間的行程，出發前查看路線建議。</p></div></div>
     <form class="card form-card" id="tripForm"><div class="form-grid">
       <div class="field"><label>行程名稱</label><input id="tripTitle" required placeholder="週末琴澳遊"></div>
       <div class="field"><label>車輛</label><select id="tripVehicle"></select></div>
       <div class="field"><label>出發地</label><input id="tripOrigin" required value="澳門"></div>
       <div class="field"><label>目的地</label><input id="tripDestination" required value="橫琴"></div>
-    </div><button class="primary" type="submit">儲存行程</button><button class="secondary" type="button" id="tripAiBtn">請 CarAI 規劃</button><div class="ai-result" id="tripAiResult"></div></form>
+    </div><button class="primary" type="submit">儲存行程</button><button class="secondary" type="button" id="tripAiBtn">取得路線建議</button><div class="ai-result" id="tripAiResult"></div></form>
     <div class="section-title">已儲存行程</div><div class="card list" id="tripList"><div class="row"><b>載入中…</b></div></div>
   </div>
 </section>
 
 <section class="screen" id="videos">
-  <div class="wrap"><div class="top"><div><h1>影片</h1><p>快速掌握保養與安全檢查。</p></div></div><div class="video-grid" id="videoList"><div class="card video-card"><b>載入中…</b></div></div></div>
+    <div class="wrap"><div class="top"><div><h1>保養影片</h1><p>車輛保養與安全檢查資訊。</p></div></div><div class="video-grid" id="videoList"><div class="card video-card"><b>載入中…</b></div></div></div>
 </section>
 
 <section class="screen" id="profile">
   <div class="wrap">
-    <div class="top"><div><h1>我的</h1><p>只保留必要設定。</p></div></div>
+    <div class="top"><div><h1>我的帳戶</h1><p>查看帳戶資料、服務訂單和通知設定。</p></div></div>
     <div class="card profile-card profile-hero">
       <div class="profile-hero__copy">
-        <span class="profile-hero__eyebrow" id="profileRoleEyebrow">YOUR VEHICLE INFORMATION</span>
+        <span class="profile-hero__eyebrow" id="profileRoleEyebrow">帳戶資料</span>
         <h2 id="profileDisplayName">你的帳戶</h2>
-        <p id="profileVehicleSummary">登入後查看你的車輛護照</p>
+        <p id="profileVehicleSummary">登入後查看你的車輛與服務資料</p>
         <div class="profile-hero__stats" id="profileHeroStats">
           <div class="profile-stat"><span class="profile-stat__num" id="profileStatVehicles">—</span><span class="profile-stat__label">車輛</span></div>
           <div class="profile-stat"><span class="profile-stat__num" id="profileStatHistory">—</span><span class="profile-stat__label">保養紀錄</span></div>
@@ -596,13 +634,13 @@ button,input,select,textarea{font-family:inherit}
     <div class="card list">
       <a class="row" href="#/requests"><span><b>服務請求、報價與預約</b><small>建立新請求、查看報價、預約時段</small></span><span>›</span></a>
       <a class="row" href="#/orders"><span><b>我的訂單</b><small>進行中與已完成的服務</small></span><span>›</span></a>
-      <a class="row" href="#/landing"><span><b>車輛護照</b><small>查看保養與里程紀錄</small></span><span>›</span></a>
+      <a class="row" href="#/garage"><span><b>我的車輛</b><small>查看車款、里程與保養紀錄</small></span><span>›</span></a>
     </div>
     <div class="section-title">設定</div>
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="家庭 / 多車"><span><b>家庭 / 多車</b><small>需要時再開啟</small></span><span>›</span></button>
-      <button class="row profile-action" type="button" data-profile-action="支援"><span><b>支援</b><small>聯絡康程</small></span><span>›</span></button>
+      <button class="row profile-action" type="button" data-profile-action="支援"><span><b>支援</b><small>聯絡 BOOUNDLESS 團隊</small></span><span>›</span></button>
       <button class="row profile-action" type="button" id="profileExportBtn" data-requires-auth><span><b>下載我的資料</b><small>JSON 副本 · 依隱私政策</small></span><span>↓</span></button>
       <button class="row profile-action profile-action--danger" type="button" id="profileDeleteBtn" data-requires-auth><span><b>刪除我的帳號</b><small>將永久停用並去識別化</small></span><span>›</span></button>
     </div>
@@ -629,7 +667,9 @@ button,input,select,textarea{font-family:inherit}
 <footer class="site-footer">
   <div class="site-footer__inner">
     <span class="site-footer__brand">© 2026 無界啟程 BOOUNDLESS</span>
+    <a class="site-footer__association" href="https://mjsseya.org/" target="_blank" rel="noopener"><img src="assets/icons/mjsseya-logo.png" alt="澳門聯校科學展覽青年協會 MJSSEYA"><span>澳門聯校科學展覽青年協會<br>青年科創實踐</span></a>
     <nav class="site-footer__links" aria-label="法律資訊">
+      <a href="qinao-guide.html" target="_blank" rel="noopener">琴澳自駕指南</a>
       <a href="/legal/privacy.html" rel="noopener">隱私</a>
       <a href="/legal/terms.html" rel="noopener">條款</a>
     </nav>
@@ -666,8 +706,8 @@ function appDialog(message, mode='notice') {
     dialog.append(form);dialog.onclose=()=>{dialog.remove();previous?.focus();resolve(value);};document.body.append(dialog);dialog.showModal();if(mode==='input')input.focus();
   });
 }
-/* 康程 CarAI — live data hydration.
-   Pulls vehicles + reminders from /api/* (SQLite-backed) and rewrites the
+/* BOOUNDLESS customer data hydration.
+   Pulls vehicles + reminders from /api/* (PostgreSQL-backed) and rewrites the
    hardcoded Home card, Car list, and Detail screen content. The original
    JS (addCarFlow, showScreen, etc.) keeps working — we only override
    openCarDetail and rewrite the list markup. */
@@ -736,7 +776,7 @@ function appDialog(message, mode='notice') {
   let newVehicleImageData = '';
   let newDashboardImageData = '';
   const showVehicleOnboardingCompletion = (vehicle) => {
-    openSheet(`<div class="sheet--vehicle onboarding-sheet"><div class="sheet__header"><span class="sheet__eyebrow">車輛護照已建立</span><button class="sheet__close" type="button" data-close-sheet aria-label="關閉">×</button></div><div class="onboard-complete"><div class="onboard-complete__mark">✓</div><h2>${esc(vehicle.model || '你的車')} 的護照已準備好</h2><p>身份資料已儲存。下一步只需告訴我們你是否有近期保養紀錄；沒有也沒關係，我們會標示為待建立基準，而不會假設車況。</p><div class="onboard-complete__choices"><button type="button" class="onboard-complete__choice" data-onboarding-state="history_pending" data-vehicle-id="${esc(vehicle.id)}"><span><b>我有近期保養資料</b><small>下一次可補上日期、里程及服務項目。</small></span><strong>→</strong></button><button type="button" class="onboard-complete__choice" data-onboarding-state="baseline_pending" data-vehicle-id="${esc(vehicle.id)}"><span><b>暫時沒有，先建立基準</b><small>護照會標記待檢查，不會自行判斷任何零件狀態。</small></span><strong>→</strong></button></div><button class="secondary" type="button" data-onboarding-state="ready" data-vehicle-id="${esc(vehicle.id)}">稍後再說，前往我的車</button><div class="ai-result" id="onboardingCompletionResult"></div></div></div>`);
+    openSheet(`<div class="sheet--vehicle onboarding-sheet"><div class="sheet__header"><span class="sheet__eyebrow">車輛資料已建立</span><button class="sheet__close" type="button" data-close-sheet aria-label="關閉">×</button></div><div class="onboard-complete"><div class="onboard-complete__mark">✓</div><h2>${esc(vehicle.model || '你的車')} 已加入</h2><p>目前沒有保養紀錄時，系統會將狀態標示為未知。你可現在補上近期紀錄，或之後再新增。</p><div class="onboard-complete__choices"><button type="button" class="onboard-complete__choice" data-onboarding-state="history_pending" data-vehicle-id="${esc(vehicle.id)}"><span><b>稍後補上保養紀錄</b><small>新增日期、里程及服務項目。</small></span><strong>→</strong></button><button type="button" class="onboard-complete__choice" data-onboarding-state="baseline_pending" data-vehicle-id="${esc(vehicle.id)}"><span><b>目前沒有紀錄</b><small>車況會標示為未知，直到新增保養或檢查資料。</small></span><strong>→</strong></button></div><button class="secondary" type="button" data-onboarding-state="ready" data-vehicle-id="${esc(vehicle.id)}">稍後處理，前往我的車</button><div class="ai-result" id="onboardingCompletionResult"></div></div></div>`);
   };
   let agentThreadId = null;
   let pendingAgentConfirmation = null;
@@ -802,7 +842,7 @@ function appDialog(message, mode='notice') {
       } else if (state.step === 2) {
         content = `<span class="sheet__eyebrow">2 / 4 · 決定保養範圍</span><h2>你的車用什麼能源？</h2><p>不用知道電池容量、引擎編號或排量；這些會在確認車型後補上。</p><div class="onboard-power-grid">${powertrains.map(([id,name,detail]) => `<button type="button" class="onboard-power ${state.powertrain === id ? 'selected' : ''}" data-powertrain="${id}"><b>${name}</b><small>${detail}</small></button>`).join('')}</div><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
       } else if (state.step === 3) {
-        content = `<span class="sheet__eyebrow">3 / 4 · 幫助辨識車型</span><h2>你的車是什麼品牌？</h2><p>選擇品牌可讓 CarAI 更快縮小車型範圍。找不到也沒關係。</p><div class="onboard-brand-grid">${brands.map(name => `<button type="button" class="onboard-brand ${state.make === name ? 'selected' : ''}" data-brand="${name}">${name}</button>`).join('')}</div><label class="field"><span>或手動輸入品牌後按 Enter</span><input id="onboardMake" placeholder="例如 Mazda" value="${state.make === '其他' ? '' : esc(state.make)}"></label><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
+        content = `<span class="sheet__eyebrow">3 / 4 · 車輛品牌</span><h2>你的車是什麼品牌？</h2><p>選擇品牌以縮小車款選項；找不到時可手動輸入。</p><div class="onboard-brand-grid">${brands.map(name => `<button type="button" class="onboard-brand ${state.make === name ? 'selected' : ''}" data-brand="${name}">${name}</button>`).join('')}</div><label class="field"><span>或手動輸入品牌後按 Enter</span><input id="onboardMake" placeholder="例如 Mazda" value="${state.make === '其他' ? '' : esc(state.make)}"></label><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
       } else {
         content = renderStep4();
       }
@@ -817,7 +857,7 @@ function appDialog(message, mode='notice') {
 
     const renderStep4 = () => {
       if (state.captureStep === 'analysis') {
-        return `<span class="sheet__eyebrow">4 / 4 · AI 處理中</span><div class="analysis-stage"><div class="ai-orb">AI</div><h2>正在了解你的車</h2><p>結合你的選擇、照片與可讀取資料，自動建立 Vehicle Scope。</p><div class="ai-steps"><div class="ai-step" id="aiStep1"><span class="ai-tick">1</span><b>確認品牌與候選車型</b></div><div class="ai-step" id="aiStep2"><span class="ai-tick">2</span><b>辨識年份與能源版本</b></div><div class="ai-step" id="aiStep3"><span class="ai-tick">3</span><b>讀取目前里程</b></div><div class="ai-step" id="aiStep4"><span class="ai-tick">4</span><b>建立部件與保養 Scope</b></div></div><p class="analysis-note">AI 不確定的資料會留待你確認，不會直接當成事實。</p></div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}">`;
+        return `<span class="sheet__eyebrow">照片辨識</span><div class="analysis-stage"><h2>正在讀取照片</h2><p>我們會嘗試填入車款或里程。辨識結果可能不完整，下一步可逐項修改。</p><div class="analysis-note">沒有提供照片的欄位會留空，並可手動輸入。</div></div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}">`;
       }
       if (state.captureStep === 'confirm') {
         const aiV = state.aiVehicle?.vehicle || state.aiVehicle || {};
@@ -829,11 +869,11 @@ function appDialog(message, mode='notice') {
         const initialYear = aiV.year || '';
         const initialMileage = aiD.mileage_km != null ? String(aiD.mileage_km) : '';
         const initialPlate = aiV.plate || '';
-        const matchText = state.aiVehicle ? 'AI Match · 96%' : (state.carFile ? 'AI Match · 處理中' : '待確認');
+        const matchText = state.aiVehicle ? '照片辨識結果' : (state.carFile ? '照片處理中' : '資料待確認');
         const showPhoto = !!state.carDataUrl;
         const titleText = ((initialBrand + ' ' + initialModel).trim()) || '未確認車型';
         const metaText = `${initialYear || '年份待確認'} · ${initialEnergy}`;
-        return `<span class="sheet__eyebrow">4 / 4 · 最後確認</span><h2>我們找到你的車了</h2><p>以下資料已由 AI 預填。直接在欄位內修改即可；正確的資料不用再操作。</p><form id="addVehicleForm"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="confirm-grid"><aside class="vehicle-preview"><div><div class="match-pill">${esc(matchText)}</div><h3 id="previewTitle">${esc(titleText)}</h3><p id="previewMeta">${esc(metaText)}</p></div><div class="vehicle-image ${showPhoto ? 'has-photo' : ''}" id="vehicleImage"><img id="confirmPhoto" alt="確認車輛照片" src="${esc(state.carDataUrl)}" class="${showPhoto ? 'show' : ''}"><svg viewBox="0 0 340 170" fill="none"><path d="M53 99h231l-13-37-41-12-30-30h-82L79 55 57 66z" fill="#1b2730"/><path d="M121 31h72l26 23H96z" fill="#dfe7eb"/><rect x="47" y="95" width="245" height="28" rx="10" fill="#1b2730"/><circle cx="103" cy="124" r="27" fill="#1b2730"/><circle cx="103" cy="124" r="15" fill="#fff"/><circle cx="236" cy="124" r="27" fill="#1b2730"/><circle cx="236" cy="124" r="15" fill="#fff"/></svg></div></aside><div><div class="form-panel"><div class="form-panel-head"><div><h4>確認資料</h4><p>資料已預填，直接修改有錯的欄位。</p></div><span class="auto-pill">AI 已預填</span></div><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleClass">車輛類別 <span class="field-confidence">已確認</span></label><select id="newVehicleClass" class="control">${classes.map(c => `<option value="${esc(c[0])}" ${state.vehicleClass === c[0] ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMake">品牌 <span class="field-confidence">${state.aiVehicle ? 'AI 預填' : '已確認'}</span></label><input id="newVehicleMake" class="control" value="${esc(initialBrand)}" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleModel">型號 <span class="field-confidence ${state.aiVehicle ? '' : 'warn'}">${state.aiVehicle ? 'AI 預填' : '必填'}</span></label><input id="newVehicleModel" required placeholder="例如 Corolla Cross" value="${esc(initialModel)}"></div><div class="field"><label for="newVehicleYear">年份 <span class="field-confidence">${state.aiVehicle ? '較高可信度' : '必填'}</span></label><input id="newVehicleYear" type="number" min="1950" max="2030" placeholder="例如 2021" value="${esc(String(initialYear))}"></div><div class="field"><label for="newVehicleFuel">能源 <span class="field-confidence">已確認</span></label><select id="newVehicleFuel" class="control">${['燃油','純電','油電混合'].map(e => `<option ${e === initialEnergy ? 'selected' : ''}>${e}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMileage">目前里程 <span class="field-confidence ${initialMileage ? '' : 'warn'}">${initialMileage ? 'AI 讀取' : '可手動輸入'}</span></label><input id="newVehicleMileage" type="number" min="0" placeholder="例如 12680" value="${esc(initialMileage)}"></div><div class="field"><label for="newVehiclePlate">車牌 <span class="field-confidence">可稍後補</span></label><input id="newVehiclePlate" placeholder="例如 MA-00-00" value="${esc(initialPlate)}"></div></div></div><div class="confirm-inline-note">建立後，系統會再用可靠來源核對 Vehicle Scope 的技術規格。AI 不確定的欄位會保留為「待確認」。</div><div class="confirm-actions"><button class="secondary" type="button" id="backFromConfirmBtn">返回</button><button class="primary" type="submit">確認並建立車輛護照</button></div><div class="ai-result" id="addVehicleResult"></div></div></div></form>`;
+        return `<span class="sheet__eyebrow">4 / 4 · 確認車輛資料</span><h2>請核對以下資料</h2><p>照片辨識結果只作預填參考。請檢查並修改有誤的欄位，再儲存。</p><form id="addVehicleForm"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="confirm-grid"><aside class="vehicle-preview"><div><div class="match-pill">${esc(matchText)}</div><h3 id="previewTitle">${esc(titleText)}</h3><p id="previewMeta">${esc(metaText)}</p></div><div class="vehicle-image ${showPhoto ? 'has-photo' : ''}" id="vehicleImage"><img id="confirmPhoto" alt="確認車輛照片" src="${esc(state.carDataUrl)}" class="${showPhoto ? 'show' : ''}"><svg viewBox="0 0 340 170" fill="none"><path d="M53 99h231l-13-37-41-12-30-30h-82L79 55 57 66z" fill="#1b2730"/><path d="M121 31h72l26 23H96z" fill="#dfe7eb"/><rect x="47" y="95" width="245" height="28" rx="10" fill="#1b2730"/><circle cx="103" cy="124" r="27" fill="#1b2730"/><circle cx="103" cy="124" r="15" fill="#fff"/><circle cx="236" cy="124" r="27" fill="#1b2730"/><circle cx="236" cy="124" r="15" fill="#fff"/></svg></div></aside><div><div class="form-panel"><div class="form-panel-head"><div><h4>核對資料</h4><p>請確認品牌、型號、年份和里程。</p></div><span class="auto-pill">${state.aiVehicle || state.aiDashboard ? '照片辨識結果' : '手動輸入'}</span></div><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleClass">車輛類別</label><select id="newVehicleClass" class="control">${classes.map(c => `<option value="${esc(c[0])}" ${state.vehicleClass === c[0] ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMake">品牌</label><input id="newVehicleMake" class="control" value="${esc(initialBrand)}" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleModel">型號</label><input id="newVehicleModel" required placeholder="例如 Corolla Cross" value="${esc(initialModel)}"></div><div class="field"><label for="newVehicleYear">年份</label><input id="newVehicleYear" type="number" min="1950" max="2030" placeholder="例如 2021" value="${esc(String(initialYear))}"></div><div class="field"><label for="newVehicleFuel">能源</label><select id="newVehicleFuel" class="control">${['燃油','純電','油電混合'].map(e => `<option ${e === initialEnergy ? 'selected' : ''}>${e}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMileage">目前里程</label><input id="newVehicleMileage" type="number" min="0" placeholder="例如 12680" value="${esc(initialMileage)}"></div><div class="field"><label for="newVehiclePlate">車牌</label><input id="newVehiclePlate" placeholder="例如 MA-00-00" value="${esc(initialPlate)}"></div></div></div><div class="confirm-inline-note">請核對照片辨識結果。系統未能確認的欄位會標示為「待確認」。</div><div class="confirm-actions"><button class="secondary" type="button" id="backFromConfirmBtn">返回</button><button class="primary" type="submit">確認並新增車輛</button></div><div class="ai-result" id="addVehicleResult"></div></div></div></form>`;
       }
       const classLabel = classes.find(c => c[0] === state.vehicleClass)?.[1] || '車輛類別待確認';
       const powerLabel = powertrains.find(p => p[0] === state.powertrain)?.[1] || '能源待確認';
@@ -847,7 +887,7 @@ function appDialog(message, mode='notice') {
       };
       const cameraIcon = `<rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M8 6l1.2-2h5.6L16 6"/><circle cx="12" cy="12.5" r="3.2"/>`;
       const dashIcon = `<circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/><path d="M5.8 16.4h12.4"/>`;
-      return `<span class="sheet__eyebrow">4 / 4 · AI 識別</span><h2>讓 AI 看看你的車</h2><p>只需兩張照片就可以大幅提高識別準確度。兩張都可以略過；如果沒有照片，稍後仍可手動確認車型與里程。</p><div class="selection-strip"><span>已選：${esc(classLabel)} · ${esc(powerLabel)} · ${esc(makeLabel)}</span><small>前面的選擇會用作 AI 約束條件</small></div><div class="capture-grid">${carSlot('car', '1 · 車身照片', cameraIcon, '建議車頭 45°、車尾 45° 或側面')}${carSlot('dash', '2 · 儀表盤照片', dashIcon, 'AI 會讀取目前里程與畫面上的可見提示')}</div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="vehicle-form-actions"><button class="secondary" type="button" data-back>上一步</button><button class="primary" id="continueCaptureBtn" type="button">繼續，讓 AI 建立車輛資料</button></div>`;
+      return `<span class="sheet__eyebrow">4 / 4 · 選擇性照片</span><h2>用照片協助填寫</h2><p>車身照片可協助填入品牌和車款；儀表盤照片可嘗試讀取里程。辨識結果可能不完整，亦可略過並手動填寫。</p><div class="selection-strip"><span>已選：${esc(classLabel)} · ${esc(powerLabel)} · ${esc(makeLabel)}</span></div><div class="capture-grid">${carSlot('car', '車身照片', cameraIcon, '建議拍攝車頭、車尾或車身側面')}${carSlot('dash', '儀表盤照片', dashIcon, '請拍攝已啟動、可清楚看見里程的儀表盤')}</div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="vehicle-form-actions"><button class="secondary" type="button" data-back>上一步</button><button class="primary" id="continueCaptureBtn" type="button">繼續</button></div>`;
     };
 
     const refreshPreview = () => {
@@ -861,31 +901,19 @@ function appDialog(message, mode='notice') {
       if (meta) meta.textContent = `${year || '年份待確認'} · ${energy}`;
     };
 
-    const tickAiStep = (n) => {
-      const el = document.getElementById('aiStep' + n);
-      if (!el) return;
-      el.classList.add('done');
-      const tick = el.querySelector('.ai-tick');
-      if (tick) tick.textContent = '✓';
-    };
-
     const runAiSequence = async () => {
-      const pause = (ms) => new Promise(r => setTimeout(r, ms));
       const callAi = async (mode, image) => {
         try {
           const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, image }) });
           return await r.json().catch(() => ({}));
         } catch (err) { return {}; }
       };
-      await pause(520); tickAiStep(1);
-      if (state.carDataUrl) state.aiVehicle = await callAi('vehicle-image', state.carDataUrl);
-      else await pause(360);
-      await pause(520); tickAiStep(2);
-      await pause(520); tickAiStep(3);
-      if (state.dashDataUrl) state.aiDashboard = await callAi('dashboard-image', state.dashDataUrl);
-      else await pause(360);
-      await pause(520); tickAiStep(4);
-      await pause(280);
+      const [vehicleResult, dashboardResult] = await Promise.all([
+        state.carDataUrl ? callAi('vehicle-image', state.carDataUrl) : Promise.resolve(null),
+        state.dashDataUrl ? callAi('dashboard-image', state.dashDataUrl) : Promise.resolve(null),
+      ]);
+      state.aiVehicle = vehicleResult?.error ? null : vehicleResult;
+      state.aiDashboard = dashboardResult?.error ? null : dashboardResult;
       state.captureStep = 'confirm';
       render();
     };
@@ -1111,7 +1139,7 @@ function appDialog(message, mode='notice') {
         const r = await fetch('/api/profile/notifications');
         if (r.status === 401) throw new Error('請先登入以管理通知。');
         const p = await r.json();
-        root.innerHTML = `<label class="row toggle-row"><span><b>保養提醒</b></span><input type="checkbox" data-pref="maintenance_reminders" ${p.maintenance_reminders ? 'checked' : ''}></label><label class="row toggle-row"><span><b>行程更新</b></span><input type="checkbox" data-pref="trip_updates" ${p.trip_updates ? 'checked' : ''}></label><label class="row toggle-row"><span><b>CarAI 建議</b></span><input type="checkbox" data-pref="ai_suggestions" ${p.ai_suggestions ? 'checked' : ''}></label><button class="primary" type="button" id="savePrefsBtn">儲存設定</button>`;
+        root.innerHTML = `<label class="row toggle-row"><span><b>保養提醒</b></span><input type="checkbox" data-pref="maintenance_reminders" ${p.maintenance_reminders ? 'checked' : ''}></label><label class="row toggle-row"><span><b>行程更新</b></span><input type="checkbox" data-pref="trip_updates" ${p.trip_updates ? 'checked' : ''}></label><label class="row toggle-row"><span><b>AI 保養建議</b></span><input type="checkbox" data-pref="ai_suggestions" ${p.ai_suggestions ? 'checked' : ''}></label><button class="primary" type="button" id="savePrefsBtn">儲存設定</button>`;
       } catch (e) { root.innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
     } else if (action === '家庭 / 多車') {
       openSheet('<h2>家庭 / 多車</h2><div id="teamSheet"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
@@ -1122,7 +1150,7 @@ function appDialog(message, mode='notice') {
         document.getElementById('teamSheet').innerHTML = d.data?.length ? d.data.map((t) => `<div class="row"><span><b>${esc(t.name)}</b><small>${esc(t.role)}</small></span></div>`).join('') : '<p>目前未加入任何家庭或車隊。</p>';
       } catch (e) { document.getElementById('teamSheet').innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
     } else {
-      openSheet('<h2>聯絡康程</h2><form id="supportForm"><div class="field"><label>主題</label><input id="supportSubject" required></div><div class="field"><label>內容</label><textarea id="supportMessage" required rows="4"></textarea></div><button class="primary" type="submit">送出支援請求</button><button class="secondary" type="button" id="supportAiBtn">先問 CarAI</button><div class="ai-result" id="supportResult"></div></form>');
+      openSheet('<h2>聯絡無界啟程</h2><form id="supportForm"><div class="field"><label>主題</label><input id="supportSubject" required></div><div class="field"><label>內容</label><textarea id="supportMessage" required rows="4"></textarea></div><button class="primary" type="submit">送出支援請求</button><button class="secondary" type="button" id="supportAiBtn">先查看 AI 建議</button><div class="ai-result" id="supportResult"></div></form>');
     }
   }
 
@@ -1131,7 +1159,7 @@ function appDialog(message, mode='notice') {
       const file = document.getElementById('newDashboardImage')?.files?.[0];
       const result = document.getElementById('addVehicleResult');
       if (!file) { result.classList.add('show'); result.textContent = '請先選擇儀表盤照片。'; return; }
-      result.classList.add('show'); result.textContent = 'CarAI 正在讀取儀表盤…';
+      result.classList.add('show'); result.textContent = '正在讀取儀表盤照片…';
       try {
         newDashboardImageData = newDashboardImageData || await prepareVehicleImage(file);
         const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'dashboard-image',image:newDashboardImageData}) });
@@ -1148,7 +1176,7 @@ function appDialog(message, mode='notice') {
       const file = document.getElementById('newVehicleImage')?.files?.[0];
       const result = document.getElementById('addVehicleResult');
       if (!file) { result.classList.add('show'); result.textContent = '請先選擇車輛照片。'; return; }
-      result.classList.add('show'); result.textContent = 'CarAI 正在識別照片…';
+      result.classList.add('show'); result.textContent = '正在讀取車身照片…';
       const recognize = async () => {
         try {
           newVehicleImageData = newVehicleImageData || await prepareVehicleImage(file);
@@ -1183,7 +1211,7 @@ function appDialog(message, mode='notice') {
       e.target.textContent = r.ok ? '已儲存' : '儲存失敗';
     }
     if (e.target.closest?.('#supportAiBtn')) {
-      const result = document.getElementById('supportResult'); result.classList.add('show'); result.textContent = 'CarAI 正在整理…';
+      const result = document.getElementById('supportResult'); result.classList.add('show'); result.textContent = 'AI 助手正在整理回覆…';
       const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,message:document.getElementById('supportMessage').value}) });
       const d = await r.json(); showAgentResult(result, r, d);
     }
@@ -1256,14 +1284,14 @@ function appDialog(message, mode='notice') {
   const profileSummary = document.getElementById('profileVehicleSummary');
   if (profileSummary) profileSummary.textContent = me
     ? (me.role === 'admin' ? 'Admin · 車行監督與商務條款管理'
-      : vehicles.length ? `${vehicles.length} 架車 · 車輛護照已建立`
-      : '尚未建立車輛護照')
-    : '登入後查看你的車輛護照';
+      : vehicles.length ? `${vehicles.length} 架車 · 車輛資料已建立`
+      : '尚未新增車輛')
+    : '登入後查看車輛資料';
   const profileEyebrow = document.getElementById('profileRoleEyebrow');
   if (profileEyebrow && me) {
     profileEyebrow.textContent = me.role === 'admin'
       ? 'ADMIN · BOOUNDLESS'
-      : (me.role === 'user' ? 'YOUR VEHICLE INFORMATION' : 'YOUR ACCOUNT');
+      : (me.role === 'user' ? '帳戶資料' : '帳戶資料');
   }
   /* Profile hero stat tiles: vehicles, history records, upcoming reminders,
      and in-flight service requests. Driven by the same fetches used for the
@@ -1314,7 +1342,7 @@ function appDialog(message, mode='notice') {
   const statusBox = document.querySelector('.home-grid .status');
   if (hero) {
     if (heroPhoto && hero.image) heroPhoto.src = hero.image;
-    if (heroEyebrow) heroEyebrow.textContent = hero.model.toUpperCase();
+    if (heroEyebrow) heroEyebrow.textContent = '車輛資料';
     if (heroMileage) heroMileage.textContent = hero.mileage_label;
     /* Subtitle below the mileage used to be hardcoded "登入後新增你的第一台車"
        — replace with a real identity line so a logged-in owner with a vehicle
@@ -1323,10 +1351,10 @@ function appDialog(message, mode='notice') {
       const subtitleParts = [];
       if (hero.year) subtitleParts.push(String(hero.year));
       if (hero.fuel_type) subtitleParts.push(String(hero.fuel_type));
-      heroMeta.textContent = subtitleParts.join(' · ') || '車輛護照已建立';
+      heroMeta.textContent = subtitleParts.join(' · ') || '車輛資料已建立';
     }
   } else if (heroEyebrow) {
-    heroEyebrow.textContent = 'YOUR CAR PASSPORT';
+    heroEyebrow.textContent = '車輛資料';
     if (heroMileage) heroMileage.textContent = '尚未建立車輛';
     if (heroPhoto) heroPhoto.removeAttribute('src');
   }
@@ -1344,12 +1372,12 @@ function appDialog(message, mode='notice') {
       statusBox.classList.add('unknown');
       if (h) h.textContent = '尚未確認車況';
       if (p) {
-        p.innerHTML = '系統未有保養或檢查紀錄，建議先做一次保養以建立基準。';
+        p.innerHTML = '目前沒有保養或檢查紀錄，車況尚未確認。';
         const cta = document.createElement('button');
         cta.className = 'primary';
         cta.type = 'button';
         cta.dataset.recordFirstService = hero.id;
-        cta.textContent = '建議先去做一個保養';
+        cta.textContent = '新增保養紀錄';
         p.appendChild(document.createElement('br'));
         p.appendChild(cta);
       }
@@ -1357,14 +1385,14 @@ function appDialog(message, mode='notice') {
       statusBox.classList.remove('unknown');
       statusBox.classList.add('ok');
       if (h) h.textContent = '目前狀態正常';
-      if (p) p.innerHTML = '所有主要項目都在建議週期內。';
+      if (p) p.innerHTML = '目前已記錄的項目均未到提醒時間。';
     }
   } else if (statusBox) {
     statusBox.classList.add('ok');
     const h = statusBox.querySelector('h3');
     const p = statusBox.querySelector('p');
     if (h) h.textContent = '建立你的第一台車';
-    if (p) p.textContent = '登入後新增車輛，CarAI 會幫你整理車況與保養紀錄。';
+    if (p) p.textContent = '輸入車款和里程，之後逐次補上保養日期與服務項目。';
   }
 
   /* 2. Car list — rebuild the three cards from API data */
@@ -1413,7 +1441,7 @@ function appDialog(message, mode='notice') {
           <span class="v10-mileage">${esc(v.mileage_label || '')}</span>
           <span class="v10-health ${healthTone}"><b>●</b> ${esc(healthText)}</span>
         </button>`;
-    }).join('') : '<div class="empty-state empty-state--garage"><img class="empty-state__visual" src="assets/garage-empty-v1.png" width="1536" height="1024" loading="lazy" decoding="async" alt="白色車輛與數碼車輛護照"><b>你還未建立車輛護照</b><small>由照片辨識或手動填寫開始，建立你的第一台車。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
+    }).join('') : '<div class="empty-state empty-state--garage"><b>尚未新增車輛</b><small>新增車款和目前里程，之後可補上保養紀錄。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
     document.getElementById('emptyAddVehicleBtn')?.addEventListener('click', openAddVehicleSheet);
   }
 
@@ -1677,7 +1705,7 @@ function appDialog(message, mode='notice') {
   }
 
   document.getElementById('serviceAiForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault(); const result = document.getElementById('serviceAiResult'); result.classList.add('show'); result.textContent = 'CarAI 正在分析車況…';
+    e.preventDefault(); const result = document.getElementById('serviceAiResult'); result.classList.add('show'); result.textContent = '正在整理保養建議…';
     const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,message:`請分析車輛 ${document.getElementById('serviceVehicle').value}，${document.getElementById('serviceQuestion').value}`}) });
     const d = await r.json(); showAgentResult(result, r, d);
   });
@@ -1686,7 +1714,7 @@ function appDialog(message, mode='notice') {
     const r=await fetch('/api/trips',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); if(r.ok){e.target.reset(); await loadTripsPage();}
   });
   document.getElementById('tripAiBtn')?.addEventListener('click', async () => {
-    const result=document.getElementById('tripAiResult'); result.classList.add('show'); result.textContent='CarAI 正在規劃…'; const trip={vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
+    const result=document.getElementById('tripAiResult'); result.classList.add('show'); result.textContent='正在整理路線建議…'; const trip={vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
     const r=await fetch('/api/agent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({stream:false,thread_id:agentThreadId,message:`請規劃由 ${trip.origin} 前往 ${trip.destination} 的行程，使用車輛 ${trip.vehicle_id}。`})}); const d=await r.json(); showAgentResult(result, r, d);
   });
   let addVehicleInFlight = false;
@@ -1807,7 +1835,7 @@ function appDialog(message, mode='notice') {
     if (view) view.innerHTML = '';
     if (protectedStaticRoutes.has(name) && !me) {
       document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">SIGN IN REQUIRED</span><h1>登入後建立你的車輛護照</h1><p>你的車輛、個人資料與 CarAI 功能只會在登入後顯示。</p><a class="landing__primary" href="#/login">前往登入</a></div></div>';
+      if (view) view.innerHTML = '<div class="wrap"><div class="route-state"><span class="sheet__eyebrow">需要登入</span><h1>登入後查看你的車輛</h1><p>車輛、保養紀錄及帳戶資料會在登入後顯示。</p><a class="landing__primary" href="#/login">前往登入</a></div></div>';
       return;
     }
     if (STATIC_ROUTES.has(name)) {
@@ -2415,7 +2443,7 @@ function appDialog(message, mode='notice') {
   async function renderAdminDealers(root) {
     root.innerHTML = `<div class="wrap"><div class="top"><div><h1>車商管理</h1><p>建立車商、編輯資料、加入成員、暫停或啟用。</p><p>新車商管理員請到 <a href="#/dealer/register">車商自助註冊</a> 建立帳號後，管理員再用「編輯」加入成員。</p></div></div>
       <form id="dealerCreateForm" class="card form-card"><div class="form-grid">
-        <div class="field"><label>車商名稱 *</label><input id="dealerDisplayName" required placeholder="康程汽車服務"></div>
+        <div class="field"><label>車商名稱 *</label><input id="dealerDisplayName" required placeholder="例如：澳門汽車服務"></div>
         <div class="field"><label>公司名稱</label><input id="dealerLegalName"></div>
         <div class="field"><label>聯絡電話</label><input id="dealerPhone"></div>
         <div class="field"><label>聯絡電郵</label><input id="dealerEmail" type="email"></div>
@@ -2556,8 +2584,8 @@ function appDialog(message, mode='notice') {
     }
     root.innerHTML = '<div class="wrap"><div class="top"><div><h1>車商自助註冊</h1><p>填寫以下資料即可建立車商帳號，並立刻進入後台。</p></div></div>' +
       '<form id="dealerRegisterForm" class="card form-card"><div class="form-grid">' +
-      '<div class="field"><label>車商名稱 *</label><input id="regDealerName" required placeholder="康程汽車服務"></div>' +
-      '<div class="field"><label>公司名稱</label><input id="regLegalName" placeholder="康程汽車服務有限公司"></div>' +
+      '<div class="field"><label>車商名稱 *</label><input id="regDealerName" required placeholder="例如：澳門汽車服務"></div>' +
+      '<div class="field"><label>公司名稱</label><input id="regLegalName" placeholder="例如：澳門汽車服務有限公司"></div>' +
       '<div class="field"><label>商業登記編號</label><input id="regRegNo"></div>' +
       '<div class="field"><label>聯絡電話</label><input id="regPhone" placeholder="+853-2882-0000"></div>' +
       '<div class="field"><label>車商電郵</label><input id="regDealerEmail" type="email"></div>' +
@@ -3038,55 +3066,6 @@ function appDialog(message, mode='notice') {
   });
 
 })();
-</script>
-
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-  const flow = document.getElementById('journeyFlow');
-  if (!flow || !window.gsap || !window.ScrollTrigger) return;
-
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reducedMotion) return;
-
-  gsap.registerPlugin(ScrollTrigger);
-  const stages = flow.querySelectorAll('.journey-stage');
-  const nodes = flow.querySelectorAll('.journey-stage__node');
-  const steps = flow.querySelectorAll('.journey-step');
-  const fill = flow.querySelector('.journey-flow__fill');
-  const pulse = flow.querySelector('.journey-flow__pulse');
-  const mobile = window.matchMedia('(max-width: 760px)').matches;
-
-  gsap.set(stages, { autoAlpha: 0, y: 36 });
-  gsap.set(nodes, { scale: .55 });
-  gsap.set(steps, { autoAlpha: 0, x: -10 });
-  gsap.set(fill, { clipPath: mobile ? 'inset(0 0 100% 0)' : 'inset(0 100% 0 0)' });
-
-  const reveal = gsap.timeline({
-    defaults: { ease: 'power3.out' },
-    scrollTrigger: { trigger: flow, start: 'top 78%', once: true }
-  });
-  reveal
-    .to(fill, { clipPath: 'inset(0 0 0 0)', duration: 1.05 }, 0)
-    .to(stages, { autoAlpha: 1, y: 0, duration: .72, stagger: .16 }, .08)
-    .to(nodes, { scale: 1, duration: .55, stagger: .16, ease: 'back.out(1.8)' }, .14)
-    .to(steps, { autoAlpha: 1, x: 0, duration: .42, stagger: .07 }, .42);
-
-  const responsiveMotion = gsap.matchMedia();
-  responsiveMotion.add('(min-width: 761px)', () => {
-    gsap.fromTo(pulse, { left: '0%', top: '50%' }, {
-      left: '100%', duration: 3.8, ease: 'none', repeat: -1,
-      scrollTrigger: { trigger: flow, start: 'top bottom', end: 'bottom top', toggleActions: 'play pause resume pause' }
-    });
-  });
-  responsiveMotion.add('(max-width: 760px)', () => {
-    gsap.fromTo(pulse, { left: '50%', top: '0%' }, {
-      top: '100%', duration: 4.2, ease: 'none', repeat: -1,
-      scrollTrigger: { trigger: flow, start: 'top bottom', end: 'bottom top', toggleActions: 'play pause resume pause' }
-    });
-  });
-
-  window.addEventListener('hashchange', () => ScrollTrigger.refresh(), { passive: true });
-});
 </script>
 
 </body>

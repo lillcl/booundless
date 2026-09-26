@@ -2,7 +2,7 @@
   "name": "kc-carai",
   "version": "0.1.0",
   "private": true,
-  "description": "康程 CarAI — Service V10 web app. Vanilla HTML/CSS/JS frontend, serverless API, Postgres persistence.",
+  "description": "無界啟程 BOOUNDLESS vehicle and maintenance web app. Vanilla HTML/CSS/JS frontend, serverless API, Postgres persistence.",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -19,7 +19,6 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",
     "express": "^4.21.0",
-    "gsap": "^3.13.0",
     "jose": "^5.9.0",
     "pg": "^8.13.0"
   },

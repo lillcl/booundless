@@ -19,7 +19,7 @@ const KNOWN_KEYS = new Set([
 const MAX_EXTRA_ROWS = 8;
 const MAX_ITEM_LEN = 40;
 
-const SYSTEM_PROMPT = `你是康程 CarAI 的保養範圍擴充助手。使用繁體中文。
+const SYSTEM_PROMPT = `你是無界啟程 BOOUNDLESS 的保養資料助手。使用繁體中文。
 車輛資料的 fuel_type、powertrain_type、make、model、year 描述一台特定車輛。
 已知範本已經包含基本的保養項目，請只列出「範本沒有、但這台車輛真正需要」的額外項目。
 只輸出 JSON 陣列，不要任何說明文字、Markdown 或程式碼區塊。

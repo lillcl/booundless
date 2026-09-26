@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     if (!user) return;
     const body = await readBody(req, { limit: '8mb' });
     const mode = body?.mode;
-    let system = '你是康程 CarAI 助手。使用繁體中文，回答精簡實用；不要虛構車況、法規或即時路況。清楚說明這只是建議。';
+    let system = '你是無界啟程 BOOUNDLESS 的 AI 助手。使用繁體中文，回答精簡實用；不要虛構車況、法規或即時路況，並提醒使用者核實建議。';
     let prompt = '';
     if (mode === 'service') {
       const db = await getDb();

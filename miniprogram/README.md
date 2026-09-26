@@ -1,4 +1,4 @@
-# 康程 CarAI — 微信小程序
+# 無界啟程 BOOUNDLESS — 微信小程序
 
 This directory contains the **WeChat Mini Program (微信小程序)** port of the [BOOUNDLESS](../) web app. Drop the folder into **微信开发者工具** to open it as a project.
 

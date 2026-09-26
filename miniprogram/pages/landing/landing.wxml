@@ -1,50 +1,22 @@
 <view class="kc-landing">
-  <view class="kc-landing__hero">
-    <view class="kc-landing__beam"></view>
-    <view class="kc-landing__beam kc-landing__beam--b"></view>
-    <view class="kc-landing__car">
-      <view class="kc-landing__car-body"></view>
-      <view class="kc-landing__car-top"></view>
-      <view class="kc-landing__car-wheel kc-landing__car-wheel--l"></view>
-      <view class="kc-landing__car-wheel kc-landing__car-wheel--r"></view>
-      <view class="kc-landing__car-window"></view>
-    </view>
-    <view class="kc-landing__badges">
-      <view class="kc-landing__badge kc-landing__badge--ruler">
-        <view class="kc-landing__badge-icon">📏</view>
-        <text>量度行程</text>
-      </view>
-      <view class="kc-landing__badge kc-landing__badge--clipboard">
-        <view class="kc-landing__badge-icon">📋</view>
-        <text>車輛記錄</text>
-      </view>
-      <view class="kc-landing__badge kc-landing__badge--camera">
-        <view class="kc-landing__badge-icon">📷</view>
-        <text>拍照識別</text>
-      </view>
-    </view>
+  <view class="kc-landing__intro">
+    <text class="kc-landing__eyebrow">無界啟程 BOOUNDLESS</text>
+    <text class="kc-landing__title">車輛及保養紀錄</text>
+    <text class="kc-landing__description">記下車款、里程和保養日期，方便日後查看。</text>
   </view>
 
-  <view class="kc-landing__brand">
-    <view class="kc-landing__brand-cn">康程 CarAI</view>
-    <view class="kc-landing__brand-sub">琴澳自駕 · 保養提醒 · 車主助理</view>
-  </view>
-
-  <view class="kc-landing__features">
+  <view class="kc-landing__features" aria-label="服務內容">
     <view class="kc-landing__feature">
-      <view class="kc-landing__feature-icon" style="background: var(--brand-soft); color: var(--brand)">🛡️</view>
-      <view class="kc-landing__feature-title">保養追蹤</view>
-      <view class="kc-landing__feature-hint">按里數自動提示，避免漏做</view>
+      <text class="kc-landing__feature-title">車輛資料</text>
+      <text class="kc-landing__feature-hint">保存車款、年份、車牌及目前里程。</text>
     </view>
     <view class="kc-landing__feature">
-      <view class="kc-landing__feature-icon" style="background: var(--green-bg); color: var(--green)">🌉</view>
-      <view class="kc-landing__feature-title">琴澳自駕</view>
-      <view class="kc-landing__feature-hint">路線 / 關口 / 停車一次看清</view>
+      <text class="kc-landing__feature-title">保養紀錄</text>
+      <text class="kc-landing__feature-hint">記錄保養項目、日期和當時里程。</text>
     </view>
     <view class="kc-landing__feature">
-      <view class="kc-landing__feature-icon" style="background: var(--amber-bg); color: var(--amber)">🤖</view>
-      <view class="kc-landing__feature-title">車主 AI</view>
-      <view class="kc-landing__feature-hint">拍照識別型號，問診一鍵直達</view>
+      <text class="kc-landing__feature-title">琴澳出行資訊</text>
+      <text class="kc-landing__feature-hint">查閱澳門及橫琴的自駕出行資料。</text>
     </view>
   </view>
 
@@ -53,7 +25,5 @@
     <secondary-button block bind:tap="onLogin">我已有帳戶</secondary-button>
   </view>
 
-  <view class="kc-landing__footer">
-    <text>© 康程 CarAI · 僅供車主使用</text>
-  </view>
+  <text class="kc-landing__footer">車輛及保養紀錄 · 琴澳出行資訊</text>
 </view>

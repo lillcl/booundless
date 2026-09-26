@@ -1,6 +1,6 @@
 # 無界啟程 BOOUNDLESS
 
-> A Traditional Chinese vehicle-management application with CarAI assistance.
+> A Traditional Chinese vehicle-management application from 無界啟程 BOOUNDLESS, with AI-assisted vehicle data entry and maintenance suggestions.
 
 ## Public website
 - [Home](https://booundless.vercel.app/): Vehicle management, maintenance reminders, and journey planning.

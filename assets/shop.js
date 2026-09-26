@@ -51,7 +51,7 @@ function cartMarkup(cart, signedIn) {
 
 function shopShell(root) {
   root.innerHTML = `<div class="wrap shop-page">
-    <header class="shop-head"><div class="shop-head__copy"><span class="sheet__eyebrow">BOOUNDLESS SHOP</span><h1>汽車用品</h1><p>選擇你的車，快速找到合適商品。</p></div><div class="shop-head__art" role="img" aria-label="精選汽車保養用品"></div></header>
+    <header class="shop-head"><div class="shop-head__copy"><span class="sheet__eyebrow">無界啟程 · 商品</span><h1>汽車用品</h1><p>查看商品規格及適用車型；不確定時請先核對車主手冊。</p></div></header>
     <section class="shop-controls">
       <div class="shop-passport" data-shop-passport></div>
       <div class="shop-discovery">
@@ -61,7 +61,7 @@ function shopShell(root) {
         <strong data-result-count></strong>
       </div>
     </section>
-    <div class="shop-toolbar"><div><h2 data-shop-heading>全部商品</h2><p>圖片為 AI 生成示意圖，不代表實際品牌或包裝；規格及適用車型請以商品資料與車主手冊為準。</p></div></div>
+    <div class="shop-toolbar"><div><h2 data-shop-heading>全部商品</h2><p>商品圖片為示意圖，包裝及外觀可能與實物不同。請以商品規格和車主手冊為準。</p></div></div>
     <div class="shop-layout"><div class="shop-grid" data-shop-products><div class="shop-loading">正在載入商品…</div></div><aside class="shop-cart"><div class="shop-cart__head"><h2>購物車</h2><span class="shop-count" data-shop-count>0</span></div><div class="shop-cart__body" data-shop-cart></div></aside></div>
   </div>`;
 }
@@ -111,7 +111,7 @@ export async function renderShop(root, context = {}) {
       const selected = vehicles.find((item) => item.id === selectedVehicleId) || vehicles[0];
       passportHost.innerHTML = `<div class="shop-passport__summary"><span>正在為你的車篩選</span><b>${esc([selected.make,selected.model].filter(Boolean).join(' '))}</b><small>${esc([selected.year,selected.fuel_type,selected.mileage_label].filter(Boolean).join(' · '))}</small></div><label><span>切換車輛</span><select data-shop-vehicle>${vehicles.map((vehicle) => `<option value="${esc(vehicle.id)}" ${vehicle.id===selectedVehicleId?'selected':''}>${esc([vehicle.make,vehicle.model].filter(Boolean).join(' '))}</option>`).join('')}</select></label>`;
     } else {
-      passportHost.innerHTML = signedIn ? '<div class="shop-passport__summary"><span>車輛配對</span><b>建立車輛護照，查看合適商品</b></div><a href="#/garage">建立護照 →</a>' : '<div class="shop-passport__summary"><span>車輛配對</span><b>登入後只看適合你的商品</b></div><a href="#/login">登入 →</a>';
+      passportHost.innerHTML = signedIn ? '<div class="shop-passport__summary"><span>車輛配對</span><b>選擇車輛，查看適用資料</b></div><a href="#/garage">選擇車輛 →</a>' : '<div class="shop-passport__summary"><span>車輛配對</span><b>登入後選擇車輛以查看適用資料</b></div><a href="#/login">登入 →</a>';
     }
   };
   const loadProducts = async (vehicleId = selectedVehicleId) => {

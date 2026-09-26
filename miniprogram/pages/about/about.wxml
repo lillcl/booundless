@@ -1,15 +1,15 @@
 <view class="kc-page kc-about">
   <view class="kc-about__hero">
     <image class="kc-about__logo" src="/images/icons/booundless-car.png" mode="aspectFit"></image>
-    <view class="kc-about__brand">康程 CarAI</view>
-    <view class="kc-about__sub">車主日常的智能助理</view>
+    <view class="kc-about__brand">無界啟程 BOOUNDLESS</view>
+    <view class="kc-about__sub">車輛及保養紀錄</view>
     <view class="kc-about__version">v0.1.0 · 小程序</view>
   </view>
 
   <view class="kc-card">
     <view class="kc-card__title">私隱政策</view>
     <view class="kc-about__paragraph">
-      康程 CarAI 重視你的私隱。我們只收集提供服務所必需的資料：
+      無界啟程 BOOUNDLESS 重視你的私隱。我們只收集提供服務所必需的資料：
       微信 openid（用於登入）、車輛資訊（用於保養提醒）、服務請求記錄。
       我們不會將你的資料分享給第三方。
     </view>
@@ -47,5 +47,5 @@
     </view>
   </view>
 
-  <view class="kc-about__footer">© 2026 康程 CarAI</view>
+  <view class="kc-about__footer">© 2026 無界啟程 BOOUNDLESS</view>
 </view>

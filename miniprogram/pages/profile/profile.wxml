@@ -53,7 +53,7 @@
     </view>
     <view class="kc-list-item" bindtap="onAbout">
       <view>
-        <view class="kc-list-item__title">關於康程 CarAI</view>
+        <view class="kc-list-item__title">關於無界啟程</view>
         <view class="kc-list-item__hint">致謝與私隱政策</view>
       </view>
       <view class="kc-list-item__arrow">›</view>

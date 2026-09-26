@@ -1,4 +1,4 @@
--- 康程 CarAI — Postgres schema.
+-- 無界啟程 BOOUNDLESS — Postgres schema.
 -- Applied automatically by api/_lib/db.js on first connection, and
 -- can be run manually with:
 --   psql "$KC_DATABASE_URL" < db/schema.sql
@@ -165,12 +165,12 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── CarAI agent + research persistence ──
+-- ── AI assistant + research persistence ──
 
 CREATE TABLE IF NOT EXISTS agent_threads (
   id         TEXT PRIMARY KEY,
   user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title      TEXT NOT NULL DEFAULT 'CarAI 對話',
+  title      TEXT NOT NULL DEFAULT 'AI 助手對話',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

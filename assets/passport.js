@@ -64,12 +64,11 @@ async function prepareImage(file) {
 function bookMarkup(vehicle, reminder) {
   const hasReminder = Boolean(reminder);
   const unknown = vehicle.scope_confirmed === false;
-  const status = unknown ? '車況待確認' : hasReminder ? reminder.title : '護照資料已同步';
+  const status = unknown ? '車況待確認' : hasReminder ? reminder.title : '目前沒有待辦提醒';
   const tone = unknown ? 'is-unknown' : hasReminder ? 'is-warn' : '';
   return `<button class="vp-book" type="button" data-passport-id="${esc(vehicle.id)}" aria-label="開啟 ${esc(vehicleName(vehicle))} 車輛護照">
     <span class="vp-book__inner">
-      <span class="vp-book__top">BOOUNDLESS · VEHICLE PASSPORT</span>
-      ${seal}
+      <span class="vp-book__top">無界啟程 · 車輛資料</span>
       <h2>${esc(vehicleName(vehicle))}</h2>
       <span class="vp-book__meta">${esc([vehicle.year, vehicle.fuel_type].filter(Boolean).join(' · ') || '車輛資料')}</span>
       <span class="vp-book__plate">${esc(vehicle.plate || '未登記車牌')}</span>
@@ -85,7 +84,7 @@ function identityPage(vehicle) {
     ['年份', vehicle.year || '未填寫'], ['能源', vehicle.fuel_type || vehicle.powertrain_type || '未填寫'],
     ['車牌', vehicle.plate || '未填寫'], ['VIN', vehicle.vin || '未填寫'],
   ];
-  return `<div class="vp-paper"><span class="vp-page-label">01 · VEHICLE IDENTITY</span><h3>車輛身份</h3>
+  return `<div class="vp-paper"><span class="vp-page-label">01 · 車輛資料</span><h3>車輛身份</h3>
     <img class="vp-identity-photo ${placeholder ? 'is-placeholder' : ''}" src="${esc(vehicle.image || 'assets/vehicle-placeholder.svg')}" alt="${esc(vehicleName(vehicle))}">
     <div class="vp-data-grid">${fields.map(([label, value]) => `<span><small>${label}</small><b>${esc(value)}</b></span>`).join('')}</div>
     <button class="vp-edit-trigger" type="button" data-edit-passport>修改護照</button>
@@ -98,7 +97,7 @@ function overviewPage(vehicle, status, history) {
   const completenessFields = [vehicle.make, vehicle.model, vehicle.year, vehicle.fuel_type, vehicle.plate, vehicle.mileage_km];
   const profilePercent = Math.round((completenessFields.filter((item) => item !== null && item !== undefined && item !== '').length / completenessFields.length) * 100);
   const complete = status?.data_complete === true;
-  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">02 · LIVE SUMMARY</span><h3>護照摘要</h3>
+  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">02 · 資料摘要</span><h3>車輛摘要</h3>
     <div class="vp-mileage"><span>目前里程</span><b>${esc(mileageLabel(vehicle))}</b></div>
     <div class="vp-summary"><div class="vp-stat"><b>${items.length}</b><small>保養項目</small></div><div class="vp-stat"><b>${history.length}</b><small>保養紀錄</small></div><div class="vp-stat"><b>${attention.length}</b><small>需要留意</small></div><div class="vp-stat"><b>${profilePercent}%</b><small>身份完整度</small></div></div>
     <div class="vp-complete ${complete ? 'is-complete' : ''}">${complete ? '保養基準資料完整，狀態會按里程與日期更新。' : '部分保養基準尚未確認；系統不會在沒有服務證據時顯示「正常」。'}</div>
@@ -107,7 +106,7 @@ function overviewPage(vehicle, status, history) {
 
 function maintenancePage(status) {
   const items = Array.isArray(status?.items) ? status.items : [];
-  return `<div class="vp-paper"><span class="vp-page-label">03 · MAINTENANCE</span><h3>保養狀態</h3>
+  return `<div class="vp-paper"><span class="vp-page-label">03 · 保養狀態</span><h3>保養狀態</h3>
     <div class="vp-list">${items.length ? items.slice(0, 7).map((item) => {
       const warn = Number(item.wear) >= 80;
       const detail = item.last_done_at ? `上次：${dateLabel(item.last_done_at)}` : '尚未記錄基準';
@@ -117,20 +116,20 @@ function maintenancePage(status) {
 }
 
 function historyPage(history) {
-  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">04 · SERVICE RECORDS</span><h3>保養紀錄</h3>
+  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">04 · 保養紀錄</span><h3>保養紀錄</h3>
     <button class="vp-edit-trigger vp-edit-trigger--primary" type="button" data-add-history>＋ 手動新增保養紀錄</button>
     <div class="vp-list">${history.length ? history.slice(0, 6).map((item) => `<button class="vp-row vp-row--button" type="button" data-history-id="${esc(item.id)}"><span><b>${esc(item.title)}</b><small>${esc([dateLabel(item.performed_at), item.mileage_km != null ? `${Number(item.mileage_km).toLocaleString()} km` : '', item.cost || '', item.source === 'dealer' ? '由車商記錄' : '由車主記錄'].filter(Boolean).join(' · '))}</small></span><span class="vp-pill">修改</span></button>`).join('') : '<div class="vp-note">暫時未有保養紀錄。你可以手動加入日期、里程及完成項目。</div>'}</div>
   </div>`;
 }
 
 function reminderPage(reminders) {
-  return `<div class="vp-paper"><span class="vp-page-label">05 · REMINDERS</span><h3>車況提醒</h3>
+  return `<div class="vp-paper"><span class="vp-page-label">05 · 保養提醒</span><h3>保養提醒</h3>
     <div class="vp-list">${reminders.length ? reminders.slice(0, 6).map((item) => `<div class="vp-row"><span><b>${esc(item.title)}</b><small>${esc(item.due_in || (item.status === 'overdue' ? '已到期' : '即將到期'))}</small></span><span class="vp-pill ${item.status === 'overdue' ? 'warn' : ''}">${item.status === 'overdue' ? '已到期' : '即將到期'}</span></div>`).join('') : '<div class="vp-note">目前沒有待處理提醒。新的保養時間或車況項目會在此出現。</div>'}</div>
   </div>`;
 }
 
 function documentsPage() {
-  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">06 · PASSPORT DATA</span><h3>資料與下一步</h3>
+  return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">06 · 分享設定</span><h3>資料分享與下一步</h3>
     <div class="vp-note"><b>車商協作由你控制</b><br>你可以只把這輛車授權給指定車商。其他車輛不會一併分享，亦可隨時取消。</div>
     <button class="vp-edit-trigger vp-edit-trigger--primary" type="button" data-manage-dealer-access>管理車商權限</button>
     <div class="vp-actions"><a href="#/service">保養與服務</a><a href="#/shop">選購合適用品</a></div>
@@ -144,8 +143,8 @@ export async function renderVehiclePassports(root, context = {}) {
   let activeSpread = 0;
   let cleanup = () => {};
   root.innerHTML = `<main class="vp-page"><div class="vp-shell">
-    <header class="vp-heading"><div><span class="vp-kicker">BOOUNDLESS · DIGITAL GARAGE</span><h1>車輛護照</h1><p>每台車一本會持續更新的數碼護照，把身份、里程、保養與提醒集中保存。</p></div><button class="vp-add" type="button" data-add-passport>＋ 建立護照</button></header>
-    <div class="vp-intro"><div><b>一眼掌握車況</b><small>所有內容來自你的車輛資料與保養紀錄，不以假資料填補空白。</small></div><div><b>與訂購功能相連</b><small>商店會按護照中的能源及車種篩選合適用品。</small></div></div>
+    <header class="vp-heading"><div><span class="vp-kicker">無界啟程 · 車輛管理</span><h1>我的車輛</h1><p>查看車輛資料、目前里程、保養紀錄和待辦提醒。</p></div><button class="vp-add" type="button" data-add-passport>＋ 新增車輛</button></header>
+    <div class="vp-intro"><div><b>資料來源</b><small>內容來自你輸入的車輛資料、保養紀錄及車行更新。</small></div><div><b>狀態未知時</b><small>沒有保養或檢查紀錄的項目會標示為未知。</small></div></div>
     <div data-passport-content><div class="vp-loading" aria-label="正在載入車輛護照"></div></div>
   </div></main>`;
 
@@ -234,9 +233,9 @@ export async function renderVehiclePassports(root, context = {}) {
     editor.setAttribute('role', 'dialog');
     editor.setAttribute('aria-modal', 'true');
     editor.setAttribute('aria-label', '修改車輛護照');
-    editor.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">PASSPORT EDITOR</span><h2>修改車輛護照</h2><p>可以直接輸入，或拍攝車身／行車證及儀表盤，讓 MiniMax AI 預填後再確認。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
-      <div class="vp-ai-capture"><label><span>車身或行車證照片</span><input type="file" accept="image/*" capture="environment" data-ai-vehicle></label><button type="button" data-recognize-vehicle>AI 辨識車輛</button><label><span>儀表盤照片</span><input type="file" accept="image/*" capture="environment" data-ai-dashboard></label><button type="button" data-recognize-dashboard>AI 讀取里程</button></div>
-      <div class="vp-editor__status" data-editor-status>AI 只會預填資料；儲存前請先確認。</div>
+    editor.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">車輛資料</span><h2>修改車輛資料</h2><p>可手動修改，或上傳照片協助填入車款及里程。請核對辨識結果後再儲存。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
+      <div class="vp-ai-capture"><label><span>車身或行車證照片</span><input type="file" accept="image/*" capture="environment" data-ai-vehicle></label><button type="button" data-recognize-vehicle>讀取車款</button><label><span>儀表盤照片</span><input type="file" accept="image/*" capture="environment" data-ai-dashboard></label><button type="button" data-recognize-dashboard>讀取里程</button></div>
+      <div class="vp-editor__status" data-editor-status>辨識結果只作預填參考，儲存前請先核對。</div>
       <form data-passport-form><div class="vp-editor__grid">
         <label>品牌<input name="make" value="${esc(vehicle.make || '')}" placeholder="例如 Toyota"></label>
         <label>型號<input name="model" required value="${esc(vehicle.model || '')}" placeholder="例如 Corolla Cross"></label>
@@ -258,7 +257,7 @@ export async function renderVehiclePassports(root, context = {}) {
       const input = editor.querySelector(kind === 'vehicle' ? '[data-ai-vehicle]' : '[data-ai-dashboard]');
       if (!input.files?.[0]) { statusLine.textContent = '請先拍攝或選擇照片。'; return; }
       statusLine.className = 'vp-editor__status is-working';
-      statusLine.textContent = '正在連接 MiniMax AI 辨識照片…';
+      statusLine.textContent = '正在讀取照片…';
       try {
         const image = await prepareImage(input.files[0]);
         const result = await sendJSONRequest('/api/ai', 'POST', { mode: kind === 'vehicle' ? 'vehicle-image' : 'dashboard-image', image });
@@ -268,7 +267,7 @@ export async function renderVehiclePassports(root, context = {}) {
           vehicleImage = image;
         } else if (result.dashboard?.mileage_km != null) form.elements.mileage_km.value = result.dashboard.mileage_km;
         statusLine.className = 'vp-editor__status is-success';
-        statusLine.textContent = `${result.provider === 'minimax' ? 'MiniMax AI' : 'AI'} 已完成預填（${result.model || 'vision model'}），請核對後儲存。`;
+        statusLine.textContent = '已填入可辨識資料，請核對後儲存。';
       } catch (error) {
         statusLine.className = 'vp-editor__status is-error';
         statusLine.textContent = `${error.message || '辨識失敗'}；仍可手動輸入。`;

@@ -125,7 +125,7 @@ test('empty passport persists unknown maintenance scope and supports manual edit
     await reader.getByRole('button', { name: '上一頁' }).click();
     await reader.getByRole('button', { name: '修改護照' }).click();
     const editor = page.getByRole('dialog', { name: '修改車輛護照' });
-    await expect(editor.getByText('MiniMax AI', { exact: false })).toBeVisible();
+    await expect(editor.getByText('辨識結果只作預填參考，儲存前請先核對。')).toBeVisible();
     await editor.locator('[name="plate"]').fill('AA-2026');
     await editor.locator('[name="mileage_km"]').fill('6789');
     await editor.getByRole('button', { name: '儲存護照' }).click();

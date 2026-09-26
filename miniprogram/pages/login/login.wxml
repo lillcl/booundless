@@ -1,6 +1,6 @@
 <view class="kc-page kc-login">
   <view class="kc-login__header">
-    <view class="kc-login__brand">康程 CarAI</view>
+    <view class="kc-login__brand">無界啟程 BOOUNDLESS</view>
     <view class="kc-login__sub">{{devMode ? '開發模式：可選郵箱 + 密碼登入' : '微信一鍵登入'}}</view>
   </view>
 

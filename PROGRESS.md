@@ -7,7 +7,7 @@
 - Orchestrator: `Lead / Orchestrator`
 
 ## Phase 0 — Initialization
-**Goal:** Confirm scope and stack for 康程 CarAI Service V10 Interactive before Phase 1.
+**Goal:** Confirm scope and stack for 無界啟程 BOOUNDLESS Service V10 Interactive before Phase 1.
 
 ### Task 0.1 — Confirm Project Scope
 - Status: ⏳ Pending
@@ -334,7 +334,7 @@
 
 ---
 
-## Phase 6 — Service MVP (康程 / BOOUNDLESS three-role pilot)
+## Phase 6 — Service MVP (無界啟程 BOOUNDLESS three-role pilot)
 
 **Goal:** 2026-09-23 (Asia/Hong_Kong) ship a controlled pilot: one confirmed dealer, real owners, three service entry points, full approval / inspection / completion / evidence / settlement flow.
 

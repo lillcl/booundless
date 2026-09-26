@@ -28,7 +28,7 @@ function sse(res, event) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Only POST allowed');
   const user = await requireUser(req, res); if (!user) return;
-  if (!allowRequest(user.id)) return sendError(res, 429, 'rate_limited', 'Too many CarAI requests; please try again shortly');
+  if (!allowRequest(user.id)) return sendError(res, 429, 'rate_limited', 'Too many AI assistant requests; please try again shortly');
   let streaming = false;
   try {
     const body = await readBody(req, { limit: '8mb' });

@@ -7,7 +7,7 @@
 
 ## 1. Goal
 
-Add an authentication layer and an admin console to the康程 CarAI demo so that:
+Add an authentication layer and an admin console to the 無界啟程 BOOUNDLESS demo so that:
 
 - A bootstrap **admin** user can sign in with credentials supplied during provisioning.
 - The admin can **create, read, update, and delete users** (CRUD).
@@ -196,9 +196,9 @@ Existing routes (`#/home`, `#/garage`, `#/service`, `#/qinao`, `#/videos`, `#/pr
 
 Replaces the current status-bar approach. Contents:
 
-- Public: `[康程] [車庫] [服務] [琴澳] [影片] [我的]   |   [Sign in]`
-- Authenticated user: `[康程] [車庫] ...   |   [email · user]   [Sign out]`
-- Admin: `[康程] [車庫] ... [管理]   |   [email · admin ▾]   [Sign out]`
+- Public: `[無界啟程] [車庫] [服務] [琴澳] [影片] [我的]   |   [Sign in]`
+- Authenticated user: `[無界啟程] [車庫] ...   |   [email · user]   [Sign out]`
+- Admin: `[無界啟程] [車庫] ... [管理]   |   [email · admin ▾]   [Sign out]`
 
 Admin menu (under `管理`): Users · Assets · Audit log.
 

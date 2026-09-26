@@ -1,8 +1,8 @@
-# CarAI Agent + Research MCP Implementation Plan
+# AI Assistant + Research MCP Implementation Plan
 
 ## 1. Goal
 
-Add a server-side CarAI agent that can:
+Add a server-side AI assistant for 無界啟程 BOOUNDLESS that can:
 
 - Understand the user's vehicles, maintenance records, reminders, trips, and preferences.
 - Call safe, validated application tools.

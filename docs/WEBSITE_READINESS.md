@@ -7,7 +7,7 @@ Local verification: 2026-09-10. These changes have not been deployed.
 | 1. Custom domain | Pending domain selection and DNS configuration. Metadata currently uses the existing booundless.vercel.app origin. |
 | 2. Empty view source | Not applicable: the app ships HTML content, not an empty React mount. Account data and interactivity still require JavaScript. |
 | 3. 404 | Added 404.html and local HTTP 404 handling, plus a hash-route error screen. Verified local HTTP status 404. Production behavior needs deployment verification. |
-| 4. Framework/template traces | No Vite/React runtime. Replaced the template browser title and topbar identity with BOOUNDLESS. Existing 康程 product copy remains. |
+| 4. Framework/template traces | No Vite/React runtime. Replaced the template browser title and topbar identity with 無界啟程 BOOUNDLESS and removed the legacy product name from customer-facing copy. |
 | 5. Page titles | Added titles for all current routes and unknown routes. Verified home and garage in browser. |
 | 6. Description | Added source-HTML description. |
 | 7. Social image | Added OG/Twitter metadata and supplied square brand image. Local image fetch passed; actual social previews need deployment. |
