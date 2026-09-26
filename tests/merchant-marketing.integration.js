@@ -67,7 +67,9 @@ try {
   assert.equal((await call('/api/admin/marketing/pages','PATCH',{path:campaign,version:0,content:{...content,headline:'Campaign headline',copy:'Campaign body',cta_label:'Start'}})).status,200);
   assert.equal((await call('/api/admin/marketing/pages','POST',{path:campaign,version:1})).status,200);
   const campaignHtml=await call(campaign,'GET',null,false,publicPage);assert.equal(campaignHtml.status,200);assert.ok(campaignHtml.body.includes('<h1>Campaign headline</h1>'));
-  assert.ok((await call('/sitemap.xml','GET',null,false,publicPage)).body.includes(campaign));
+  const sitemap=(await call('/sitemap.xml','GET',null,false,publicPage)).body;
+  assert.ok(sitemap.includes(campaign));
+  assert.ok(sitemap.includes('/qinao-guide.html'));
   assert.equal((await call('/api/marketing/conversions','POST',{consent:false,event_name:'vehicle_created',business_id:vehicleId})).status,422);
   await db.query('UPDATE marketing_integrations SET config=$1 WHERE id=TRUE',[{enabled:true,ga4:'G-TESTONLY'}]);
   const event=await call('/api/marketing/conversions','POST',{consent:true,event_name:'vehicle_created',business_id:vehicleId});assert.equal(event.status,200);assert.equal(event.body.recorded,true);
