@@ -77,6 +77,13 @@ function bookMarkup(vehicle, reminder) {
   </button>`;
 }
 
+function historyUnknownMarkup(vehicle) {
+  return `<section class="vp-history-unknown" aria-label="${esc(vehicleName(vehicle))} 保養紀錄提醒">
+    <div><b>${esc(vehicleName(vehicle))}：保養紀錄尚未建立</b><p>目前沒有檢查或維修紀錄，車況尚未確認。可預約基線檢查，建立這輛車的初始車況紀錄。</p></div>
+    <a href="#/service-offers?vehicle_id=${encodeURIComponent(vehicle.id)}">預約基線檢查</a>
+  </section>`;
+}
+
 function identityPage(vehicle) {
   const placeholder = !vehicle.image || /vehicle-placeholder\.svg(?:$|\?)/.test(vehicle.image);
   const fields = [
@@ -427,7 +434,7 @@ export async function renderVehiclePassports(root, context = {}) {
       content.innerHTML = `<div class="vp-empty"><img src="assets/garage-empty-v1.png" alt="白色車輛與數碼車輛護照"><h2>建立你的第一本車輛護照</h2><p>新增車輛後，身份、里程及保養範圍會在這裡集中顯示。</p><button class="vp-add" type="button" data-empty-add>新增車輛</button></div>`;
       content.querySelector('[data-empty-add]').addEventListener('click', () => context.onAddVehicle?.());
     } else {
-      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle) => bookMarkup(vehicle, reminders.find((item) => item.vehicle_id === vehicle.id))).join('')}</div>`;
+      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle) => `<div class="vp-vehicle-entry">${bookMarkup(vehicle, reminders.find((item) => item.vehicle_id === vehicle.id))}<div data-history-unknown-for="${esc(vehicle.id)}"></div></div>`).join('')}</div>`;
       content.querySelectorAll('[data-passport-id]').forEach((book) => book.addEventListener('click', () => {
         const vehicle = vehicles.find((item) => item.id === book.dataset.passportId);
         if (vehicle) openReader(vehicle, book, reminders);
@@ -435,14 +442,13 @@ export async function renderVehiclePassports(root, context = {}) {
       if (window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.gsap.fromTo(content.querySelectorAll('.vp-book'), { opacity: 0, y: 35, rotateY: 8 }, { opacity: 1, y: 0, rotateY: 0, duration: .7, stagger: .11, ease: 'power3.out' });
       }
-      /* Inject the "歷史未知" CTA above each vehicle that has no history
-         yet AND no baseline inspection pending. The CTA leads to the
-         service-offers page filtered by this vehicle. */
+      /* Keep each history CTA with its own passport card. */
       if (typeof window.passportCta === 'function') {
-        const shelf = content.querySelector('.vp-shelf');
         for (const vehicle of vehicles) {
-          const cta = await window.passportCta(shelf, vehicle.id);
-          if (cta && shelf.firstChild !== cta) shelf.insertBefore(cta, shelf.firstChild);
+          const cta = await window.passportCta(content.querySelector('.vp-shelf'), vehicle.id);
+          const target = content.querySelector(`[data-history-unknown-for="${CSS.escape(vehicle.id)}"]`);
+          if (cta && target) target.replaceWith(historyUnknownMarkup(vehicle));
+          else target?.remove();
         }
       }
     }

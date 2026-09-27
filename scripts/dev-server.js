@@ -39,7 +39,7 @@ import adminCspReportsHandler from '../api/_handlers/admin-csp-reports.js';
 import serviceOffersHandler from '../api/_handlers/service-offers.js';
 import { closeDb } from '../api/_lib/db.js';
 import { applySecurityHeaders } from '../api/_lib/security-headers.js';
-import { originCheckWrap } from '../api/_lib/origin-check.js';
+import { originCheck } from '../api/_lib/origin-check.js';
 import { rateLimit } from '../api/_lib/rate-limit.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -57,17 +57,11 @@ app.use(express.json({ limit: '8mb' }));
 /* Cross-cutting security: HSTS / CSP / X-Frame-Options / Referrer-Policy. */
 app.use((_req, res, next) => { applySecurityHeaders(res); next(); });
 
-/* Rate limiters, applied per-route so /api/auth and /api/me can stay tight. */
+/* Match production's three API limiter tiers and origin policy. */
 const testLimit = process.env.NODE_ENV === 'test' ? 1000 : null;
 const apiLimiter = rateLimit({ capacity: testLimit || 120, refillTokens: testLimit || 120, refillMs: 60_000 });
 const authLimiter = rateLimit({ capacity: testLimit || 15, refillTokens: testLimit || 15, refillMs: 60_000 });
 const mutatingLimiter = rateLimit({ capacity: testLimit || 60, refillTokens: testLimit || 60, refillMs: 60_000 });
-function withLimit(limiter, handler) {
-  return async (req, res) => {
-    if (!(await limiter(req, res, null))) return;
-    return handler(req, res);
-  };
-}
 function isMutating(req) { return ['POST','PUT','PATCH','DELETE'].includes(req.method); }
 
 /* Express → Vercel req shim: provide a parsed `query` and `url` path. */
@@ -78,18 +72,17 @@ function adapt(handler) {
   };
 }
 
-/* Dev-only: strict limiter + origin check for auth + me routes.
-   In production api/index.js wraps every handler, but the dev shim mounts
-   handlers directly — apply the same guards here so behaviour matches. */
-function protect(limiter, handler) {
-  const wrapped = originCheckWrap(adapt(handler));
-  return (req, res, next) => {
-    limiter(req, res, null).then((allowed) => {
-      if (res.writableEnded || !allowed) return;
-      wrapped(req, res).catch(next);
-    }).catch(next);
-  };
-}
+app.use('/api', async (req, res, next) => {
+  try {
+    const path = req.originalUrl || req.url || '';
+    const strict = path.startsWith('/api/auth') || path.startsWith('/api/me');
+    const limiter = strict ? authLimiter : isMutating(req) ? mutatingLimiter : apiLimiter;
+    if (!(await limiter(req, res, null))) return;
+    return originCheck(null, null, next)(req, res);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 app.get('/api/health', adapt(healthHandler));
 app.get('/api/vehicles', adapt(vehiclesHandler));
@@ -109,13 +102,13 @@ app.get('/api/history', adapt(historyHandler));
 app.get('/api/history/recent', adapt(historyHandler));
 app.get('/api/reminders', adapt(remindersHandler));
 app.get('/api/reminders/:id', adapt(remindersHandler));
-app.get('/api/auth/me', protect(authLimiter, authHandler));
-app.post('/api/auth/login', protect(authLimiter, authHandler));
-app.post('/api/auth/register', protect(authLimiter, authHandler));
-app.post('/api/auth/logout', protect(authLimiter, authHandler));
-app.get('/api/me', protect(authLimiter, meHandler));
-app.get('/api/me/export', protect(authLimiter, meHandler));
-app.delete('/api/me', protect(authLimiter, meHandler));
+app.get('/api/auth/me', adapt(authHandler));
+app.post('/api/auth/login', adapt(authHandler));
+app.post('/api/auth/register', adapt(authHandler));
+app.post('/api/auth/logout', adapt(authHandler));
+app.get('/api/me', adapt(meHandler));
+app.get('/api/me/export', adapt(meHandler));
+app.delete('/api/me', adapt(meHandler));
 app.get('/api/users', adapt(usersHandler));
 app.post('/api/users', adapt(usersHandler));
 app.patch('/api/users/:id', adapt(usersHandler));
@@ -226,13 +219,20 @@ app.use((_req, res) => {
   res.status(404).sendFile(join(root, 'error.html'));
 });
 
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   console.error('[dev-server] unhandled error:', err);
   if (res.headersSent) return;
   if (String(req.path || '').startsWith('/api/')) {
-    res.statusCode = 500;
+    const invalidJson = err?.type === 'entity.parse.failed';
+    const tooLarge = err?.type === 'entity.too.large';
+    res.statusCode = invalidJson ? 400 : tooLarge ? 413 : 500;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({ error: { code: 'internal_error', message: err.message } }));
+    res.end(JSON.stringify({ error: {
+      code: invalidJson ? 'invalid_json' : tooLarge ? 'payload_too_large' : 'internal_error',
+      message: invalidJson ? 'Request body must be valid JSON'
+        : tooLarge ? 'Request body is too large'
+          : 'Internal server error',
+    } }));
     return;
   }
   res.status(500).sendFile(join(root, 'error.html'));
@@ -241,7 +241,7 @@ app.use((err, _req, res, _next) => {
 const server = createServer(app);
 
 server.listen(port, () => {
-  console.log(`[dev-server] 康程 CarAI listening on http://127.0.0.1:${port}`);
+  console.log(`[dev-server] 無界啟程 BOOUNDLESS listening on http://127.0.0.1:${port}`);
   console.log(`[dev-server]   Home   -> http://127.0.0.1:${port}/`);
   console.log(`[dev-server]   Health -> http://127.0.0.1:${port}/api/health`);
 });

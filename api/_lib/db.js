@@ -2,7 +2,7 @@
    Single shared pool per process. */
 
 import pg from 'pg';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seedShopCatalog } from '../../db/shop-catalog.js';
@@ -32,15 +32,28 @@ function resolveSchemaPath() {
 export { SCHEMA_VERSION };
 
 export async function applySchema(db) {
-  const sql = readFileSync(resolveSchemaPath(), 'utf8');
+  const schemaPath = resolveSchemaPath();
+  const schemaDir = dirname(schemaPath);
+  const sql = readFileSync(schemaPath, 'utf8');
   await db.query(sql);
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'marketing-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'merchant-v2-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'workflow-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'scope-ai-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'shop-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'vehicle-sharing-schema.sql'), 'utf8'));
-  await db.query(readFileSync(join(dirname(resolveSchemaPath()), 'service-mvp-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'marketing-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'merchant-v2-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'workflow-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'scope-ai-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'shop-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'vehicle-sharing-schema.sql'), 'utf8'));
+  await db.query(readFileSync(join(schemaDir, 'service-mvp-schema.sql'), 'utf8'));
+  /* Development auto-bootstrap must finish with the same forward-only
+     migrations as scripts/migrate.js. Otherwise a later base/additive slice
+     can recreate an object that a migration deliberately removed (for
+     example dealer_invites), leaving dev and E2E on a schema that production
+     never has. */
+  const migrationsDir = join(schemaDir, 'migrations');
+  if (existsSync(migrationsDir)) {
+    for (const file of readdirSync(migrationsDir).filter((name) => name.endsWith('.sql')).sort()) {
+      await db.query(readFileSync(join(migrationsDir, file), 'utf8'));
+    }
+  }
   await db.query("INSERT INTO _meta(key,value) VALUES('schema_version',$1) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value", [SCHEMA_VERSION]);
 }
 

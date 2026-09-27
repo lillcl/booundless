@@ -12,7 +12,7 @@
 
    Cleanup runs in `finally` so reruns are safe. */
 
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
@@ -39,6 +39,7 @@ if (!DB_URL) {
     try {
       const adminId = `admin-${suffix}`;
       const ownerId = `owner-${suffix}`;
+      const dealerUserId = `dealer-user-${suffix}`;
       const dealerId = `dealer-${suffix}`;
       const branchId = `branch-${suffix}`;
       const vehicleId = `vehicle-${suffix}`;
@@ -57,13 +58,19 @@ if (!DB_URL) {
         [ownerId, `owner-${suffix}@example.test`, hash('Owner-pw-2026!')]
       );
       await c.query(
+        `INSERT INTO users (id, email, password_hash, role, display_name, is_active)
+         VALUES ($1,$2,$3,'user','Test Dealer', TRUE)
+         ON CONFLICT (id) DO NOTHING`,
+        [dealerUserId, `dealer-${suffix}@example.test`, hash('Dealer-pw-2026!')]
+      );
+      await c.query(
         `INSERT INTO dealers (id, display_name, status, pilot_enabled)
          VALUES ($1,'Test Dealer', 'active', TRUE)
          ON CONFLICT (id) DO NOTHING`,
         [dealerId]
       );
       await c.query(
-        `INSERT INTO dealer_branches (id, dealer_id, display_name, timezone)
+        `INSERT INTO dealer_branches (id, dealer_id, name, timezone)
          VALUES ($1,$2,'Test Branch', 'Asia/Macau')
          ON CONFLICT (id) DO NOTHING`,
         [branchId, dealerId]
@@ -72,13 +79,13 @@ if (!DB_URL) {
         `INSERT INTO dealer_members (dealer_id, user_id, role)
          VALUES ($1,$2,'owner')
          ON CONFLICT DO NOTHING`,
-        [dealerId, ownerId]
+        [dealerId, dealerUserId]
       );
       await c.query(
         `INSERT INTO vehicles (id, model, make, year, fuel_type, plate, mileage_km, mileage_label,
           created_by_user_id, onboarding_state, onboarding_completed_at)
          VALUES ($1, 'Corolla Cross', 'Toyota', 2021, '混能', $2, 42680, '42680 km',
-          $3, 'completed', NOW())
+          $3, 'ready', NOW())
          ON CONFLICT (id) DO NOTHING`,
         [vehicleId, `TEST-${suffix}`, ownerId]
       );
@@ -89,6 +96,24 @@ if (!DB_URL) {
           'MOP', 28000, 'fixed', 45, 'baseline-v1', TRUE)`,
         [offerId, dealerId, branchId]
       );
+      const serviceKeys = [
+        'engine_oil', 'oil_filter', 'transmission_fluid', 'brake_pads',
+        'brake_fluid', 'coolant', 'spark_plugs', 'air_filter', 'cabin_filter',
+      ];
+      for (const key of serviceKeys) {
+        const serviceId = `service-${suffix}-${key}`;
+        await c.query(
+          `INSERT INTO dealer_service_items
+             (id,dealer_id,name,service_item_type_key,is_active)
+           VALUES ($1,$2,$3,$4,TRUE)`,
+          [serviceId, dealerId, key, key],
+        );
+        await c.query(
+          `INSERT INTO service_offer_items (offer_id,dealer_service_item_id)
+           VALUES ($1,$2)`,
+          [offerId, serviceId],
+        );
+      }
       // Slot in 1 hour for 60 minutes
       const starts = new Date(Date.now() + 60 * 60 * 1000);
       const ends = new Date(starts.getTime() + 60 * 60 * 1000);
@@ -99,24 +124,47 @@ if (!DB_URL) {
         [slotId, branchId, starts.toISOString(), ends.toISOString()]
       );
       await c.query('COMMIT');
-      return { adminId, ownerId, dealerId, branchId, vehicleId, offerId, slotId };
+      return { adminId, ownerId, dealerUserId, dealerId, branchId, vehicleId, offerId, slotId };
     } catch (e) {
       await c.query('ROLLBACK').catch(() => {});
       throw e;
     }
   }
 
-  async function cleanup(c, suffix) {
-    const ids = [`admin-${suffix}`, `owner-${suffix}`];
-    await c.query(`DELETE FROM users WHERE id = ANY($1::text[])`, [ids]);
-    await c.query(`DELETE FROM dealer_members WHERE dealer_id = $1`, [`dealer-${suffix}`]);
+  async function cleanup(c, suffix, includeSecondOwner = false) {
+    const ids = [`admin-${suffix}`, `owner-${suffix}`, `dealer-user-${suffix}`];
+    const vehicleIds = [`vehicle-${suffix}`];
+    if (includeSecondOwner) {
+      ids.push(`owner2-${suffix}`);
+      vehicleIds.push(`vehicle2-${suffix}`);
+    }
+    const requestWhere = `SELECT id FROM dealer_service_requests WHERE vehicle_id = ANY($1::text[])`;
+    await c.query(`DELETE FROM request_actions WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM commission_entries WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM service_payment_events WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM service_completion_lines USING service_completions
+      WHERE service_completion_lines.completion_id=service_completions.id
+        AND service_completions.request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM service_completions WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM service_order_lines WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM inspection_results USING inspection_reports
+      WHERE inspection_results.report_id=inspection_reports.id
+        AND inspection_reports.request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM inspection_reports WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM service_bookings WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM dealer_quotes WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM dealer_request_events WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM dealer_request_items WHERE request_id IN (${requestWhere})`, [vehicleIds]);
+    await c.query(`DELETE FROM dealer_service_requests WHERE vehicle_id = ANY($1::text[])`, [vehicleIds]);
+    await c.query(`DELETE FROM service_history WHERE vehicle_id = ANY($1::text[])`, [vehicleIds]);
+    await c.query(`DELETE FROM vehicles WHERE id = ANY($1::text[])`, [vehicleIds]);
     await c.query(`DELETE FROM booking_slots WHERE branch_id = $1`, [`branch-${suffix}`]);
     await c.query(`DELETE FROM service_offers WHERE dealer_id = $1`, [`dealer-${suffix}`]);
+    await c.query(`DELETE FROM dealer_service_items WHERE dealer_id = $1`, [`dealer-${suffix}`]);
+    await c.query(`DELETE FROM dealer_members WHERE dealer_id = $1`, [`dealer-${suffix}`]);
     await c.query(`DELETE FROM dealer_branches WHERE id = $1`, [`branch-${suffix}`]);
     await c.query(`DELETE FROM dealers WHERE id = $1`, [`dealer-${suffix}`]);
-    await c.query(`DELETE FROM vehicles WHERE id = $1`, [`vehicle-${suffix}`]);
-    // Cascade through service_* tables for this request
-    await c.query(`DELETE FROM dealer_service_requests WHERE vehicle_id = $1`, [`vehicle-${suffix}`]);
+    await c.query(`DELETE FROM users WHERE id = ANY($1::text[])`, [ids]);
   }
 
   async function postJSON(client, baseUrl, path, cookie, body, idempotencyKey) {
@@ -152,10 +200,11 @@ if (!DB_URL) {
   /* Start the dev server (use whatever port TEST_PORT says, default 0 = find one) */
   async function startServer() {
     const { spawn } = await import('node:child_process');
+    const port = 3100 + Math.floor(Math.random() * 200);
     const proc = spawn('node', ['scripts/dev-server.js'], {
       env: {
         ...process.env,
-        PORT: String(3100 + Math.floor(Math.random() * 200)),
+        PORT: String(port),
         KC_DATABASE_URL: DB_URL,
         KC_AUTO_MIGRATE: '0', // we ran migrate manually
         DEMO_SEED_ENABLED: '0',
@@ -164,7 +213,6 @@ if (!DB_URL) {
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const port = Number(proc.env.PORT || (() => { const m = proc.spawnargs.join(' ').match(/PORT=(\d+)/); return m ? m[1] : '3100'; })());
     const baseUrl = `http://127.0.0.1:${port}`;
     // wait for /api/health
     for (let i = 0; i < 40; i += 1) {
@@ -200,7 +248,7 @@ if (!DB_URL) {
         const version0 = create.body.data.version;
         // 2. Dealer logs in and quotes (manual quote with v2 line_ids).
         const dealerLogin = await postJSON(null, baseUrl, '/api/auth/login', null,
-          { email: `owner-${suffix}@example.test`, password: 'Owner-pw-2026!' });
+          { email: `dealer-${suffix}@example.test`, password: 'Dealer-pw-2026!' });
         const dealerCookie = dealerLogin.setCookie.split(';')[0];
         // Build a v2 quote payload with 1 line that bundles 7 inspection keys (labour only).
         const lineId = randomUUID();
@@ -210,20 +258,25 @@ if (!DB_URL) {
           quantity: 1,
           parts_unit_minor: 0,
           labour_minor: 28000,
+          amount_minor: 28000,
           work_type: 'inspect',
-          service_keys: ['engine_oil','oil_filter','transmission_oil','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter'],
+          service_keys: ['engine_oil','oil_filter','transmission_fluid','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter'],
         }];
         const quoteRes = await postJSON(null, baseUrl, `/api/service-requests/${requestId}`, dealerCookie,
           { action: 'quote', version: version0, currency: 'MOP',
-            items: quoteItems.map((it) => ({ description: it.description, amount_minor: 28000, service_keys: it.service_keys })),
+            items: quoteItems,
             expires_at: new Date(Date.now() + 7 * 86400000).toISOString() },
           randomUUID());
         assert.equal(quoteRes.status, 200, `quote (${quoteRes.body.error?.message || ''})`);
         // 3. Owner accepts the quote with the line_id (v2 path).
         const afterQuote = (await getJSON(null, baseUrl, `/api/service-requests/${requestId}`, cookie)).body.data;
         const latestVersion = afterQuote.version;
+        const quoteId = (await c.query(
+          `SELECT id FROM dealer_quotes WHERE request_id=$1 ORDER BY version DESC LIMIT 1`,
+          [requestId],
+        )).rows[0].id;
         const accept = await postJSON(null, baseUrl, `/api/service-requests/${requestId}`, cookie,
-          { action: 'accept_quote', version: latestVersion, quote_id: quoteRes.body.request ? quoteRes.body.request.accepted_quote_id : undefined,
+          { action: 'accept_quote', version: latestVersion, quote_id: quoteId,
             selected_line_ids: [lineId] },
           randomUUID());
         assert.equal(accept.status, 200, `accept_quote (${accept.body.error?.message || ''})`);
@@ -240,13 +293,12 @@ if (!DB_URL) {
           randomUUID());
         assert.equal(startRes.status, 200, `start (${startRes.body.error?.message || ''})`);
         // 6. Dealer drafts and publishes an inspection report.
-        const draft = await putJSON(null, baseUrl, `/api/service-requests/${requestId}/inspection`, dealerCookie,
-          { mileage_km: 42680, summary: '全部在範圍內', template_key: 'baseline-v1' });
-        assert.equal(draft.status, 200, `inspection draft (${draft.body.error?.message || ''})`);
-        const reportId = draft.body.data.id;
         const allResults = ['engine_oil_and_filter','transmission_oil','brake_pads','brake_fluid','coolant','spark_plugs','air_filter','cabin_filter']
           .map((k) => ({ check_key: k, result: 'normal', service_keys: [],
                           notes: 'ok', measurement_method: 'visual' }));
+        const draft = await putJSON(null, baseUrl, `/api/service-requests/${requestId}/inspection`, dealerCookie,
+          { mileage_km: 42680, summary: '全部在範圍內', template_key: 'baseline-v1', results: allResults });
+        assert.equal(draft.status, 200, `inspection draft (${draft.body.error?.message || ''})`);
         const pub = await postJSON(null, baseUrl, `/api/service-requests/${requestId}/inspection/publish`,
           dealerCookie, { version: draft.body.data.version, results: allResults },
           randomUUID());
@@ -267,8 +319,9 @@ if (!DB_URL) {
             actual_parts_brand: null, actual_parts_spec: null, actual_part_number: null,
             next_due_km: 50000, next_due_date: null })),
         };
+        const afterPublish = (await getJSON(null, baseUrl, `/api/service-requests/${requestId}`, dealerCookie)).body.data;
         const compRes = await postJSON(null, baseUrl, `/api/service-requests/${requestId}`, dealerCookie,
-          { action: 'complete', version: pub.body.data && 0, completion },
+          { action: 'complete', version: afterPublish.version, completion },
           randomUUID());
         assert.equal(compRes.status, 200, `complete (${compRes.body.error?.message || ''})`);
         // 8. Owner confirms. Since service_kind=baseline, history is inspection-only and last_done unchanged.
@@ -296,7 +349,6 @@ if (!DB_URL) {
       } catch (e) { console.error('[cleanup]', e.message); }
       proc.kill();
       await new Promise((r) => setTimeout(r, 200));
-      await pool.end().catch(() => {});
     }
   });
 
@@ -318,7 +370,7 @@ if (!DB_URL) {
         const v2 = `vehicle2-${suffix}`;
         await c.query(
           `INSERT INTO vehicles (id, model, fuel_type, plate, mileage_km, mileage_label, created_by_user_id, onboarding_state)
-           VALUES ($1,'Yaris','汽油',$2, 12000, '12000 km', $3, 'completed')`,
+           VALUES ($1,'Yaris','汽油',$2, 12000, '12000 km', $3, 'ready')`,
           [v2, `T2-${suffix}`, owner2]
         );
         // Both owners log in and create requests for the same offer + slot.
@@ -329,7 +381,7 @@ if (!DB_URL) {
           { email: `owner2-${suffix}@example.test`, password: 'Owner-pw-2026!' });
         const owner2Cookie = owner2Login.setCookie.split(';')[0];
         const dealerLogin = await postJSON(null, baseUrl, '/api/auth/login', null,
-          { email: `owner-${suffix}@example.test`, password: 'Owner-pw-2026!' });
+          { email: `dealer-${suffix}@example.test`, password: 'Dealer-pw-2026!' });
         const dealerCookie = dealerLogin.setCookie.split(';')[0];
         const r1 = await postJSON(null, baseUrl, `/api/vehicles/${seed.vehicleId}/service-requests`, owner1Cookie,
           { offer_id: seed.offerId, contact_name: 'O1', terms_version: 'v1', consented_at: new Date().toISOString() },
@@ -341,11 +393,12 @@ if (!DB_URL) {
         assert.equal(r2.status, 200, 'r2 create');
         // Dealer quotes both.
         for (const req of [r1.body.data, r2.body.data]) {
-          await postJSON(null, baseUrl, `/api/service-requests/${req.id}`, dealerCookie,
+          const quote = await postJSON(null, baseUrl, `/api/service-requests/${req.id}`, dealerCookie,
             { action: 'quote', version: req.version, currency: 'MOP',
               items: [{ description: 'baseline', amount_minor: 28000, service_keys: ['engine_oil'] }],
               expires_at: new Date(Date.now() + 86400000).toISOString() },
             randomUUID());
+          assert.equal(quote.status, 200, `quote ${req.id}`);
         }
         const a1 = (await getJSON(null, baseUrl, `/api/service-requests/${r1.body.data.id}`, owner1Cookie)).body.data;
         const a2 = (await getJSON(null, baseUrl, `/api/service-requests/${r2.body.data.id}`, owner2Cookie)).body.data;
@@ -372,16 +425,14 @@ if (!DB_URL) {
       });
     } finally {
       try {
-        await withClient((c) => {
-          return c.query(`DELETE FROM users WHERE id IN ($1,$2)`,
-            [`owner-${suffix}`, `owner2-${suffix}`]).then(() =>
-            c.query(`DELETE FROM vehicles WHERE id = $1`, [`vehicle2-${suffix}`])
-          ).then(() => cleanup(c, suffix));
-        });
+        await withClient((c) => cleanup(c, suffix, true));
       } catch (e) { console.error('[cleanup]', e.message); }
       proc.kill();
       await new Promise((r) => setTimeout(r, 200));
-      await pool.end().catch(() => {});
     }
+  });
+
+  after(async () => {
+    await pool.end().catch(() => {});
   });
 }

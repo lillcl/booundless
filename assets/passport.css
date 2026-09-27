@@ -14,6 +14,12 @@
 @media(max-width:680px){.vp-service-checks{grid-template-columns:1fr}.vp-editor__wide{grid-column:auto}}
 /* Flat, readable vehicle records; remove the decorative leather-book treatment. */
 .vp-page{background:#f7f8f8;color:#172b35}
+.vp-shelf{align-items:start}
+.vp-vehicle-entry{display:grid;gap:10px;min-width:0}
+.vp-history-unknown{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border:1px solid #f0b56b;border-radius:10px;background:#fff5e3;color:#6f4308}
+.vp-history-unknown b{font-size:13px}
+.vp-history-unknown p{margin:4px 0 0;font-size:11px;line-height:1.45;color:#765831}
+.vp-history-unknown a{flex:0 0 auto;padding:9px 12px;border-radius:7px;background:#173c4d;color:#fff;text-decoration:none;font-size:11px;font-weight:700}
 .vp-heading h1{letter-spacing:0;line-height:1.1}
 .vp-heading p{color:#5e6c71}
 .vp-add{border-radius:8px;background:#173c4d;box-shadow:none}
@@ -46,4 +52,4 @@
 .vp-editor__panel{border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.18)}
 .vp-editor__head button,.vp-edit-trigger,.vp-ai-capture,.vp-ai-capture button,.vp-editor__grid input,.vp-editor__grid select,.vp-editor__grid textarea,.vp-service-checks,.vp-service-checks label,.vp-access-select select,.vp-access-options,.vp-access-list .vp-row button{border-radius:8px}
 @media(max-width:820px){.vp-reader__stage{height:100vh}.vp-reader__book{inset:0;display:block;overflow:auto;border:0;border-radius:0;box-shadow:none}.vp-spread.is-active{display:block}.vp-paper,.vp-paper--right{width:100%;height:auto;max-height:none;overflow:visible;padding:24px 20px;background:#fff}.vp-paper:first-child{border-bottom:1px solid #e0e5e6}.vp-progress{bottom:10px;border-radius:8px;background:#173c4d}.vp-progress button{border-radius:7px}.vp-reader__close{top:12px;right:12px}}
-@media(max-width:680px){.vp-shelf{grid-template-columns:1fr;padding:4px 0 12px}.vp-book{max-width:none;min-height:200px}.vp-book__inner{min-height:200px}.vp-heading h1{font-size:38px}.vp-empty{border-radius:10px;box-shadow:none}.vp-empty img{display:none}}
+@media(max-width:680px){.vp-shelf{grid-template-columns:1fr;padding:4px 0 12px}.vp-book{max-width:none;min-height:200px}.vp-book__inner{min-height:200px}.vp-history-unknown{align-items:flex-start;flex-direction:column}.vp-history-unknown a{width:100%;text-align:center}.vp-heading h1{font-size:38px}.vp-empty{border-radius:10px;box-shadow:none}.vp-empty img{display:none}}

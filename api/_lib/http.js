@@ -9,7 +9,9 @@ export function sendJSON(res, status, payload) {
 }
 
 export function sendError(res, status, code, message) {
-  sendJSON(res, status, { error: { code, message } });
+  const production = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
+  const safeMessage = production && status >= 500 ? 'Internal server error' : message;
+  sendJSON(res, status, { error: { code, message: safeMessage } });
 }
 
 export function onlyMethod(req, res, allowed) {

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolveHandler } from '../api/index.js';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -34,6 +35,54 @@ test('garage is rendered by the database-backed vehicle passport module', () => 
 test('standalone AI function bundles database schema files required by authentication', () => {
   const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
   assert.equal(config.functions?.['api/ai.js']?.includeFiles, 'db/*.sql');
+});
+
+test('development schema bootstrap applies forward migrations after schema slices', () => {
+  const dbSource = readFileSync(new URL('../api/_lib/db.js', import.meta.url), 'utf8');
+  const serviceSlice = dbSource.indexOf("service-mvp-schema.sql");
+  const migrationsDir = dbSource.indexOf("join(schemaDir, 'migrations')");
+  assert.ok(serviceSlice >= 0, 'service schema slice is applied');
+  assert.ok(migrationsDir > serviceSlice, 'forward migrations run after all schema slices');
+  assert.match(dbSource, /readdirSync\(migrationsDir\).*\.sort\(\)/s);
+});
+
+test('retired dealer invite endpoints resolve to 404 instead of an auth handler', () => {
+  assert.equal(resolveHandler('/api/dealer/invites/register'), null);
+  assert.equal(resolveHandler('/api/dealer/invites/accept'), null);
+  assert.equal(resolveHandler('/api/admin/dealers/dealer-123/invites'), null);
+});
+
+test('API guard wrappers are cached separately by limiter class', () => {
+  const source = readFileSync(new URL('../api/index.js', import.meta.url), 'utf8');
+  assert.match(source, /opts\.strict \? 'strict' : opts\.mutating \? 'mutating' : 'default'/);
+  assert.match(source, /variants\.set\(variant, guarded\)/);
+  assert.doesNotMatch(source, /wrapped\.set\(target, guarded\)/);
+});
+
+test('development error handler uses its request argument', () => {
+  const source = readFileSync(new URL('../scripts/dev-server.js', import.meta.url), 'utf8');
+  assert.match(source, /app\.use\(\(err, req, res, _next\) =>/);
+  assert.doesNotMatch(source, /app\.use\(\(err, _req, res, _next\) =>[\s\S]*?req\.path/);
+  assert.match(source, /err\?\.type === 'entity\.parse\.failed'/);
+  assert.match(source, /code: invalidJson \? 'invalid_json'/);
+});
+
+test('development server applies rate and origin guards to every API route', () => {
+  const source = readFileSync(new URL('../scripts/dev-server.js', import.meta.url), 'utf8');
+  assert.match(source, /app\.use\('\/api', async \(req, res, next\) =>/);
+  assert.match(source, /strict \? authLimiter : isMutating\(req\) \? mutatingLimiter : apiLimiter/);
+  assert.match(source, /return originCheck\(null, null, next\)\(req, res\)/);
+  assert.doesNotMatch(source, /function withLimit\(/);
+  assert.doesNotMatch(source, /function protect\(/);
+});
+
+test('legal pages use root-relative assets and the canonical production host', () => {
+  for (const page of ['privacy', 'terms']) {
+    const source = readFileSync(new URL(`../legal/${page}.html`, import.meta.url), 'utf8');
+    assert.match(source, /href="\/assets\/icons\/booundless-car\.png"/);
+    assert.match(source, /src="\/assets\/icons\/booundless-car\.png"/);
+    assert.match(source, new RegExp(`href="https://www\\.booundless\\.com/legal/${page}\\.html"`));
+  }
 });
 
 test('file previews send login to the hosted API-backed application', () => {

@@ -327,7 +327,7 @@ export async function submitCompletion(client, { requestId, userId, completion }
     );
   }
   await client.query(
-    `UPDATE dealer_service_requests SET work_state='completion_submitted',
+    `UPDATE dealer_service_requests SET status='completed', work_state='completion_submitted',
        completed_at=NOW(), final_total_minor=$1,
        version=version+1, updated_at=NOW() WHERE id=$2`,
     [completedSum, requestId]

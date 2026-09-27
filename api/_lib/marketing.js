@@ -1,4 +1,15 @@
-export const ORIGIN = 'https://www.booundless.com';
+function configuredOrigin() {
+  const value = process.env.KC_PUBLIC_ORIGIN || 'https://www.booundless.com';
+  try {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
+    return url.origin;
+  } catch {
+    throw new Error('KC_PUBLIC_ORIGIN must be a valid HTTP(S) origin');
+  }
+}
+
+export const ORIGIN = configuredOrigin();
 export const validPagePath=path=>['/','/demo'].includes(path)||/^\/campaigns\/[a-z0-9]+(-[a-z0-9]+)*$/.test(path);
 export function validateMetadata(body) {
   const result = {};

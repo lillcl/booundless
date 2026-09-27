@@ -229,7 +229,7 @@ export async function internalEvidenceHandler(req, res, objectKey, mode, exp, si
         if (!detectMime(buffer)) { res.statusCode = 415; return res.end('Unsupported image'); }
         await store.write(objectKey, buffer, detectMime(buffer));
         res.statusCode = 200; res.end('ok');
-      } catch (e) { res.statusCode = 500; res.end(e.message); }
+      } catch (e) { console.error('[evidence-storage] write failed', e); res.statusCode = 500; res.end('Storage error'); }
     });
     return;
   }

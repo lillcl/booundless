@@ -132,6 +132,7 @@ export default async function handler(req,res) {
     if(!customer&&!operator){await client.query('ROLLBACK');return sendError(res,403,'forbidden','Request access denied');}
     if(body.version!==r.version){await client.query('ROLLBACK');return sendError(res,409,'conflict','Request changed; refresh before trying again');}
     let next=r.status;
+    let requestUpdatedByHelper=false;
     if(body.action==='quote') {
       if(!operator||!['new','quoted'].includes(r.status))throw new Error('Cannot quote this request');
       const {items,total}=quoteItems(body.items);
@@ -164,6 +165,7 @@ export default async function handler(req,res) {
           selectedLineIds=selectedQuoteLines(q.items,body.selected_line_indexes).map((line)=>line.line_id).filter(Boolean);
         }
         await acceptQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:q.id, selectedLineIds:selectedLineIds||[] });
+        requestUpdatedByHelper=true;
       } else {
         const approved=selectedQuoteLines(q.items,body.selected_line_indexes);
         await client.query('UPDATE dealer_quotes SET accepted_at=NOW() WHERE id=$1',[q.id]);
@@ -176,11 +178,13 @@ export default async function handler(req,res) {
     } else if(body.action==='reject_quote') {
       if(!customer)throw new Error('Only the owner can reject a quote');
       await rejectQuoteV2(client, { requestId:r.id, userId:user.id, quoteId:body.quote_id, reason:body.reason });
+      requestUpdatedByHelper=true;
       next='new';
     } else if(body.action==='schedule') {
       if(body.slot_id){
         if(!operator&&!customer)throw new Error('Only the owner or operator can schedule');
         await scheduleSlotV2(client, { requestId:r.id, userId:user.id, slotId:body.slot_id, operator: !!operator });
+        requestUpdatedByHelper=true;
       } else {
         if(!operator||r.status!=='accepted')throw new Error('Accept a quote before scheduling');
         const scheduled=new Date(body.scheduled_at);
@@ -191,6 +195,7 @@ export default async function handler(req,res) {
     } else if(body.action==='start') {
       if(!operator)throw new Error('Only operator can start');
       await startService(client, { requestId:r.id, userId:user.id });
+      requestUpdatedByHelper=true;
       next='scheduled';
     } else if(body.action==='complete') {
       if(!operator)throw new Error('Only operator can complete');
@@ -209,6 +214,7 @@ export default async function handler(req,res) {
             lines:body.completion.lines
           }
         });
+        requestUpdatedByHelper=true;
       } else {
         const quote=await client.query(`SELECT items,total_minor FROM dealer_quotes WHERE request_id=$1 AND accepted_at IS NOT NULL
           AND ($2::uuid IS NULL OR id=$2) ORDER BY version DESC LIMIT 1`,[r.id,r.accepted_quote_id]);
@@ -229,6 +235,7 @@ export default async function handler(req,res) {
       if(!customer)throw new Error('Only the owner can confirm completion');
       if(r.workflow_version>=2){
         await confirmCompletionV2(client, { requestId:r.id, userId:user.id });
+        requestUpdatedByHelper=true;
       } else {
         if(r.status!=='completed'||r.completion_confirmed_at)throw new Error('Completion already confirmed or unavailable');
         const q=(await client.query(`SELECT * FROM dealer_quotes WHERE request_id=$1 AND accepted_at IS NOT NULL
@@ -251,7 +258,9 @@ export default async function handler(req,res) {
     } else if(body.action==='decline') {
       if(!operator||!['new','quoted'].includes(r.status))throw new Error('Cannot decline this request');next='declined';
     } else throw new Error('Unknown action');
-    const updated=await client.query('UPDATE dealer_service_requests SET status=$1,version=version+1,updated_at=NOW() WHERE id=$2 RETURNING *',[next,r.id]);
+    const updated=requestUpdatedByHelper
+      ? await client.query('SELECT * FROM dealer_service_requests WHERE id=$1',[r.id])
+      : await client.query('UPDATE dealer_service_requests SET status=$1,version=version+1,updated_at=NOW() WHERE id=$2 RETURNING *',[next,r.id]);
     await client.query('INSERT INTO dealer_request_events(request_id,actor_id,action) VALUES($1,$2,$3)',[r.id,user.id,body.action]);
     await notifyParticipants(client,r,user.id,body.action,updated.rows[0].version);
     await client.query('COMMIT');return sendJSON(res,200,{request:updated.rows[0]});

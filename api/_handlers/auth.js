@@ -14,8 +14,15 @@ import { sendError, sendJSON, onlyMethod, readBody } from '../_lib/http.js';
 import { getDb } from '../_lib/db.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 8;
-const PASSWORD_MAX = 72; // bcrypt input cap
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 72; // bcrypt input cap, measured in bytes
+
+export function passwordValidationError(password) {
+  const value = String(password || '');
+  if (value.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters`;
+  if (Buffer.byteLength(value) > PASSWORD_MAX) return `Password must be at most ${PASSWORD_MAX} bytes`;
+  return null;
+}
 
 function field(value, max = 500) {
   if (value == null || value === '') return null;
@@ -64,13 +71,9 @@ export default async function handler(req, res) {
     if (!email || !EMAIL_RE.test(email)) {
       return sendError(res, 422, 'unprocessable', 'Valid email required');
     }
-    if (password.length < PASSWORD_MIN) {
-      return sendError(res, 422, 'unprocessable', `Password must be at least ${PASSWORD_MIN} characters`);
-    }
-    /* bcrypt truncates input at 72; longer passwords silently lose chars. */
-    if (Buffer.byteLength(password) > PASSWORD_MAX) {
-      return sendError(res, 422, 'unprocessable', `Password must be at most ${PASSWORD_MAX} bytes`);
-    }
+    /* bcrypt truncates input at 72 bytes; reject instead of silently weakening it. */
+    const passwordError = passwordValidationError(password);
+    if (passwordError) return sendError(res, 422, 'unprocessable', passwordError);
 
     /* Validate dealer self-registration payload up front so we don't leave a
        half-registered user on a typo. Branch address is required so the new

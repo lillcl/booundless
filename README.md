@@ -1,7 +1,7 @@
-# 康程 CarAI — Service V10
+# 無界啟程 BOOUNDLESS — 車輛及保養管理
 
-A web app for vehicle owners to track maintenance reminders, browse service
-options, and plan 琴澳 (Hengqin/Macau) self-driving trips.
+A web app for vehicle owners to manage vehicle details and service history,
+review maintenance reminders, find service options, and plan 琴澳 (Hengqin/Macau) trips.
 
 ## Stack
 
@@ -9,41 +9,30 @@ options, and plan 琴澳 (Hengqin/Macau) self-driving trips.
 | ------------ | ----------------------------------------- |
 | Frontend     | Vanilla HTML / CSS / JS (no framework)    |
 | API          | Vercel-style serverless functions (Node)  |
-| Database     | SQLite via `better-sqlite3`               |
-| Deploy       | Vercel / Netlify (static + functions)     |
+| Database     | PostgreSQL (`pg`; Supabase-compatible)    |
+| Deploy       | Vercel (static + serverless functions)    |
 
 ## Project layout
 
 ```
 .
 ├── index.html              # App shell + router mount
-├── css/
-│   ├── tokens.css          # Design tokens (colour, type, spacing)
-│   ├── base.css            # Reset + chrome (header, bottom-nav)
-│   ├── components.css      # Reusable primitives (card, action, reminder)
-│   └── views.css           # View-specific layout
-├── js/
-│   ├── app.js              # Entry: hash router + nav sync
-│   ├── api.js              # API client
-│   ├── icons.js            # Inline SVG icon library
-│   └── views/
-│       ├── home.js         # Home (greeting, reminders, fleet, trip)
-│       └── stubs.js        # Placeholders for Garage/Service/琴澳/Videos/Profile
+├── assets/                 # Frontend modules, styles, and images
 ├── api/
-│   ├── health.js           # GET /api/health
-│   ├── vehicles.js         # GET /api/vehicles, /api/vehicles/:id
-│   ├── reminders.js        # GET /api/reminders, /api/reminders/:id
+│   ├── index.js            # Main production API router
+│   ├── ai.js / agent.js    # AI serverless entry points
+│   ├── _handlers/          # HTTP handlers grouped by domain
 │   └── _lib/
-│       ├── db.js           # SQLite connection + auto-seed
-│       └── http.js         # JSON response helpers
+│       ├── db.js           # PostgreSQL connection + schema bootstrap
+│       └── http.js         # JSON response helpers and body parsing
 ├── db/
-│   ├── schema.sql          # Canonical schema (auto-applied)
-│   └── seed.js             # Manual seed script (optional)
+│   ├── schema.sql          # Base schema
+│   ├── *-schema.sql        # Additive domain schema slices
+│   └── migrations/         # Ordered forward migrations
 ├── scripts/
 │   └── dev-server.js       # Express shim for local dev
-├── assets/
-│   ├── icons/              # Inline SVG icons, favicon
-│   └── scenic/             # Scenic photos used in cards
+├── shared/                 # Shared constants and validation templates
+├── tests/                  # Unit, integration, and Playwright E2E tests
 ├── reference/              # V10.4 design prototype (read-only)
 ├── vercel.json             # Vercel routing config
 ├── package.json
@@ -63,11 +52,16 @@ This starts an Express server on `http://127.0.0.1:3000` that:
 - Applies `db/schema.sql` and seeds default data on first request
 - Serves the static frontend at `/`
 
-Override defaults with environment variables:
+Configure a PostgreSQL database and session secret before starting:
 
 ```bash
-KC_DB_PATH=/tmp/kc.db PORT=4000 npm run dev
+KC_DATABASE_URL=postgresql://user:password@127.0.0.1:5432/kc_carai \
+KC_JWT_SECRET=replace-with-a-long-random-secret \
+PORT=4000 npm run dev
 ```
+
+See `.env.example` for the complete environment contract. The server loads a
+local `.env` automatically.
 
 ## API
 
@@ -83,17 +77,11 @@ All responses are JSON. Errors use the envelope `{ "error": { "code", "message" 
 
 ## Database
 
-SQLite database file lives at `db/dev.db` (per-developer, gitignored).
-Schema is in `db/schema.sql` and is auto-applied by `api/_lib/db.js` on first
-connection. On an empty database, one demo vehicle and one reminder are seeded
-so the Home view has something to show immediately.
-
-To re-seed from scratch:
-
-```bash
-rm db/dev.db
-npm run dev   # schema applied + auto-seed on first request
-```
+The app requires PostgreSQL. It reads `SUPABASE_DB_URL` in cloud environments
+or `KC_DATABASE_URL` locally. Development can apply the base schema, additive
+schema slices, and ordered migrations automatically. Production releases
+should run `node scripts/migrate.js` before deployment and validate readiness
+using the release checklist.
 
 ## Deploy
 
@@ -103,20 +91,11 @@ npm run dev   # schema applied + auto-seed on first request
 npx vercel
 ```
 
-Vercel reads `vercel.json` and deploys:
-- `api/*.js` as Node 20 serverless functions
-- everything else as static assets
-- `/api/*` paths routed to the matching handler
-
-For persistent SQLite in production, point `KC_DB_PATH` at a Vercel Persistent
-Volume or external database. For ephemeral/demo deployments, leave the default
-file path — the function's local filesystem is writable for the duration of
-the cold start.
-
-### Netlify
-
-Add `netlify.toml` with equivalent function routing. The same handler modules
-in `api/*.js` will run unchanged.
+Vercel reads `vercel.json`, routes most API traffic through `api/index.js`, and
+keeps the AI endpoints separate for their longer execution limits. Configure
+the PostgreSQL, authentication, origin, storage, and AI environment variables
+listed in `RELEASE.md`; do not rely on a serverless function's local filesystem
+for persistent data.
 
 ## Design reference
 
@@ -127,8 +106,8 @@ the running app uses the modular sources at the repo root.
 
 ## Conventions
 
-- **Source of truth:** `db/schema.sql` for tables, `css/tokens.css` for design
-  tokens, `api/` for HTTP contracts.
+- **Source of truth:** `db/schema.sql`, additive schema slices and migrations
+  for tables; `api/` for HTTP contracts.
 - **No build step.** Frontend ships as authored files; `index.html` loads
   ES modules directly.
 - **Serverless parity.** The same handler module is used by Vercel in

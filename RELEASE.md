@@ -1,4 +1,4 @@
-# Release runbook — BOOUNDLESS / 康程 CarAI
+# Release runbook — 無界啟程 BOOUNDLESS
 
 This is the procedural document for shipping a new version of the production
 deployment on Vercel. It assumes the post-2026-09-22 hardening baseline
@@ -28,6 +28,7 @@ Set these under Vercel → Project → Settings → Environment Variables for th
 | `SUPABASE_STORAGE_BUCKET` | yes | `cars` (default) | Bucket for vehicle photos. |
 | `KC_JWT_SECRET` | yes | `openssl rand -hex 32` | Cookie session signing. |
 | `KC_ALLOWED_ORIGINS` | yes | `https://booundless.vercel.app,<your-custom-domain>` | Comma-separated; required for the origin check. |
+| `KC_PUBLIC_ORIGIN` | yes | `https://www.booundless.com` | Canonical origin for metadata, campaigns, and sitemap URLs. |
 | `AI_API_KEY` | yes | MiniMax dashboard | Rotate quarterly. |
 | `AI_BASE_URL` | optional | `https://api.minimax.cn/anthropic` | MiniMax Anthropic-compatible. |
 | `AI_MODEL` | optional | `MiniMax-M3` | |
@@ -92,7 +93,7 @@ curl -fsSI 'https://booundless.vercel.app/error.html?status=429&code=rate_limite
 - [ ] `/api/health` returns `{ status: 'ok' }`.
 - [ ] Sign up with a fresh email, see home dashboard.
 - [ ] Add a vehicle, see it appear under 我的車.
-- [ ] Open CarAI chat, send a short message, observe streaming tokens.
+- [ ] Open the AI assistant, send a short message, observe streaming tokens.
 - [ ] Profile → 下載我的資料 → JSON file downloads.
 - [ ] Profile → 刪除我的帳號 → confirm twice → land on `/` and the session is gone.
 

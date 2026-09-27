@@ -4,7 +4,9 @@
    DELETE /api/users/:id    — soft-delete (admin)
    Every mutation writes to audit_log. */
 
+import { randomUUID } from 'node:crypto';
 import { hashPassword, requireAdmin, audit } from '../_lib/auth.js';
+import { passwordValidationError } from './auth.js';
 import { sendError, sendJSON, onlyMethod, readBody } from '../_lib/http.js';
 import { getDb } from '../_lib/db.js';
 
@@ -63,12 +65,11 @@ async function handleCreate(req, res, admin) {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return sendError(res, 422, 'unprocessable', 'Valid email required');
   }
-  if (password.length < 6) {
-    return sendError(res, 422, 'unprocessable', 'Password must be at least 6 characters');
-  }
+  const passwordError = passwordValidationError(password);
+  if (passwordError) return sendError(res, 422, 'unprocessable', passwordError);
 
   const password_hash = await hashPassword(password);
-  const id = `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `u-${randomUUID()}`;
 
   const db = await getDb();
   const existing = await db.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -143,9 +144,8 @@ async function handleOne(req, res, id, admin) {
     }
   }
   if (body?.password) {
-    if (String(body.password).length < 6) {
-      return sendError(res, 422, 'unprocessable', 'Password must be at least 6 characters');
-    }
+    const passwordError = passwordValidationError(body.password);
+    if (passwordError) return sendError(res, 422, 'unprocessable', passwordError);
     fields.push(`password_hash = $${i++}`);
     values.push(await hashPassword(String(body.password)));
     changed.push('password');

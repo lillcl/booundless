@@ -37,19 +37,30 @@ const mutatingLimiter = rateLimit({ capacity: 60, refillTokens: 60, refillMs: 60
 
 const wrapped = new WeakMap();
 function withGuards(target, opts = {}) {
-  if (wrapped.has(target)) return wrapped.get(target);
+  let variants = wrapped.get(target);
+  if (!variants) {
+    variants = new Map();
+    wrapped.set(target, variants);
+  }
+  const variant = opts.strict ? 'strict' : opts.mutating ? 'mutating' : 'default';
+  if (variants.has(variant)) return variants.get(variant);
   const limiter = opts.strict ? authLimiter : opts.mutating ? mutatingLimiter : apiLimiter;
   const guarded = originCheckWrap(async (req, res) => {
     const user = (typeof opts.resolveUser === 'function') ? await opts.resolveUser(req).catch(() => null) : null;
     if (!(await limiter(req, res, user))) return;
     return target(req, res);
   });
-  wrapped.set(target, guarded);
+  variants.set(variant, guarded);
   return guarded;
 }
 
 export function resolveHandler(path) {
   // exposed for tests; same as the internal resolve
+  /* Invite-token onboarding was removed in favour of dealer self-registration.
+     Exclude the retired paths before the broad dealer matcher so production
+     returns the same 404 as the local server, including for anonymous calls. */
+  if (/^\/api\/dealer\/invites(?:\/|$)/.test(path)
+      || /^\/api\/admin\/dealers\/[^/]+\/invites(?:\/|$)/.test(path)) return null;
   if (/^\/api\/internal\/evidence\/[^/]+$/.test(path)) return internalEvidenceRoute;
   if (/^\/api\/(?:admin\/)?shop(?:\/|$)/.test(path)) return shop;
   if(path==='/api/admin/marketing/tracking'||/^\/api\/marketing\/(config|conversions)$/.test(path))return tracking;
