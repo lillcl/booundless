@@ -26,7 +26,8 @@
 <meta name="twitter:image" content="https://www.booundless.com/assets/booundless-social.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"無界啟程 BOOUNDLESS","alternateName":"BOOUNDLESS","url":"https://www.booundless.com/","inLanguage":"zh-Hant","description":"記錄車款、里程及保養日期，查看保養提醒、車行服務資料及琴澳自駕資訊。","publisher":{"@type":"Organization","name":"澳門聯校科學展覽青年協會","alternateName":"Macao Joint School Science Exhibition Youth Association","url":"https://mjsseya.org/"}}
 </script>
@@ -41,6 +42,10 @@
 <script src="assets/dealer-inspection.js" defer></script>
 <script src="assets/dealer-completion.js" defer></script>
 <script src="assets/passport-cta.js" defer></script>
+<link rel="modulepreload" href="assets/passport.js">
+<link rel="modulepreload" href="assets/shop.js">
+<link rel="modulepreload" href="assets/tracking-admin.js">
+<link rel="modulepreload" href="assets/request-flow.js">
 <link rel="stylesheet" href="assets/shop.css">
 <link rel="stylesheet" href="assets/passport.css">
 <style>
@@ -728,6 +733,8 @@ function appDialog(message, mode='notice') {
      they read must exist before routing is initialized. */
   let me = null; // { id, email, role, display_name, is_active }
   let sessionReady = false;
+  let dashboardDataLoaded = false;
+  let dashboardDataLoadPromise = null;
   let adminAssetsCache = null;
   let adminAssetsTab = 'vehicles';
   let adminAuditFilter = '';
@@ -1264,23 +1271,78 @@ function appDialog(message, mode='notice') {
     showScreen('vehicleDetailSimple');
   };
 
+  function renderGarageCards() {
+    const list = document.getElementById('mycarList');
+    if (!list) return;
+    list.innerHTML = vehicles.length ? vehicles.map((v) => {
+      const r = reminders.find((x) => x.vehicle_id === v.id);
+      let healthTone;
+      let healthText;
+      if (v.scope_confirmed === false) {
+        healthTone = 'unknown';
+        healthText = '尚未確認車況';
+      } else if (r && r.icon === 'brake') {
+        healthTone = 'brake';
+        healthText = r.title;
+      } else if (r) {
+        healthTone = '';
+        healthText = r.title;
+      } else {
+        healthTone = 'good';
+        healthText = '狀態正常';
+      }
+      const modelText = String(v.model || '').trim();
+      const makeText = String(v.make || '').trim();
+      const cardName = makeText && modelText.toLowerCase().startsWith(makeText.toLowerCase() + ' ')
+        ? modelText : ([makeText, modelText].filter(Boolean).join(' ').trim() || '未命名車輛');
+      const subtitle = [v.year, v.fuel_type].filter(Boolean).join(' · ');
+      const isPlaceholder = !v.image || /vehicle-placeholder(?:\.svg|-ai\.png)$/.test(v.image);
+      return `
+        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder-ai.png')}')">
+          <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
+          ${isPlaceholder ? '<span class="v10-photo-tag">尚未上傳照片</span>' : ''}
+          <span class="v10-dots">•••</span>
+          <span class="v10-name">${esc(cardName)}</span>
+          <span class="v10-meta">${esc(subtitle)}</span>
+          <span class="v10-divider"></span>
+          <span class="v10-mileage">${esc(v.mileage_label || '')}</span>
+          <span class="v10-health ${healthTone}"><b>●</b> ${esc(healthText)}</span>
+        </button>`;
+    }).join('') : '<div class="empty-state empty-state--garage"><b>尚未新增車輛</b><small>新增車款和目前里程，之後可補上保養紀錄。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
+    document.getElementById('emptyAddVehicleBtn')?.addEventListener('click', openAddVehicleSheet);
+  }
+
   /* Hydration runs as a function so it can be called after the session is
      established (and again after login / onboarding). Running it at the
      top of the IIFE — before fetchMe() — sends /api/vehicles without the
      auth cookie and the garage paints empty until a manual reload. */
   async function hydrateHomeAndGarageData() {
-  const [vehiclesRes, remindersRes, historyRes] = await Promise.allSettled([
-    fetch('/api/vehicles').then((r) => r.json()),
-    fetch('/api/reminders').then((r) => r.json()),
-    fetch('/api/history/recent?limit=5').then((r) => r.json()),
-  ]);
-  vehicles = vehiclesRes.status === 'fulfilled' ? unwrap(vehiclesRes.value) : [];
-  reminders = remindersRes.status === 'fulfilled' ? unwrap(remindersRes.value) : [];
-  history = historyRes.status === 'fulfilled' ? unwrap(historyRes.value) : [];
+  const vehicleRequest = fetch('/api/vehicles').then((r) => r.json());
+  const reminderRequest = fetch('/api/reminders').then((r) => r.json()).catch(() => ({ data: [] }));
+  const historyRequest = fetch('/api/history/recent?limit=5').then((r) => r.json()).catch(() => ({ data: [] }));
+  const vehiclesRes = await vehicleRequest.catch(() => null);
+  vehicles = vehiclesRes ? unwrap(vehiclesRes) : [];
   if (!vehicles.length) vehicles = [...document.querySelectorAll('.v10-car-card')].map((card) => ({
           id: card.dataset.carid, model: card.querySelector('.v10-name')?.textContent.replace(/\s+/g, ' ').trim() || '車輛',
     mileage_label: card.querySelector('.v10-mileage')?.textContent || '', image: '', team: card.dataset.team,
   }));
+  /* Vehicle content is useful on its own. Paint it before slower reminder and
+     history endpoints finish; those results will refresh the badges below. */
+  renderGarageCards();
+  reminders = unwrap(await reminderRequest);
+  renderGarageCards();
+  historyRequest.then((payload) => {
+    history = unwrap(payload);
+    const recentEl = document.getElementById('recentRecords');
+    if (recentEl && vehicles.length) {
+      recentEl.innerHTML = history.length ? history.map((h) => {
+        const when = h.performed_at ? new Date(h.performed_at).toISOString().slice(0, 10) : '';
+        const mileage = h.mileage_km ? `${h.mileage_km.toLocaleString()} km` : '';
+        const meta = [when, mileage].filter(Boolean).join(' · ');
+        return `<div class="row visual-row"><span class="record-copy"><b>${esc(h.title)}</b><small>${esc(meta)}</small></span><span class="state ok">已完成</span></div>`;
+      }).join('') : '<div class="row"><span class="record-copy"><b>尚無保養紀錄</b></span></div>';
+    }
+  });
 
   const displayName = me?.display_name || me?.email?.split('@')[0] || '你的帳戶';
   const greeting = document.getElementById('homeGreeting');
@@ -1307,16 +1369,6 @@ function appDialog(message, mode='notice') {
   const statReminders = document.getElementById('profileStatReminders');
   const statOrders = document.getElementById('profileStatOrders');
   if (me) {
-    let histCount = 0, remindCount = 0, orderCount = 0;
-    try {
-      const hist = await fetch('/api/history/recent?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] }));
-      histCount = (hist.data || []).filter((row) => vehicles.some((v) => v.id === row.vehicle_id)).length;
-    } catch {}
-    remindCount = (reminders || []).filter((r) => (r.status || 'upcoming') === 'upcoming').length;
-    try {
-      const reqs = await fetch('/api/service-requests?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] }));
-      orderCount = (reqs.data || []).filter((r) => !['completed','cancelled','declined'].includes(r.status)).length;
-    } catch {}
     function setStat(node, value, warn) {
       if (!node) return;
       node.textContent = value;
@@ -1324,9 +1376,16 @@ function appDialog(message, mode='notice') {
       node.classList.toggle('is-warn', !!warn && value > 0);
     }
     setStat(statVehicles, vehicles.length, false);
-    setStat(statHistory, histCount, false);
-    setStat(statReminders, remindCount, remindCount > 0);
-    setStat(statOrders, orderCount, orderCount > 0);
+    setStat(statReminders, reminders.filter((r) => (r.status || 'upcoming') === 'upcoming').length, true);
+    Promise.all([
+      fetch('/api/history/recent?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] })),
+      fetch('/api/service-requests?limit=50').then((r) => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] })),
+    ]).then(([hist, reqs]) => {
+      const histCount = (hist.data || []).filter((row) => vehicles.some((v) => v.id === row.vehicle_id)).length;
+      const orderCount = (reqs.data || []).filter((r) => !['completed','cancelled','declined'].includes(r.status)).length;
+      setStat(statHistory, histCount, false);
+      setStat(statOrders, orderCount, orderCount > 0);
+    });
   } else {
     if (statVehicles) statVehicles.textContent = '—';
     if (statHistory) statHistory.textContent = '—';
@@ -1402,54 +1461,7 @@ function appDialog(message, mode='notice') {
   }
 
   /* 2. Car list — rebuild the three cards from API data */
-  const list = document.getElementById('mycarList');
-  if (list) {
-    list.innerHTML = vehicles.length ? vehicles.map((v) => {
-      const r = reminders.find((x) => x.vehicle_id === v.id);
-      /* Health badge rule: explicit "尚未確認車況" whenever scope_confirmed is
-         false — never fall through to 「狀態正常」when we have no data. */
-      let healthTone;
-      let healthText;
-      if (v.scope_confirmed === false) {
-        healthTone = 'unknown';
-        healthText = '尚未確認車況';
-      } else if (r && r.icon === 'brake') {
-        healthTone = 'brake';
-        healthText = r.title;
-      } else if (r) {
-        healthTone = '';
-        healthText = r.title;
-      } else {
-        healthTone = 'good';
-        healthText = '狀態正常';
-      }
-      /* Dedupe make/model on the card so the brand never appears twice. */
-      const modelText = String(v.model || '').trim();
-      const makeText = String(v.make || '').trim();
-      let cardName;
-      if (makeText && modelText.toLowerCase().startsWith(makeText.toLowerCase() + ' ')) {
-        cardName = modelText;
-      } else {
-        cardName = [makeText, modelText].filter(Boolean).join(' ').trim() || '未命名車輛';
-      }
-      /* Sub-line below the model name. Prefer fuel_type (human-readable) so the
-         card tells owner what kind of vehicle this is at a glance. */
-      const subtitle = [v.year, v.fuel_type].filter(Boolean).join(' · ');
-      const isPlaceholder = !v.image || /vehicle-placeholder(?:\.svg|-ai\.png)$/.test(v.image);
-      return `
-        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder-ai.png')}')">
-          <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
-          ${isPlaceholder ? '<span class="v10-photo-tag">尚未上傳照片</span>' : ''}
-          <span class="v10-dots">•••</span>
-          <span class="v10-name">${esc(cardName)}</span>
-          <span class="v10-meta">${esc(subtitle)}</span>
-          <span class="v10-divider"></span>
-          <span class="v10-mileage">${esc(v.mileage_label || '')}</span>
-          <span class="v10-health ${healthTone}"><b>●</b> ${esc(healthText)}</span>
-        </button>`;
-    }).join('') : '<div class="empty-state empty-state--garage"><b>尚未新增車輛</b><small>新增車款和目前里程，之後可補上保養紀錄。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>';
-    document.getElementById('emptyAddVehicleBtn')?.addEventListener('click', openAddVehicleSheet);
-  }
+  renderGarageCards();
 
   /* 3. Override openCarDetail so the detail screen reads from API data */
   const statusCache = new Map();
@@ -1686,6 +1698,16 @@ function appDialog(message, mode='notice') {
   fillVehicleSelects();
   }
 
+  function ensureDashboardData() {
+    if (dashboardDataLoaded) return Promise.resolve();
+    if (!dashboardDataLoadPromise) {
+      dashboardDataLoadPromise = hydrateHomeAndGarageData()
+        .then(() => { dashboardDataLoaded = true; })
+        .finally(() => { dashboardDataLoadPromise = null; });
+    }
+    return dashboardDataLoadPromise;
+  }
+
   async function loadServicePage() {
     const root = document.getElementById('serviceList'); if (!root) return;
     try {
@@ -1894,14 +1916,18 @@ function appDialog(message, mode='notice') {
 
   async function fetchMe() {
     try {
+      /* Both endpoints use the same session cookie. Start dealer membership
+         lookup alongside session lookup so a signed-in user's header does
+         not pay for two network round-trips in series. */
+      const dealerRequest = fetch('/api/dealer/me').catch(() => null);
       const r = await fetch('/api/auth/me');
       if (r.ok) {
         const d = await r.json();
         me = d.user;
         if (me) {
           try {
-            const dm = await fetch('/api/dealer/me');
-            if (dm.ok) {
+            const dm = await dealerRequest;
+            if (dm?.ok) {
               const payload = await dm.json();
               me.dealer_count = (payload.data || []).length;
               me.dealers = payload.data || [];
@@ -2030,7 +2056,7 @@ function appDialog(message, mode='notice') {
           /* Reload vehicles / reminders / history now that the session cookie
              is set — without this, the IIFE's earlier /api/vehicles fetch came
              back 401 and the garage would stay empty until manual reload. */
-          await hydrateHomeAndGarageData();
+          await ensureDashboardData();
           window.location.hash = '#/home';
         } else {
           const d = await r.json().catch(() => ({}));
@@ -2084,7 +2110,7 @@ function appDialog(message, mode='notice') {
           /* New account — no vehicles yet, but still run the hydration so the
              empty state renders against fresh data and any future fetches
              carry the session cookie. */
-          await hydrateHomeAndGarageData();
+          await ensureDashboardData();
           okEl.textContent = '帳號已建立，歡迎加入 BOOUNDLESS';
           okEl.style.display = 'block';
           window.location.hash = '#/home';
@@ -3067,21 +3093,46 @@ function appDialog(message, mode='notice') {
     }).join('');
   }
 
-  /* Bootstrap: fetch session and render topbar */
-  await fetchMe();
+  /* Paint public/static routes before waiting for account and dashboard data.
+     Previously every route waited for auth, then three unrelated dashboard
+     requests, so even the landing page could appear unresponsive. */
+  const initialRoute = getRoute();
+  const initialNeedsSession = !['landing', 'demo', 'login', 'register', 'dealer/register'].includes(initialRoute);
+  const initialPublicRender = initialNeedsSession ? Promise.resolve() : dispatch();
+  const sessionLoad = fetchMe();
+  if (initialNeedsSession) await sessionLoad;
   sessionReady = true;
   renderTopbar();
-  const initialRoute = getRoute();
   try {
-    await hydrateHomeAndGarageData();
-    await dispatch();
+    await initialPublicRender;
+    /* Re-dispatch after auth only when the route was protected or changed
+       while the session request was in flight. */
+    if (initialNeedsSession || getRoute() !== initialRoute) await dispatch();
+    if (me && ['home', 'garage', 'profile'].includes(getRoute())) {
+      ensureDashboardData().catch((error) => console.warn('Dashboard data refresh failed', error));
+    }
   } catch (error) {
     handleRouteFailure(error, initialRoute);
   }
+  sessionLoad.then(() => {
+    if (!initialNeedsSession) {
+      sessionReady = true;
+      renderTopbar();
+      /* Authentication can affect the header and route guard, but does not
+         block public page paint. Re-render only if the current route needs it. */
+      const currentRoute = getRoute();
+      if (currentRoute !== initialRoute || currentRoute === 'dealer/register') {
+        dispatch().catch((error) => handleRouteFailure(error, currentRoute));
+      }
+    }
+  });
   window.addEventListener('hashchange', () => {
     renderTopbar();
     const requestedRoute = getRoute();
     dispatch().catch((error) => handleRouteFailure(error, requestedRoute));
+    if (me && ['home', 'garage', 'profile'].includes(requestedRoute)) {
+      ensureDashboardData().catch((error) => console.warn('Dashboard data refresh failed', error));
+    }
   });
 
 })();
