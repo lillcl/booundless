@@ -203,6 +203,13 @@ app.all('/api/admin/shop/*',adapt(shopHandler));
 app.get(['/', '/demo'], adapt(publicPage));
 app.get('/campaigns/:slug',adapt(publicPage));
 app.get('/sitemap.xml',adapt(publicPage));
+// Keep the guide URL and legacy redirects aligned with production.
+app.get(['/qinao-guide.html', '/guide/'], (req, res, next) => {
+  if (req.path === '/guide') return next();
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  res.redirect(308, '/guide' + query);
+});
+app.get('/guide', (_req, res) => res.sendFile(join(root, 'qinao-guide.html')));
 app.use(express.static(root, {
   extensions: ['html'],
   index: 'index.html',

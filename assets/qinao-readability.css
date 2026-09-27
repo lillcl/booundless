@@ -1,0 +1,86 @@
+/* Reading rhythm shared by the guide and its application checklists. */
+body{font-size:18px;line-height:1.75}
+.wrap{max-width:1160px}
+.chapter{padding:72px 0}
+.chapter-title{margin-bottom:36px}
+.chapter-title .number{font-size:56px;color:#718692}
+.chapter-title p{max-width:38em;line-height:1.75}
+.chapter-title .kicker{font-size:16px;letter-spacing:.04em}
+.regime-cards{gap:32px;align-items:stretch}
+.regime-card{box-shadow:none;border-top-width:3px;border-radius:8px}
+.regime-card>header{padding:28px 28px 16px;background:#fff}
+.regime-kicker{font-size:16px}
+.regime-summary{margin:0;padding:0 28px}
+.regime-summary>div{padding:14px 0}
+.regime-summary dt{font-size:16px;color:#526b79;margin-bottom:5px}
+.regime-summary dd{margin:0;font-size:18px;line-height:1.65;color:#213f50}
+.regime-footnote{margin:16px 28px 0;font-size:16px;line-height:1.75}
+.regime-links{padding:24px 28px 28px}
+.regime-links>a{font-size:17px}
+.regime-warning{margin-top:28px;border:0;background:#f5f7f8;padding:20px 24px;color:#213f50}
+.permit-jump{display:flex;flex-wrap:wrap;gap:16px 32px;margin:0 0 32px}
+.permit-jump a{font-weight:650}
+.permit{max-width:880px;margin:48px auto 0;border-radius:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+.permit+.permit{margin-top:88px;padding-top:48px;border-top:1px solid #c8dce3}
+.permit-head{display:block;padding:0 0 28px;background:transparent;color:#213f50;border-bottom:2px solid #c8dce3}
+.permit-head h3{font-size:32px;color:#143e57}
+.permit-head p{margin-top:8px;font-size:17px}
+.permit-body{padding:0}
+.application-checks{margin:0;padding:0;border:0;border-radius:0;background:transparent}
+.application-checks h4,.application-stage h4{font-size:25px;line-height:1.4;margin:44px 0 16px;color:#143e57}
+.application-checks>p,.application-stage>p{font-size:17px;line-height:1.8;max-width:38em}
+.application-checks fieldset{margin:32px 0 40px;padding:0;border:0}
+.application-checks legend{font-size:20px;font-weight:650;padding-bottom:0;border:0}
+.application-check-status{margin:12px 0 8px;gap:16px}
+.application-check-status output{font-size:16px;font-weight:500;color:#526b79}
+.application-check-status button{min-height:44px;padding:8px 0;font-size:16px;border:0;background:transparent;color:#526b79;text-decoration:underline;text-underline-offset:4px}
+.application-check{padding:20px 12px;gap:16px;border:0;border-radius:6px;margin:4px -12px}
+.application-check+.application-check{border-top:1px solid #e2eaed}
+.application-check>span{min-width:0;max-width:38em}
+.application-check strong{font-size:18px;font-weight:650;line-height:1.6}
+.application-check small{font-size:16px;line-height:1.8;margin-top:8px;color:#49616e}
+.application-check input{margin-top:5px}
+.application-check:has(input:checked){background:#edf5f1}
+.application-category{margin:32px 0 24px}
+.application-category>label{display:block;font-size:20px;font-weight:650;margin-bottom:12px}
+.application-category select{display:block;width:100%;max-width:420px;min-height:48px;padding:10px 14px;background:#fff;border:1px solid #8ca5af;border-radius:6px;font:inherit;color:inherit}
+.application-category p{font-size:16px;line-height:1.8;margin-top:10px}
+[data-category][hidden]{display:none!important}
+.application-extra{margin:24px 0;padding:20px 0;border:0;border-top:1px solid #d4e3e9;background:transparent}
+.application-extra summary{font-size:17px;font-weight:600;cursor:pointer;line-height:1.7}
+.application-extra p,.application-extra li,.application-extra a{font-size:16px;line-height:1.8}
+.application-extra p{margin:16px 0;max-width:38em}
+.application-extra ul{padding-left:22px;margin:16px 0 0}
+.application-extra li+li{margin-top:12px}
+.application-primary{margin:4px 0 28px;padding:14px 22px;font-size:17px;max-width:100%;white-space:normal}
+.permit .process{display:block;max-width:42em;margin:0;padding:0;counter-reset:step}
+.permit .process li{position:relative;min-height:0;margin:0;padding:0 0 32px 54px;border:0;background:none;border-radius:0}
+.permit .process li:before{left:0;top:2px;width:32px;height:32px;line-height:32px;background:#edf2f4;color:#143e57}
+.permit .process li:after{display:none!important}
+.permit .process li b{font-size:19px;line-height:1.6}
+.permit .process li p{font-size:16px;line-height:1.8;margin-top:8px;max-width:38em}
+.after-approval{padding:0 0 12px}
+.after-approval>a{display:inline-block;margin-top:20px;font-size:17px}
+.source-chip,.destination-copy .source-chip{border:0;border-radius:0;background:none;padding:4px 0;font-size:16px;text-decoration:underline;font-weight:500}
+.source-list{gap:12px 24px}
+.destination-card{box-shadow:none;border-radius:8px}
+.destination-copy p,.family-checks p,.repair-stage ul{font-size:18px;line-height:1.8}
+.destination-meta,.destination-tag,.recipe-label,.recipe-time span{font-size:16px}
+.repair-stage{border:0;border-top:2px solid #d4e3e9;background:none;min-height:0;padding:24px 12px}
+.service-ch .warranty-intro,.service-ch .warranty-rule,.service-ch .warranty-source-copy p,.service-ch .receipt-head p,.source-note,.note,.requirements{font-size:16px;line-height:1.8}
+.service-ch .warranty-card{border-top:0;border-radius:6px;padding:24px}
+.service-ch .warranty-source{grid-template-columns:1fr;gap:12px;border:0;padding:8px 0;background:none}
+.service-ch .receipt{border:0;border-top:1px solid #d4e3e9;border-radius:0;padding:28px 0;margin-top:32px}
+.mini-section>p,.service-layout p,.warranty-intro,.warranty-rule,.note{max-width:42em}
+.extra .reference p,.extra .reference li{font-size:16px;line-height:1.8;max-width:42em}
+.chapter,.permit{scroll-margin-top:160px}
+@media(max-width:850px){.regime-cards{gap:24px}}
+@media(max-width:650px){
+ .wrap{padding-inline:22px}.chapter{padding:48px 0}.chapter-title{gap:12px;margin-bottom:28px}.chapter-title .number{font-size:36px}.chapter-title h2{font-size:29px}
+ .regime-card>header{padding:24px 22px 12px}.regime-summary{padding:0 22px}.regime-footnote{margin:16px 22px 0}.regime-links{padding:22px}
+ .permit{margin-top:36px}.permit+.permit{margin-top:64px;padding-top:36px}.permit-head{padding:0 0 24px}.permit-head h3{font-size:28px}.permit-body{padding:0}
+ .application-checks h4,.application-stage h4{font-size:23px;margin-top:36px}.application-checks>p,.application-stage>p{font-size:16px}
+ .application-checks legend{font-size:19px}.application-check{padding:18px 8px;gap:12px;margin-inline:-8px}.application-check strong{font-size:17px}.application-check small{font-size:16px}
+ .permit .process li{padding-left:44px}.permit .process li b{font-size:18px}.source-chip{font-size:16px}.chapter,.permit{scroll-margin-top:180px}
+}
+@media print{.permit{break-inside:auto}.application-check-status button,.application-primary,.permit-jump{display:none}.application-check,.process li{break-inside:avoid}.permit,.chapter{scroll-margin-top:0}.application-checks h4,.application-stage h4{break-after:avoid}.application-category select{border:0;padding:0}.application-extra{break-inside:avoid}}

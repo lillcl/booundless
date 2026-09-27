@@ -61,14 +61,16 @@ async function prepareImage(file) {
   return canvas.toDataURL('image/jpeg', .8);
 }
 
-function bookMarkup(vehicle, reminder) {
+function bookMarkup(vehicle, reminder, index) {
   const hasReminder = Boolean(reminder);
   const unknown = vehicle.scope_confirmed === false;
   const status = unknown ? '車況待確認' : hasReminder ? reminder.title : '目前沒有待辦提醒';
   const tone = unknown ? 'is-unknown' : hasReminder ? 'is-warn' : '';
-  return `<button class="vp-book" type="button" data-passport-id="${esc(vehicle.id)}" aria-label="開啟 ${esc(vehicleName(vehicle))} 車輛護照">
+  return `<button class="vp-book vp-book--${index % 4}" type="button" data-passport-id="${esc(vehicle.id)}" aria-label="開啟 ${esc(vehicleName(vehicle))} 車輛護照">
     <span class="vp-book__inner">
-      <span class="vp-book__top">無界啟程 · 車輛資料</span>
+      <span class="vp-book__top">無界啟程 · BOOUNDLESS</span>
+      <span class="vp-book__title">車輛護照<small>VEHICLE PASSPORT</small></span>
+      ${seal}
       <h2>${esc(vehicleName(vehicle))}</h2>
       <span class="vp-book__meta">${esc([vehicle.year, vehicle.fuel_type].filter(Boolean).join(' · ') || '車輛資料')}</span>
       <span class="vp-book__plate">${esc(vehicle.plate || '未登記車牌')}</span>
@@ -434,7 +436,7 @@ export async function renderVehiclePassports(root, context = {}) {
       content.innerHTML = `<div class="vp-empty"><img src="assets/garage-empty-v1.png" alt="白色車輛與數碼車輛護照"><h2>建立你的第一本車輛護照</h2><p>新增車輛後，身份、里程及保養範圍會在這裡集中顯示。</p><button class="vp-add" type="button" data-empty-add>新增車輛</button></div>`;
       content.querySelector('[data-empty-add]').addEventListener('click', () => context.onAddVehicle?.());
     } else {
-      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle) => `<div class="vp-vehicle-entry">${bookMarkup(vehicle, reminders.find((item) => item.vehicle_id === vehicle.id))}<div data-history-unknown-for="${esc(vehicle.id)}"></div></div>`).join('')}</div>`;
+      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle, index) => `<div class="vp-vehicle-entry">${bookMarkup(vehicle, reminders.find((item) => item.vehicle_id === vehicle.id), index)}<div data-history-unknown-for="${esc(vehicle.id)}"></div></div>`).join('')}</div>`;
       content.querySelectorAll('[data-passport-id]').forEach((book) => book.addEventListener('click', () => {
         const vehicle = vehicles.find((item) => item.id === book.dataset.passportId);
         if (vehicle) openReader(vehicle, book, reminders);
@@ -447,7 +449,9 @@ export async function renderVehiclePassports(root, context = {}) {
         for (const vehicle of vehicles) {
           const cta = await window.passportCta(content.querySelector('.vp-shelf'), vehicle.id);
           const target = content.querySelector(`[data-history-unknown-for="${CSS.escape(vehicle.id)}"]`);
-          if (cta && target) target.replaceWith(historyUnknownMarkup(vehicle));
+          if (cta && target) {
+            target.innerHTML = historyUnknownMarkup(vehicle);
+          }
           else target?.remove();
         }
       }

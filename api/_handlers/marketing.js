@@ -12,7 +12,7 @@ export async function publicPage(req, res) {
     try{const db=await getDb();const pages=await db.query("SELECT path,updated_at FROM marketing_pages WHERE (published->>'indexable')::boolean=TRUE OR (path='/' AND published IS NULL)");
       res.setHeader('Content-Type','application/xml; charset=utf-8');res.setHeader('Cache-Control','public, max-age=0, s-maxage=60');res.statusCode=200;
       const entries=pages.rows.map(p=>`<url><loc>${escapeHTML(ORIGIN+p.path)}</loc><lastmod>${new Date(p.updated_at).toISOString()}</lastmod></url>`);
-      if(!pages.rows.some(p=>p.path==='/qinao-guide.html'))entries.push(`<url><loc>${escapeHTML(ORIGIN+'/qinao-guide.html')}</loc></url>`);
+      if(!pages.rows.some(p=>p.path==='/guide'))entries.push(`<url><loc>${escapeHTML(ORIGIN+'/guide')}</loc></url>`);
       return res.end('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+entries.join('')+'</urlset>');
     }catch{return sendError(res,503,'unavailable','Sitemap temporarily unavailable');}
   }

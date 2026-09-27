@@ -73,7 +73,7 @@ try {
   const campaignHtml=await call(campaign,'GET',null,false,publicPage);assert.equal(campaignHtml.status,200);assert.ok(campaignHtml.body.includes('<h1>Campaign headline</h1>'));
   const sitemap=(await call('/sitemap.xml','GET',null,false,publicPage)).body;
   assert.ok(sitemap.includes(campaign));
-  assert.ok(sitemap.includes('/qinao-guide.html'));
+  assert.ok(sitemap.includes('/guide'));
   assert.equal((await call('/api/marketing/conversions','POST',{consent:false,event_name:'vehicle_created',business_id:vehicleId})).status,422);
   await db.query('UPDATE marketing_integrations SET config=$1 WHERE id=TRUE',[{enabled:true,ga4:'G-TESTONLY'}]);
   const event=await call('/api/marketing/conversions','POST',{consent:true,event_name:'vehicle_created',business_id:vehicleId});assert.equal(event.status,200);assert.equal(event.body.recorded,true);
