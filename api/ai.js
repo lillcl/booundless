@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       if (typeof body.image !== 'string' || !body.image.startsWith('data:image/')) return sendError(res, 422, 'unprocessable', 'image must be a data URL');
       const image = body.image.slice(0, 7 * 1024 * 1024);
       const result = await askAI({
-        system: `${system} 你是車輛照片辨識助手。只輸出 JSON，格式為 {"model":"","make":"","year":null,"fuel_type":"","plate":""}。看不清楚的欄位請留空，不要猜車牌。`,
+        system: `${system} 你是車輛照片辨識助手。只輸出 JSON，格式為 {"model":"","make":"","year":null,"fuel_type":"","plate":"","vin":""}。能源只可為燃油、純電或油電混合；VIN、年份及車牌須有清晰文字證據。看不清楚的欄位請留空，不要猜測。`,
         user: [{ type: 'text', text: '請辨識照片中的車輛，回傳指定 JSON。' }, { type: 'image_url', image_url: { url: image } }],
         model: process.env.AI_VISION_MODEL || process.env.AI_MODEL,
         maxTokens: 300,

@@ -324,12 +324,14 @@ export default async function handler(req, res) {
       const db = await getDb();
       if (req.method === 'PATCH') {
         const body = await readBody(req, { limit: '8mb' });
-        const allowed = ['model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'vin', 'plate', 'mileage_km', 'image'];
+        const allowed = ['passport_name', 'passport_color', 'model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'vin', 'plate', 'mileage_km', 'image'];
         const updates = [];
         const values = [];
         for (const field of allowed) {
           if (!Object.prototype.hasOwnProperty.call(body || {}, field)) continue;
           let value = body[field];
+          if (field === 'passport_name' && String(value || '').length > 80) return sendError(res, 422, 'unprocessable', 'Passport name must be 80 characters or fewer');
+          if (field === 'passport_color' && !['blue','green','burgundy','purple'].includes(value)) return sendError(res, 422, 'unprocessable', 'Invalid passport color');
           if (field === 'model' && !String(value || '').trim()) return sendError(res, 422, 'unprocessable', 'model is required');
           if (field === 'mileage_km') value = Math.max(0, Number(value) || 0);
           if (field === 'year') value = value === '' || value == null ? null : Number(value);
@@ -346,7 +348,7 @@ export default async function handler(req, res) {
         const updated = await db.query(
           `UPDATE vehicles SET ${updates.join(', ')}, updated_by_user_id=$${values.length - 1}, updated_at=NOW()
            WHERE id=$${values.length} AND created_by_user_id=$${values.length - 1} AND archived_at IS NULL
-           RETURNING id, model, make, year, fuel_type, vehicle_class, powertrain_type,
+           RETURNING id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type,
              onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label,
              image, owner, team, created_at, updated_at`,
           values,
@@ -356,7 +358,7 @@ export default async function handler(req, res) {
       }
       if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET or PATCH allowed');
       const r = await db.query(
-        `SELECT id, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
         [id, user.id],
       );
@@ -423,10 +425,11 @@ export default async function handler(req, res) {
          completed onboarding (onboarding_state='ready'). Until then the
          client must not claim the vehicle is verified. */
       const r = await db.query(
-        `SELECT v.id, v.model, v.make, v.year, v.fuel_type, v.vehicle_class, v.powertrain_type,
+        `SELECT v.id, v.passport_name, v.passport_color, v.model, v.make, v.year, v.fuel_type, v.vehicle_class, v.powertrain_type,
                 v.onboarding_state, v.onboarding_completed_at, v.vin, v.plate,
                 v.mileage_km, v.mileage_label, v.image, v.owner, v.team,
                 v.created_at, v.updated_at,
+                EXISTS (SELECT 1 FROM service_history sh WHERE sh.vehicle_id = v.id) AS has_service_history,
                 (v.onboarding_state = 'ready'
                  AND NOT EXISTS (
                    SELECT 1 FROM vehicle_status vs

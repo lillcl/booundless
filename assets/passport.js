@@ -2,6 +2,8 @@ const esc = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
 }[char]));
 
+const passportColors = ['blue', 'green', 'burgundy', 'purple'];
+const passportName = (vehicle) => vehicle.passport_name || vehicleName(vehicle);
 const vehicleName = (vehicle) => {
   const make = String(vehicle.make || '').trim();
   const model = String(vehicle.model || '').trim();
@@ -63,25 +65,25 @@ async function prepareImage(file) {
 
 function bookMarkup(vehicle, reminder, index) {
   const hasReminder = Boolean(reminder);
-  const unknown = vehicle.scope_confirmed === false;
+  const unknown = vehicle.scope_confirmed !== true;
   const status = unknown ? '車況待確認' : hasReminder ? reminder.title : '目前沒有待辦提醒';
   const tone = unknown ? 'is-unknown' : hasReminder ? 'is-warn' : '';
-  return `<button class="vp-book vp-book--${index % 4}" type="button" data-passport-id="${esc(vehicle.id)}" aria-label="開啟 ${esc(vehicleName(vehicle))} 車輛護照">
+  return `<button class="vp-book vp-book--${passportColors.includes(vehicle.passport_color) ? passportColors.indexOf(vehicle.passport_color) : index % 4}" type="button" data-passport-id="${esc(vehicle.id)}" aria-label="開啟 ${esc(vehicleName(vehicle))} 車輛護照">
     <span class="vp-book__inner">
       <span class="vp-book__top">無界啟程 · BOOUNDLESS</span>
       <span class="vp-book__title">車輛護照<small>VEHICLE PASSPORT</small></span>
       ${seal}
-      <h2>${esc(vehicleName(vehicle))}</h2>
+      <h2 title="${esc(passportName(vehicle))}">${esc(passportName(vehicle))}</h2>
       <span class="vp-book__meta">${esc([vehicle.year, vehicle.fuel_type].filter(Boolean).join(' · ') || '車輛資料')}</span>
       <span class="vp-book__plate">${esc(vehicle.plate || '未登記車牌')}</span>
-      <span class="vp-book__status ${tone}"><i></i>${esc(status)}</span>
+      <span class="vp-book__status ${tone}" data-passport-status><i></i><span>${esc(status)}</span></span>
     </span>
   </button>`;
 }
 
 function historyUnknownMarkup(vehicle) {
   return `<section class="vp-history-unknown" aria-label="${esc(vehicleName(vehicle))} 保養紀錄提醒">
-    <div><b>${esc(vehicleName(vehicle))}：保養紀錄尚未建立</b><p>目前沒有檢查或維修紀錄，車況尚未確認。可預約基線檢查，建立這輛車的初始車況紀錄。</p></div>
+    <div><b>車況待確認，建議驗車</b><p>預約基線檢查，確認車況並補齊保養基準。</p></div>
     <a href="#/service-offers?vehicle_id=${encodeURIComponent(vehicle.id)}">預約基線檢查</a>
   </section>`;
 }
@@ -93,7 +95,7 @@ function identityPage(vehicle) {
     ['年份', vehicle.year || '未填寫'], ['能源', vehicle.fuel_type || vehicle.powertrain_type || '未填寫'],
     ['車牌', vehicle.plate || '未填寫'], ['VIN', vehicle.vin || '未填寫'],
   ];
-  return `<div class="vp-paper"><span class="vp-page-label">01 · 車輛資料</span><h3>車輛身份</h3>
+  return `<div class="vp-paper"><span class="vp-page-label">01 · 車輛資料</span><h3>${esc(passportName(vehicle))}</h3>
     <img class="vp-identity-photo ${placeholder ? 'is-placeholder' : ''}" src="${esc(vehicle.image || 'assets/vehicle-placeholder.svg')}" alt="${esc(vehicleName(vehicle))}">
     <div class="vp-data-grid">${fields.map(([label, value]) => `<span><small>${label}</small><b>${esc(value)}</b></span>`).join('')}</div>
     <button class="vp-edit-trigger" type="button" data-edit-passport>修改護照</button>
@@ -109,7 +111,7 @@ function overviewPage(vehicle, status, history) {
   return `<div class="vp-paper vp-paper--right"><span class="vp-page-label">02 · 資料摘要</span><h3>車輛摘要</h3>
     <div class="vp-mileage"><span>目前里程</span><b>${esc(mileageLabel(vehicle))}</b></div>
     <div class="vp-summary"><div class="vp-stat"><b>${items.length}</b><small>保養項目</small></div><div class="vp-stat"><b>${history.length}</b><small>保養紀錄</small></div><div class="vp-stat"><b>${attention.length}</b><small>需要留意</small></div><div class="vp-stat"><b>${profilePercent}%</b><small>身份完整度</small></div></div>
-    <div class="vp-complete ${complete ? 'is-complete' : ''}">${complete ? '保養基準資料完整，狀態會按里程與日期更新。' : '部分保養基準尚未確認；系統不會在沒有服務證據時顯示「正常」。'}</div>
+    <div class="vp-complete ${complete ? 'is-complete' : ''}">${complete ? '保養基準資料完整，狀態會按里程與日期更新。' : '車況未知：建議預約基線驗車，建立可追溯的車況紀錄。'}</div>${!complete ? `<a class="vp-inspection-link" href="#/service-offers?vehicle_id=${encodeURIComponent(vehicle.id)}">預約基線驗車 →</a>` : ''}
   </div>`;
 }
 
@@ -196,7 +198,9 @@ export async function renderVehiclePassports(root, context = {}) {
     reader.setAttribute('role', 'dialog');
     reader.setAttribute('aria-modal', 'true');
     reader.setAttribute('aria-label', `${vehicleName(vehicle)} 車輛護照`);
-    reader.innerHTML = `<div class="vp-reader__stage"><button class="vp-reader__close" type="button" aria-label="關閉車輛護照">×</button><div class="vp-reader__book"><div class="vp-loading"></div><div class="vp-cover"><div class="vp-cover__content">${seal}<h2>${esc(vehicleName(vehicle))}</h2><p>車輛護照</p></div></div></div><div class="vp-progress"><button type="button" data-page-prev aria-label="上一頁">←</button><span data-page-count>1 / 3</span><button type="button" data-page-next aria-label="下一頁">→</button></div></div>`;
+    reader.innerHTML = `<div class="vp-reader__stage"><button class="vp-reader__close" type="button" aria-label="關閉車輛護照">×</button><div class="vp-reader__book"><section class="vp-spread is-active">${identityPage(vehicle)}<div class="vp-paper vp-paper--right"><h3>保養資料</h3><p role="status">正在載入最新車況與紀錄…</p><div class="vp-loading"></div></div></section></div><div class="vp-progress"><button type="button" data-page-prev disabled aria-label="上一頁">←</button><span data-page-count>1 / 3</span><button type="button" data-page-next disabled aria-label="下一頁">→</button></div></div>`;
+    const currentReader = reader;
+    reader.querySelector('[data-edit-passport]')?.addEventListener('click', () => openEditor(vehicle, allReminders));
     document.body.appendChild(reader);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => reader?.classList.add('is-open'));
@@ -210,11 +214,7 @@ export async function renderVehiclePassports(root, context = {}) {
         getJSON(`/api/vehicles/${encodeURIComponent(vehicle.id)}/status`),
         getJSON(`/api/vehicles/${encodeURIComponent(vehicle.id)}/history`),
       ]);
-      if (!Array.isArray(status.items) || status.items.length === 0) {
-        status = await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}/scope/generate`, 'POST', { template_only: true });
-        status.data_complete = false;
-      }
-      if (!reader) return;
+      if (reader !== currentReader) return;
       const history = Array.isArray(historyPayload) ? historyPayload : historyPayload.data || [];
       const ownReminders = allReminders.filter((item) => item.vehicle_id === vehicle.id);
       const book = reader.querySelector('.vp-reader__book');
@@ -229,8 +229,9 @@ export async function renderVehiclePassports(root, context = {}) {
       reader.querySelector('[data-manage-dealer-access]')?.addEventListener('click', () => openDealerAccess(vehicle));
       window.setTimeout(() => reader?.querySelector('.vp-reader__close')?.focus(), 450);
     } catch (error) {
-      const loading = reader?.querySelector('.vp-loading');
-      if (loading) loading.outerHTML = '<div class="vp-paper"><div class="vp-note">暫時無法同步這本護照，請關閉後再試。</div></div>';
+      if (reader !== currentReader) return;
+      const loading = reader.querySelector('.vp-paper--right');
+      if (loading) loading.innerHTML = '<div class="vp-note">暫時無法同步保養資料。車輛資料仍可查看及修改。</div>';
       console.error('[vehicle-passport] failed to load', error);
     }
   };
@@ -242,10 +243,12 @@ export async function renderVehiclePassports(root, context = {}) {
     editor.setAttribute('role', 'dialog');
     editor.setAttribute('aria-modal', 'true');
     editor.setAttribute('aria-label', '修改車輛護照');
-    editor.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">車輛資料</span><h2>修改車輛資料</h2><p>可手動修改，或上傳照片協助填入車款及里程。請核對辨識結果後再儲存。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
+    editor.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">車輛資料</span><h2>修改車輛護照</h2><p>可手動修改，或上傳照片協助填入車款及里程。請核對辨識結果後再儲存。</p></div><button type="button" data-editor-close aria-label="關閉">×</button></div>
       <div class="vp-ai-capture"><label><span>車身或行車證照片</span><input type="file" accept="image/*" capture="environment" data-ai-vehicle></label><button type="button" data-recognize-vehicle>讀取車款</button><label><span>儀表盤照片</span><input type="file" accept="image/*" capture="environment" data-ai-dashboard></label><button type="button" data-recognize-dashboard>讀取里程</button></div>
       <div class="vp-editor__status" data-editor-status>辨識結果只作預填參考，儲存前請先核對。</div>
       <form data-passport-form><div class="vp-editor__grid">
+        <label>護照名稱<input name="passport_name" maxlength="80" value="${esc(vehicle.passport_name || '')}" placeholder="留空使用品牌與型號"></label>
+        <label>封面顏色<select name="passport_color">${passportColors.map((color, index) => `<option value="${color}" ${color === (vehicle.passport_color || passportColors[Number(activeVehicle?.className.match(/vp-book--(\d)/)?.[1]) || 0]) ? 'selected' : ''}>${['海軍藍','森林綠','酒紅','紫色'][index]}</option>`).join('')}</select></label>
         <label>品牌<input name="make" value="${esc(vehicle.make || '')}" placeholder="例如 Toyota"></label>
         <label>型號<input name="model" required value="${esc(vehicle.model || '')}" placeholder="例如 Corolla Cross"></label>
         <label>年份<input name="year" type="number" min="1950" max="2100" value="${esc(vehicle.year || '')}"></label>
@@ -258,30 +261,47 @@ export async function renderVehiclePassports(root, context = {}) {
     const statusLine = editor.querySelector('[data-editor-status]');
     const form = editor.querySelector('[data-passport-form]');
     let vehicleImage = vehicle.image || '';
+    let recognizing = false;
     const close = () => editor.remove();
     editor.querySelector('[data-editor-close]').addEventListener('click', close);
     editor.querySelector('[data-editor-cancel]').addEventListener('click', close);
     editor.addEventListener('click', (event) => { if (event.target === editor) close(); });
     const recognize = async (kind) => {
       const input = editor.querySelector(kind === 'vehicle' ? '[data-ai-vehicle]' : '[data-ai-dashboard]');
+      if (recognizing) return;
       if (!input.files?.[0]) { statusLine.textContent = '請先拍攝或選擇照片。'; return; }
       statusLine.className = 'vp-editor__status is-working';
       statusLine.textContent = '正在讀取照片…';
+      recognizing = true;
+      const controls = [...editor.querySelectorAll('input, select, button[type=submit], [data-recognize-vehicle], [data-recognize-dashboard]')];
+      controls.forEach(control => { control.disabled = true; });
       try {
         const image = await prepareImage(input.files[0]);
+        if (kind === 'vehicle') vehicleImage = image;
         const result = await sendJSONRequest('/api/ai', 'POST', { mode: kind === 'vehicle' ? 'vehicle-image' : 'dashboard-image', image });
+        let changed = 0;
         if (kind === 'vehicle') {
           const info = result.vehicle || {};
-          for (const name of ['make', 'model', 'year', 'fuel_type', 'plate']) if (info[name] !== '' && info[name] != null && form.elements[name]) form.elements[name].value = info[name];
+          for (const name of ['make', 'model', 'year', 'fuel_type', 'plate', 'vin']) {
+            const value = info[name];
+            if (value == null || value === '' || !['string','number'].includes(typeof value)) continue;
+            if (name === 'year' && (!Number.isInteger(Number(value)) || Number(value) < 1950 || Number(value) > 2100)) continue;
+            if (name === 'vin' && !/^[A-HJ-NPR-Z0-9]{17}$/i.test(String(value))) continue;
+            if (name === 'fuel_type' && ![...form.elements.fuel_type.options].some(option => option.value === value)) continue;
+            form.elements[name].value = value;
+            changed++;
+          }
           vehicleImage = image;
-        } else if (result.dashboard?.mileage_km != null) form.elements.mileage_km.value = result.dashboard.mileage_km;
+        } else if (result.dashboard?.mileage_km != null && Number.isFinite(Number(result.dashboard.mileage_km)) && Number(result.dashboard.mileage_km) >= 0) { form.elements.mileage_km.value = result.dashboard.mileage_km; changed++; }
         statusLine.className = 'vp-editor__status is-success';
-        statusLine.textContent = '已填入可辨識資料，請核對後儲存。';
+        statusLine.textContent = changed ? `已更新 ${changed} 個欄位，請核對後儲存。` : '沒有辨識到可填入的資料；原有欄位已保留，可手動修改。';
       } catch (error) {
         statusLine.className = 'vp-editor__status is-error';
         statusLine.textContent = `${error.message || '辨識失敗'}；仍可手動輸入。`;
-      }
+      } finally { recognizing = false; controls.forEach(control => { control.disabled = false; }); }
     };
+    editor.querySelector('[data-ai-vehicle]').addEventListener('change', () => recognize('vehicle'));
+    editor.querySelector('[data-ai-dashboard]').addEventListener('change', () => recognize('dashboard'));
     editor.querySelector('[data-recognize-vehicle]').addEventListener('click', () => recognize('vehicle'));
     editor.querySelector('[data-recognize-dashboard]').addEventListener('click', () => recognize('dashboard'));
     form.addEventListener('submit', async (event) => {
@@ -297,6 +317,14 @@ export async function renderVehiclePassports(root, context = {}) {
         if (vehicleImage) data.image = vehicleImage;
         const updated = await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}`, 'PATCH', data);
         Object.assign(vehicle, updated);
+        if (activeVehicle) {
+          const holder = document.createElement('div');
+          holder.innerHTML = bookMarkup(vehicle, allReminders.find(item => item.vehicle_id === vehicle.id), 0);
+          const next = holder.firstElementChild;
+          next.addEventListener('click', () => openReader(vehicle, next, allReminders));
+          activeVehicle.replaceWith(next);
+          activeVehicle = next;
+        }
         close();
         const trigger = activeVehicle;
         reader.remove();
@@ -429,32 +457,33 @@ export async function renderVehiclePassports(root, context = {}) {
   document.addEventListener('keydown', onKeyDown);
   root.querySelector('[data-add-passport]').addEventListener('click', () => context.onAddVehicle?.());
   try {
-    const [vehiclePayload, reminderPayload] = await Promise.all([getJSON('/api/vehicles'), getJSON('/api/reminders')]);
+    const reminderPayloadPromise = getJSON('/api/reminders').catch(() => ({ data: [] }));
+    const vehiclePayload = await getJSON('/api/vehicles');
     const vehicles = Array.isArray(vehiclePayload) ? vehiclePayload : vehiclePayload.data || vehiclePayload.vehicles || [];
-    const reminders = Array.isArray(reminderPayload) ? reminderPayload : reminderPayload.data || [];
+    let reminders = [];
     if (!vehicles.length) {
       content.innerHTML = `<div class="vp-empty"><img src="assets/garage-empty-v1.png" alt="白色車輛與數碼車輛護照"><h2>建立你的第一本車輛護照</h2><p>新增車輛後，身份、里程及保養範圍會在這裡集中顯示。</p><button class="vp-add" type="button" data-empty-add>新增車輛</button></div>`;
       content.querySelector('[data-empty-add]').addEventListener('click', () => context.onAddVehicle?.());
     } else {
-      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle, index) => `<div class="vp-vehicle-entry">${bookMarkup(vehicle, reminders.find((item) => item.vehicle_id === vehicle.id), index)}<div data-history-unknown-for="${esc(vehicle.id)}"></div></div>`).join('')}</div>`;
+      content.innerHTML = `<div class="vp-shelf">${vehicles.map((vehicle, index) => `<div class="vp-vehicle-entry">${bookMarkup(vehicle, null, index)}${vehicle.scope_confirmed !== true || vehicle.has_service_history === false ? historyUnknownMarkup(vehicle) : ''}</div>`).join('')}</div>`;
       content.querySelectorAll('[data-passport-id]').forEach((book) => book.addEventListener('click', () => {
         const vehicle = vehicles.find((item) => item.id === book.dataset.passportId);
         if (vehicle) openReader(vehicle, book, reminders);
       }));
-      if (window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        window.gsap.fromTo(content.querySelectorAll('.vp-book'), { opacity: 0, y: 35, rotateY: 8 }, { opacity: 1, y: 0, rotateY: 0, duration: .7, stagger: .11, ease: 'power3.out' });
-      }
-      /* Keep each history CTA with its own passport card. */
-      if (typeof window.passportCta === 'function') {
-        for (const vehicle of vehicles) {
-          const cta = await window.passportCta(content.querySelector('.vp-shelf'), vehicle.id);
-          const target = content.querySelector(`[data-history-unknown-for="${CSS.escape(vehicle.id)}"]`);
-          if (cta && target) {
-            target.innerHTML = historyUnknownMarkup(vehicle);
-          }
-          else target?.remove();
-        }
-      }
+      reminderPayloadPromise.then((payload) => {
+        reminders.splice(0, reminders.length, ...(Array.isArray(payload) ? payload : payload.data || []));
+        content.querySelectorAll('[data-passport-id]').forEach((book) => {
+          const vehicle = vehicles.find((item) => item.id === book.dataset.passportId);
+          const badge = book.querySelector('[data-passport-status]');
+          if (!vehicle || !badge) return;
+          const reminder = reminders.find((item) => item.vehicle_id === vehicle.id);
+          const unknown = vehicle.scope_confirmed !== true;
+          badge.classList.toggle('is-unknown', unknown);
+          badge.classList.toggle('is-warn', !unknown && Boolean(reminder));
+          badge.querySelector('span').textContent = unknown ? '車況待確認' : reminder?.title || '目前沒有待辦提醒';
+        });
+      });
+
     }
   } catch (error) {
     content.innerHTML = '<div class="vp-error"><b>暫時無法載入車輛護照</b><br><small>請檢查連線後重新整理頁面。</small><br><button class="vp-add" type="button" onclick="location.reload()">重新載入</button></div>';
