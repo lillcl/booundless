@@ -53,23 +53,18 @@ test.describe('full pipeline: signup → car → maintenance → dealer sync →
       expect(meResponse.status).toBe(200);
       expect(meResponse.body?.user?.email).toBe(userEmail);
 
-      /* ── 2. Add a car through the 4-step onboarding sheet ─────────────── */
+      /* ── 2. Add a car through manual onboarding ───────────────────────── */
       await userPage.goto('/#/garage');
-      await expect(userPage.getByRole('heading', { name: '車輛護照', level: 1 })).toBeVisible();
+      await expect(userPage.getByRole('heading', { name: '我的車輛', level: 1 })).toBeVisible();
       await userPage.locator('[data-add-passport]').first().click();
+      await userPage.locator('[data-add-mode="manual"]').click();
       /* Step 1: 車輛類別 — pick "輕型客車" */
       await userPage.locator('button[data-class="light_passenger"]').click();
       /* Step 2: 能源 — pick 燃油 */
       await userPage.locator('button[data-powertrain="fuel"]').click();
       /* Step 3: 品牌 — pick Toyota */
       await userPage.locator('button[data-brand="Toyota"]').click();
-      /* Step 4a: capture — skip both photos, then continue. With no images
-         the AI sequence is purely a series of ~360ms pauses (~3.6s total)
-         before rendering the confirmation form. */
-      await userPage.locator('#skipCar').click();
-      await userPage.locator('#skipDash').click();
-      await userPage.locator('#continueCaptureBtn').click();
-      /* Step 4b: confirm — fill the AI-skipped fields manually. */
+      /* Step 4: fill the manual review form; no image recognition request. */
       await expect(userPage.locator('#newVehicleModel')).toBeVisible({ timeout: 15_000 });
       await userPage.locator('#newVehicleMake').fill('Toyota');
       await userPage.locator('#newVehicleModel').fill('Corolla');
@@ -78,15 +73,15 @@ test.describe('full pipeline: signup → car → maintenance → dealer sync →
       await userPage.locator('#newVehiclePlate').fill('MX-12-34');
       const createResponse = userPage.waitForResponse((response) =>
         response.url().endsWith('/api/vehicles') && response.request().method() === 'POST');
-      await userPage.getByRole('button', { name: '確認並建立車輛護照' }).click();
+      await userPage.getByRole('button', { name: '確認並新增車輛' }).click();
       const created = await createResponse;
       expect(created.status(), await created.text()).toBe(201);
       const createdBody = await created.json();
       vehicleId = createdBody.id;
       expect(vehicleId).toBeTruthy();
 
-      /* The completion sheet pops after create; click "稍後再說，前往我的車" */
-      await userPage.getByRole('button', { name: '稍後再說，前往我的車' }).click();
+      /* The completion sheet pops after create; continue to the garage. */
+      await userPage.getByRole('button', { name: '稍後處理，前往我的車' }).click();
       await expect(userPage).toHaveURL(/#\/garage$/);
 
       const vehiclesResp = await db.query(

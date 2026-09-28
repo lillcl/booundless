@@ -93,6 +93,7 @@ function identityPage(vehicle) {
   const fields = [
     ['品牌', vehicle.make || '未填寫'], ['型號', vehicle.model || '未填寫'],
     ['年份', vehicle.year || '未填寫'], ['能源', vehicle.fuel_type || vehicle.powertrain_type || '未填寫'],
+    ['車身顏色', vehicle.body_color || '未填寫'],
     ['車牌', vehicle.plate || '未填寫'], ['VIN', vehicle.vin || '未填寫'],
   ];
   return `<div class="vp-paper"><span class="vp-page-label">01 · 車輛資料</span><h3>${esc(passportName(vehicle))}</h3>
@@ -253,6 +254,7 @@ export async function renderVehiclePassports(root, context = {}) {
         <label>型號<input name="model" required value="${esc(vehicle.model || '')}" placeholder="例如 Corolla Cross"></label>
         <label>年份<input name="year" type="number" min="1950" max="2100" value="${esc(vehicle.year || '')}"></label>
         <label>能源<select name="fuel_type">${['','燃油','純電','油電混合','Hybrid','EV','Petrol','Diesel'].map((value) => `<option value="${esc(value)}" ${String(vehicle.fuel_type || '') === value ? 'selected' : ''}>${esc(value || '未填寫')}</option>`).join('')}</select></label>
+        <label>車身顏色<input name="body_color" value="${esc(vehicle.body_color || '')}" placeholder="例如 白色"></label>
         <label>車牌<input name="plate" value="${esc(vehicle.plate || '')}"></label>
         <label>VIN<input name="vin" value="${esc(vehicle.vin || '')}"></label>
         <label>目前里程（km）<input name="mileage_km" type="number" min="0" value="${esc(vehicle.mileage_km ?? '')}"></label>
@@ -282,7 +284,7 @@ export async function renderVehiclePassports(root, context = {}) {
         let changed = 0;
         if (kind === 'vehicle') {
           const info = result.vehicle || {};
-          for (const name of ['make', 'model', 'year', 'fuel_type', 'plate', 'vin']) {
+          for (const name of ['make', 'model', 'year', 'fuel_type', 'body_color', 'plate', 'vin']) {
             const value = info[name];
             if (value == null || value === '' || !['string','number'].includes(typeof value)) continue;
             if (name === 'year' && (!Number.isInteger(Number(value)) || Number(value) < 1950 || Number(value) > 2100)) continue;
@@ -312,7 +314,7 @@ export async function renderVehiclePassports(root, context = {}) {
       statusLine.textContent = '正在儲存護照…';
       try {
         const data = Object.fromEntries(new FormData(form).entries());
-        data.mileage_km = Number(data.mileage_km) || 0;
+        data.mileage_km = data.mileage_km === '' ? null : Number(data.mileage_km);
         data.year = data.year ? Number(data.year) : null;
         if (vehicleImage) data.image = vehicleImage;
         const updated = await sendJSONRequest(`/api/vehicles/${encodeURIComponent(vehicle.id)}`, 'PATCH', data);

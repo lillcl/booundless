@@ -8,8 +8,8 @@ loadDotenv();
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
-const URL = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
-if (!URL) { console.error('SUPABASE_DB_URL or KC_DATABASE_URL not set'); process.exit(1); }
+const URL = process.env.SUPABASE_DB_URL || process.env.DIRECT_URL;
+if (!URL) { console.error('SUPABASE_DB_URL not set; local databases are disabled'); process.exit(1); }
 
 const ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

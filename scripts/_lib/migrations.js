@@ -68,8 +68,9 @@ async function getApplied(client) {
 export async function runMigrations({ connectionString, verbose = true } = {}) {
   const url = connectionString
     || process.env.SUPABASE_DB_URL
-    || process.env.KC_DATABASE_URL;
-  if (!url) throw new Error('SUPABASE_DB_URL or KC_DATABASE_URL is required for migrations.');
+    || process.env.DIRECT_URL;
+  if (!url) throw new Error('SUPABASE_DB_URL is required; local databases are disabled.');
+  if (/^(localhost|127\.0\.0\.1|::1)$/i.test(new URL(url).hostname)) throw new Error('Local databases are disabled.');
 
   const pool = new pg.Pool({ connectionString: url, max: 2 });
   const client = await pool.connect();
@@ -144,8 +145,9 @@ export async function runMigrations({ connectionString, verbose = true } = {}) {
 export async function readinessCheck({ connectionString, expectedSlices } = {}) {
   const url = connectionString
     || process.env.SUPABASE_DB_URL
-    || process.env.KC_DATABASE_URL;
-  if (!url) throw new Error('SUPABASE_DB_URL or KC_DATABASE_URL is required for readiness check.');
+    || process.env.DIRECT_URL;
+  if (!url) throw new Error('SUPABASE_DB_URL is required; local databases are disabled.');
+  if (/^(localhost|127\.0\.0\.1|::1)$/i.test(new URL(url).hostname)) throw new Error('Local databases are disabled.');
   const pool = new pg.Pool({ connectionString: url, max: 1 });
   const client = await pool.connect();
   try {

@@ -324,7 +324,7 @@ export default async function handler(req, res) {
       const db = await getDb();
       if (req.method === 'PATCH') {
         const body = await readBody(req, { limit: '8mb' });
-        const allowed = ['passport_name', 'passport_color', 'model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'vin', 'plate', 'mileage_km', 'image'];
+        const allowed = ['passport_name', 'passport_color', 'model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'body_color', 'vin', 'plate', 'mileage_km', 'image'];
         const updates = [];
         const values = [];
         for (const field of allowed) {
@@ -333,13 +333,17 @@ export default async function handler(req, res) {
           if (field === 'passport_name' && String(value || '').length > 80) return sendError(res, 422, 'unprocessable', 'Passport name must be 80 characters or fewer');
           if (field === 'passport_color' && !['blue','green','burgundy','purple'].includes(value)) return sendError(res, 422, 'unprocessable', 'Invalid passport color');
           if (field === 'model' && !String(value || '').trim()) return sendError(res, 422, 'unprocessable', 'model is required');
-          if (field === 'mileage_km') value = Math.max(0, Number(value) || 0);
+          if (field === 'mileage_km') {
+            if (value === '' || value == null) value = null;
+            else if (!Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 3000000) return sendError(res, 422, 'unprocessable', 'Invalid mileage');
+            else value = Number(value);
+          }
           if (field === 'year') value = value === '' || value == null ? null : Number(value);
           if (!['mileage_km', 'year'].includes(field)) value = String(value || '').trim() || null;
           values.push(value);
           updates.push(`${field}=$${values.length}`);
           if (field === 'mileage_km') {
-            values.push(`${Number(value).toLocaleString()} km`);
+            values.push(value == null ? '' : `${value.toLocaleString()} km`);
             updates.push(`mileage_label=$${values.length}`);
           }
         }
@@ -348,7 +352,7 @@ export default async function handler(req, res) {
         const updated = await db.query(
           `UPDATE vehicles SET ${updates.join(', ')}, updated_by_user_id=$${values.length - 1}, updated_at=NOW()
            WHERE id=$${values.length} AND created_by_user_id=$${values.length - 1} AND archived_at IS NULL
-           RETURNING id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type,
+           RETURNING id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, body_color,
              onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label,
              image, owner, team, created_at, updated_at`,
           values,
@@ -358,7 +362,7 @@ export default async function handler(req, res) {
       }
       if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET or PATCH allowed');
       const r = await db.query(
-        `SELECT id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, body_color, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
         [id, user.id],
       );
@@ -371,11 +375,14 @@ export default async function handler(req, res) {
       const body = await readBody(req);
       if (!body?.model) return sendError(res, 422, 'unprocessable', 'model is required');
       const id = randomUUID();
-      const mileage = Math.max(0, Number(body.mileage_km) || 0);
+      const mileage = body.mileage_km === '' || body.mileage_km == null ? null : Number(body.mileage_km);
+      if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3000000)) return sendError(res, 422, 'unprocessable', 'Invalid mileage');
+      const powertrainByFuel = { '燃油': 'fuel', '純電': 'ev', '油電混合': 'hybrid' };
+      const powertrain = powertrainByFuel[body.fuel_type] || body.powertrain_type || null;
       const r = await db.query(`INSERT INTO vehicles
-        (id,model,make,year,fuel_type,vehicle_class,powertrain_type,onboarding_state,plate,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,'identity_confirmed',$8,$9,$10,$11,$12,$13,$14,$14) RETURNING *`,
-      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,body.powertrain_type||null,body.plate||null,mileage,`${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
+        (id,model,make,year,fuel_type,vehicle_class,powertrain_type,onboarding_state,plate,vin,body_color,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'identity_confirmed',$8,$9,$10,$11,$12,$13,$14,$15,$16,$16) RETURNING *`,
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,powertrain,body.plate||null,body.vin||null,body.body_color||null,mileage,mileage == null ? '' : `${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
       const vehicle = r.rows[0];
 
       /* Seed a default maintenance scope from the powertrain template so the
@@ -399,7 +406,7 @@ export default async function handler(req, res) {
          protects against any DB-level failure so the vehicle row is always
          returned to the client. */
       try {
-        const aiRows = await suggestExtraScope({ ...vehicle, mileage_km: mileage });
+        const aiRows = body.identity_source === 'manual' ? [] : await suggestExtraScope({ ...vehicle, mileage_km: mileage });
         for (let i = 0; i < aiRows.length; i += 1) {
           const row = aiRows[i];
           await db.query(
@@ -425,7 +432,7 @@ export default async function handler(req, res) {
          completed onboarding (onboarding_state='ready'). Until then the
          client must not claim the vehicle is verified. */
       const r = await db.query(
-        `SELECT v.id, v.passport_name, v.passport_color, v.model, v.make, v.year, v.fuel_type, v.vehicle_class, v.powertrain_type,
+        `SELECT v.id, v.passport_name, v.passport_color, v.model, v.make, v.year, v.fuel_type, v.vehicle_class, v.powertrain_type, v.body_color,
                 v.onboarding_state, v.onboarding_completed_at, v.vin, v.plate,
                 v.mileage_km, v.mileage_label, v.image, v.owner, v.team,
                 v.created_at, v.updated_at,
@@ -445,6 +452,12 @@ export default async function handler(req, res) {
 
     sendError(res, 404, 'not_found', `No route matches ${url}`);
   } catch (err) {
+    console.error('[vehicles-api] request failed', {
+      method: req.method,
+      route: url,
+      code: err.code || null,
+      message: err.message,
+    });
     sendError(res, err.status || 500, 'internal_error', err.message);
   }
 }

@@ -15,7 +15,7 @@ test('demo navigation stays inside the document for file previews', () => {
 test('static navigation and critical assets are file-preview safe', () => {
   assert.match(html, /href="#\/landing"/);
   assert.match(html, /src="assets\/vehicle-toyota\.jpg"/);
-  assert.match(html, /src="assets\/vendor\/gsap\.min\.js"/);
+  assert.match(html, /src="assets\/site-metadata\.js"/);
 });
 
 test('vehicle history resolves independently of maintenance status', () => {

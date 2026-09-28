@@ -13,21 +13,19 @@ const PASSWORD = 'Pipeline-e2e-2026!';
 
 async function addCar(page) {
   await page.goto('/#/garage');
-  await expect(page.getByRole('heading', { name: '車輛護照', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '我的車輛', level: 1 })).toBeVisible();
   await page.locator('[data-add-passport]').first().click();
+  await page.locator('[data-add-mode="manual"]').click();
   await page.locator('button[data-class="light_passenger"]').click();
   await page.locator('button[data-powertrain="fuel"]').click();
   await page.locator('button[data-brand="Toyota"]').click();
-  await page.locator('#skipCar').click();
-  await page.locator('#skipDash').click();
-  await page.locator('#continueCaptureBtn').click();
   await expect(page.locator('#newVehicleModel')).toBeVisible({ timeout: 15_000 });
   await page.locator('#newVehicleMake').fill('Toyota');
   await page.locator('#newVehicleModel').fill('Corolla');
   await page.locator('#newVehicleYear').fill('2021');
   await page.locator('#newVehicleMileage').fill('42000');
   const createResp = page.waitForResponse((r) => r.url().endsWith('/api/vehicles') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: '確認並建立車輛護照' }).click();
+  await page.getByRole('button', { name: '確認並新增車輛' }).click();
   const created = await (await createResp).json();
   return created.id;
 }
@@ -47,7 +45,7 @@ test.describe('onboarding completion paths', () => {
       vehicleId = await addCar(page);
       const onboardingResp = page.waitForResponse((r) =>
         r.url().includes(`/api/vehicles/${vehicleId}/onboarding`) && r.request().method() === 'POST');
-      await page.getByRole('button', { name: '我有近期保養資料' }).click();
+      await page.getByRole('button', { name: /稍後補上保養紀錄/ }).click();
       expect((await onboardingResp).status()).toBe(200);
       const row = await db.query(`SELECT onboarding_state FROM vehicles WHERE id = $1`, [vehicleId]);
       expect(row.rows[0].onboarding_state).toBe('history_pending');
@@ -71,7 +69,7 @@ test.describe('onboarding completion paths', () => {
       vehicleId = await addCar(page);
       const onboardingResp = page.waitForResponse((r) =>
         r.url().includes(`/api/vehicles/${vehicleId}/onboarding`) && r.request().method() === 'POST');
-      await page.getByRole('button', { name: '暫時沒有，先建立基準' }).click();
+      await page.getByRole('button', { name: /目前沒有紀錄/ }).click();
       expect((await onboardingResp).status()).toBe(200);
       const row = await db.query(`SELECT onboarding_state FROM vehicles WHERE id = $1`, [vehicleId]);
       expect(row.rows[0].onboarding_state).toBe('baseline_pending');
@@ -93,7 +91,7 @@ test.describe('onboarding completion paths', () => {
     try {
       await signup(page, 'OB Ready', email, PASSWORD);
       vehicleId = await addCar(page);
-      await page.getByRole('button', { name: '稍後再說，前往我的車' }).click();
+      await page.getByRole('button', { name: '稍後處理，前往我的車' }).click();
       await expect(page).toHaveURL(/#\/garage$/, { timeout: 10_000 });
       const row = await db.query(`SELECT onboarding_state FROM vehicles WHERE id = $1`, [vehicleId]);
       expect(row.rows[0].onboarding_state).toBe('ready');

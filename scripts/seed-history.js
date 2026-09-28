@@ -5,7 +5,7 @@ import { config as loadDotenv } from 'dotenv';
 loadDotenv();
 import pg from 'pg';
 
-const URL = process.argv[2] || process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
+const URL = process.argv[2] || process.env.SUPABASE_DB_URL || process.env.DIRECT_URL;
 if (!URL) { console.error('No DB URL'); process.exit(1); }
 
 const pool = new pg.Pool({ connectionString: URL, max: 2 });

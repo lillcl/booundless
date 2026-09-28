@@ -21,8 +21,8 @@ loadDotenv();
 
 import pg from 'pg';
 
-const DB_URL = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
-if (!DB_URL) { console.error('SUPABASE_DB_URL or KC_DATABASE_URL required'); process.exit(2); }
+const DB_URL = process.env.SUPABASE_DB_URL || process.env.DIRECT_URL;
+if (!DB_URL) { console.error('SUPABASE_DB_URL required; local databases are disabled'); process.exit(2); }
 
 function summariseForSlack(report) {
   const lines = [];

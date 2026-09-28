@@ -20,8 +20,8 @@ Set these under Vercel → Project → Settings → Environment Variables for th
 
 | Variable | Required | Source | Notes |
 | --- | --- | --- | --- |
-| `KC_DATABASE_URL` | yes | Supabase dashboard → Project → Database → Connection string (Transaction pooler) | Falls back if `SUPABASE_DB_URL` is unset. |
-| `SUPABASE_DB_URL` | yes (cloud) | Same as above | Cloud runtime prefers this. |
+| `SUPABASE_DB_URL` | yes | Supabase dashboard → Project → Database → Connection string (Transaction pooler) | Canonical database URL for every environment. |
+| `DIRECT_URL` | fallback | Supabase database connection string | Compatibility fallback for existing local env files; must also point to Supabase. |
 | `SUPABASE_URL` | yes | Supabase → Project URL | Used by client config endpoint. |
 | `SUPABASE_ANON_KEY` | yes | Supabase → API → `anon` | Public. |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | Supabase → API → `service_role` | **Server only.** Never `NEXT_PUBLIC_`. |

@@ -1,6 +1,7 @@
 import { getDb } from './_lib/db.js';
 import { requireUser } from './_lib/auth.js';
 import { askAI } from './_lib/ai.js';
+import { normalizeVehicleVision, VEHICLE_VISION_SYSTEM } from './_lib/vehicle-vision.js';
 import { readBody, sendError, sendJSON } from './_lib/http.js';
 
 export default async function handler(req, res) {
@@ -28,19 +29,22 @@ export default async function handler(req, res) {
       prompt = `使用者問題：${String(body.question || '').slice(0, 2000)}`;
     } else if (mode === 'vehicle-image') {
       if (typeof body.image !== 'string' || !body.image.startsWith('data:image/')) return sendError(res, 422, 'unprocessable', 'image must be a data URL');
-      const image = body.image.slice(0, 7 * 1024 * 1024);
+      if (body.image.length > 7 * 1024 * 1024) return sendError(res, 413, 'image_too_large', 'Please upload a smaller photo');
+      const image = body.image;
       const result = await askAI({
-        system: `${system} 你是車輛照片辨識助手。只輸出 JSON，格式為 {"model":"","make":"","year":null,"fuel_type":"","plate":"","vin":""}。能源只可為燃油、純電或油電混合；VIN、年份及車牌須有清晰文字證據。看不清楚的欄位請留空，不要猜測。`,
-        user: [{ type: 'text', text: '請辨識照片中的車輛，回傳指定 JSON。' }, { type: 'image_url', image_url: { url: image } }],
+        system: VEHICLE_VISION_SYSTEM,
+        user: [{ type: 'text', text: '辨識照片中央的主體車輛，回傳指定 JSON。' }, { type: 'image_url', image_url: { url: image } }],
         model: process.env.AI_VISION_MODEL || process.env.AI_MODEL,
-        maxTokens: 300,
+        maxTokens: 450,
       });
-      let vehicle = {};
-      try { vehicle = JSON.parse(result.text.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* keep empty fields when provider returns non-JSON */ }
+      let raw = {};
+      try { raw = JSON.parse(result.text.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* unusable model output becomes an explicit empty result */ }
+      const vehicle = normalizeVehicleVision(raw);
       return sendJSON(res, 200, { vehicle, model: result.model, provider: result.provider });
     } else if (mode === 'dashboard-image') {
       if (typeof body.image !== 'string' || !body.image.startsWith('data:image/')) return sendError(res, 422, 'unprocessable', 'image must be a data URL');
-      const image = body.image.slice(0, 7 * 1024 * 1024);
+      if (body.image.length > 7 * 1024 * 1024) return sendError(res, 413, 'image_too_large', 'Please upload a smaller photo');
+      const image = body.image;
       const result = await askAI({
         system: `${system} 你是汽車儀表盤讀取助手。只輸出 JSON，格式為 {"mileage_km":null,"warning_lights":[],"displayed_messages":[],"confidence":"low|medium|high"}。只讀取清楚可見的里程、警示燈與文字。看不清楚就用 null 或空陣列；絕不可猜測車況或把保養燈當故障。`,
         user: [{ type: 'text', text: '請讀取這張儀表盤照片中的可見資訊，回傳指定 JSON。' }, { type: 'image_url', image_url: { url: image } }],
@@ -49,8 +53,8 @@ export default async function handler(req, res) {
       });
       let dashboard = {};
       try { dashboard = JSON.parse(result.text.replace(/^```json\s*|\s*```$/g, '').trim()); } catch { /* ask user to enter it manually */ }
-      const mileage = Number(dashboard.mileage_km);
-      if (!Number.isFinite(mileage) || mileage < 0 || mileage > 3000000) dashboard.mileage_km = null;
+      const mileage = dashboard.mileage_km == null || dashboard.mileage_km === '' ? NaN : Number(dashboard.mileage_km);
+      dashboard.mileage_km = Number.isInteger(mileage) && mileage >= 0 && mileage <= 3000000 ? mileage : null;
       if (!Array.isArray(dashboard.warning_lights)) dashboard.warning_lights = [];
       if (!Array.isArray(dashboard.displayed_messages)) dashboard.displayed_messages = [];
       return sendJSON(res, 200, { dashboard, model: result.model, provider: result.provider });

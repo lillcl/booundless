@@ -6,12 +6,13 @@ import { readFileSync } from 'node:fs';
 // E2E fixtures create and remove database rows. Refuse to use the app DB.
 if (!process.env.TEST_DATABASE_URL) throw new Error('TEST_DATABASE_URL is required for E2E tests');
 const savedConfig = (() => { try { return parse(readFileSync(new URL('./.env', import.meta.url))); } catch { return {}; } })();
-if ([savedConfig.KC_DATABASE_URL, savedConfig.SUPABASE_DB_URL].filter(Boolean).includes(process.env.TEST_DATABASE_URL)) {
+if ([savedConfig.SUPABASE_DB_URL, savedConfig.DIRECT_URL].filter(Boolean).includes(process.env.TEST_DATABASE_URL)) {
   throw new Error('TEST_DATABASE_URL must differ from the configured app database URL');
 }
-process.env.KC_DATABASE_URL = process.env.TEST_DATABASE_URL;
+/* E2E uses an explicitly isolated database. Keep the app's Supabase-only
+   production configuration intact; never silently fall back to KC_DATABASE_URL. */
+process.env.SUPABASE_DB_URL = process.env.TEST_DATABASE_URL;
 process.env.KC_AUTO_MIGRATE = '0';
-delete process.env.SUPABASE_DB_URL;
 
 export default defineConfig({
   testDir: './tests/e2e',

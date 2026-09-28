@@ -202,6 +202,7 @@ button,input{font:inherit}.app{display:flex;min-height:100vh;flex-direction:colu
 .form-panel-head p{margin:3px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
 .auto-pill{font-size:10px;padding:5px 9px;background:var(--green-soft);color:#376a43;border-radius:999px;font-weight:850;flex:0 0 auto;letter-spacing:.02em}
 .field-confidence{font-size:10px;color:#5d8a67;font-weight:760;background:var(--green-soft);padding:2px 7px;border-radius:6px;margin-left:auto}
+.field-source{display:block;margin-top:6px;color:#58706a;font-size:12px;line-height:1.4}
 .field-confidence.warn{color:#a37418;background:#fff8ea}
 .confirm-actions{display:grid;grid-template-columns:.6fr 1.4fr;gap:11px;margin-top:18px}
 .confirm-actions .primary,.confirm-actions .secondary{margin:0}
@@ -209,7 +210,8 @@ button,input{font:inherit}.app{display:flex;min-height:100vh;flex-direction:colu
 .confirm-inline-note{margin-top:14px;padding:11px 13px;border-radius:14px;background:#fff8ea;border:1px solid #efdfbd;color:#795b20;font-size:12px;line-height:1.55}
 
 @media(max-width:560px){
-  .capture-grid,.confirm-grid,.confirm-actions{grid-template-columns:1fr}
+  .onboard-choice-grid,.onboard-power-grid,.capture-grid,.confirm-grid,.confirm-actions{grid-template-columns:1fr}
+  .onboard-brand-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .vehicle-preview{min-height:200px}
   .vehicle-preview h3{font-size:18px}
 }
@@ -809,12 +811,12 @@ function appDialog(message, mode='notice') {
       const image = new Image();
       image.onerror = () => reject(new Error('照片格式無法辨識'));
       image.onload = () => {
-        const scale = Math.min(1, 1200 / Math.max(image.width, image.height));
+        const scale = Math.min(1, 1800 / Math.max(image.width, image.height));
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(image.width * scale));
         canvas.height = Math.max(1, Math.round(image.height * scale));
         canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.78));
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
       };
       image.src = reader.result;
     };
@@ -825,7 +827,8 @@ function appDialog(message, mode='notice') {
     newVehicleImageData = '';
     newDashboardImageData = '';
     const state = {
-      step: 1,
+      step: 0,
+      mode: null,
       vehicleClass: '',
       powertrain: '',
       make: '',
@@ -836,6 +839,8 @@ function appDialog(message, mode='notice') {
       dashDataUrl: '',
       aiVehicle: null,
       aiDashboard: null,
+      aiError: '',
+      manualDraft: {},
     };
     const classes = [
       ['light_passenger','輕型客車','一般私家車、SUV、MPV'],
@@ -848,9 +853,13 @@ function appDialog(message, mode='notice') {
     const powertrains = [['fuel','燃油車','引擎與傳統保養'],['ev','純電車','電池、充電與電驅'],['hybrid','油電混合','引擎與高壓系統']];
     const brands = ['Toyota','Honda','BMW','Mercedes-Benz','Tesla','BYD','Lexus','Audi','Volkswagen','其他'];
     const render = () => {
-      const progress = `<div class="onboard-progress" aria-label="建立進度">${[1,2,3,4].map(n => `<span class="${n === state.step ? 'active' : n < state.step ? 'done' : ''}"><i>${n < state.step ? '✓' : n}</i><b>${['車輛類別','能源','品牌','確認資料'][n - 1]}</b></span>`).join('')}</div>`;
+      const progress = state.mode === 'manual'
+        ? `<div class="onboard-progress" aria-label="建立進度">${[1,2,3,4].map(n => `<span class="${n === state.step ? 'active' : n < state.step ? 'done' : ''}"><i>${n < state.step ? '✓' : n}</i><b>${['車輛類別','能源','品牌','確認資料'][n - 1]}</b></span>`).join('')}</div>`
+        : '';
       let content = '';
-      if (state.step === 1) {
+      if (state.step === 0) {
+        content = `<span class="sheet__eyebrow">新增車輛</span><h2>你想怎樣建立車輛資料？</h2><p>選擇其中一種方式，儲存前都可以核對及修改資料。</p><div class="onboard-choice-grid"><button type="button" class="onboard-choice" data-add-mode="ai"><b>用照片識別</b><small>上傳車身照片，等候 AI 填寫可辨認的資料。</small><span>→</span></button><button type="button" class="onboard-choice" data-add-mode="manual"><b>手動輸入</b><small>自行填寫品牌、車款及車輛資料。</small><span>→</span></button></div>`;
+      } else if (state.step === 1) {
         content = `<span class="sheet__eyebrow">1 / 4 · 只需選一次</span><h2>你的車屬於哪一類？</h2><p>先選最接近的類別，讓我們建立正確的保養範圍。</p><div class="onboard-choice-grid">${classes.map(([id,name,detail]) => `<button type="button" class="onboard-choice ${state.vehicleClass === id ? 'selected' : ''}" data-class="${id}"><b>${name}</b><small>${detail}</small><span>→</span></button>`).join('')}</div>`;
       } else if (state.step === 2) {
         content = `<span class="sheet__eyebrow">2 / 4 · 決定保養範圍</span><h2>你的車用什麼能源？</h2><p>不用知道電池容量、引擎編號或排量；這些會在確認車型後補上。</p><div class="onboard-power-grid">${powertrains.map(([id,name,detail]) => `<button type="button" class="onboard-power ${state.powertrain === id ? 'selected' : ''}" data-powertrain="${id}"><b>${name}</b><small>${detail}</small></button>`).join('')}</div><div class="onboard-nav"><button class="secondary" type="button" data-back>上一步</button></div>`;
@@ -860,11 +869,17 @@ function appDialog(message, mode='notice') {
         content = renderStep4();
       }
       openSheet(`<div class="sheet--vehicle onboarding-sheet"><div class="sheet__header"><div><span class="sheet__eyebrow">建立車輛護照</span></div><button class="sheet__close" type="button" data-close-sheet aria-label="關閉">×</button></div>${progress}<div class="onboard-stage">${content}</div></div>`);
+      document.querySelectorAll('[data-add-mode]').forEach(button => button.onclick = () => {
+        state.mode = button.dataset.addMode;
+        state.step = state.mode === 'ai' ? 4 : 1;
+        state.captureStep = state.mode === 'ai' ? 'capture' : 'confirm';
+        render();
+      });
       document.querySelectorAll('[data-class]').forEach(button => button.onclick = () => { state.vehicleClass = button.dataset.class; state.step = 2; render(); });
       document.querySelectorAll('[data-powertrain]').forEach(button => button.onclick = () => { state.powertrain = button.dataset.powertrain; state.step = 3; render(); });
       document.querySelectorAll('[data-brand]').forEach(button => button.onclick = () => { state.make = button.dataset.brand; state.step = 4; render(); });
       document.getElementById('onboardMake')?.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; e.preventDefault(); const typed = e.target.value.trim(); if (typed) state.make = typed; state.step = 4; render(); });
-      document.querySelector('[data-back]')?.addEventListener('click', () => { state.step -= 1; render(); });
+      document.querySelector('[data-back]')?.addEventListener('click', () => { state.step = state.mode === 'ai' ? 0 : state.step - 1; render(); });
       if (state.step === 4) wireStep4();
     };
 
@@ -876,31 +891,48 @@ function appDialog(message, mode='notice') {
         const aiV = state.aiVehicle?.vehicle || state.aiVehicle || {};
         const aiD = state.aiDashboard?.dashboard || state.aiDashboard || {};
         const energyMap = { fuel: '燃油', ev: '純電', hybrid: '油電混合' };
-        const initialEnergy = energyMap[state.powertrain] || aiV.fuel_type || '純電';
-        const initialBrand = (state.make && state.make !== '其他') ? state.make : (aiV.make || '');
-        const initialModel = aiV.model || '';
-        const initialYear = aiV.year || '';
-        const initialMileage = aiD.mileage_km != null ? String(aiD.mileage_km) : '';
-        const initialPlate = aiV.plate || '';
-        const matchText = state.aiVehicle ? '照片辨識結果' : (state.carFile ? '照片處理中' : '資料待確認');
+        const aiMode = state.mode === 'ai';
+        const draft = state.manualDraft;
+        const initialEnergy = aiMode ? (aiV.fuel_type || '') : (draft.fuel_type || energyMap[state.powertrain] || '');
+        const initialBrand = aiMode ? (aiV.make || '') : (draft.make || (state.make === '其他' ? '' : state.make));
+        const initialModel = aiMode ? (aiV.model || '') : (draft.model || '');
+        const initialYear = aiMode ? (aiV.year || '') : (draft.year || '');
+        const initialMileage = aiMode && aiD.mileage_km != null ? String(aiD.mileage_km) : (aiMode ? '' : draft.mileage_km || '');
+        const initialPlate = aiMode ? (aiV.plate || '') : (draft.plate || '');
+        const initialColor = aiMode ? (aiV.body_color || '') : (draft.body_color || '');
+        const initialClass = aiMode ? (aiV.vehicle_class || '') : (draft.vehicle_class || state.vehicleClass);
+        const matchText = aiMode ? (state.aiVehicle ? 'AI 識別結果' : '待手動填寫') : '手動輸入';
         const showPhoto = !!state.carDataUrl;
         const titleText = ((initialBrand + ' ' + initialModel).trim()) || '未確認車型';
-        const metaText = `${initialYear || '年份待確認'} · ${initialEnergy}`;
-        return `<span class="sheet__eyebrow">4 / 4 · 確認車輛資料</span><h2>請核對以下資料</h2><p>照片辨識結果只作預填參考。請檢查並修改有誤的欄位，再儲存。</p><form id="addVehicleForm"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="confirm-grid"><aside class="vehicle-preview"><div><div class="match-pill">${esc(matchText)}</div><h3 id="previewTitle">${esc(titleText)}</h3><p id="previewMeta">${esc(metaText)}</p></div><div class="vehicle-image ${showPhoto ? 'has-photo' : ''}" id="vehicleImage"><img id="confirmPhoto" alt="確認車輛照片" src="${esc(state.carDataUrl)}" class="${showPhoto ? 'show' : ''}"><svg viewBox="0 0 340 170" fill="none"><path d="M53 99h231l-13-37-41-12-30-30h-82L79 55 57 66z" fill="#1b2730"/><path d="M121 31h72l26 23H96z" fill="#dfe7eb"/><rect x="47" y="95" width="245" height="28" rx="10" fill="#1b2730"/><circle cx="103" cy="124" r="27" fill="#1b2730"/><circle cx="103" cy="124" r="15" fill="#fff"/><circle cx="236" cy="124" r="27" fill="#1b2730"/><circle cx="236" cy="124" r="15" fill="#fff"/></svg></div></aside><div><div class="form-panel"><div class="form-panel-head"><div><h4>核對資料</h4><p>請確認品牌、型號、年份和里程。</p></div><span class="auto-pill">${state.aiVehicle || state.aiDashboard ? '照片辨識結果' : '手動輸入'}</span></div><div class="form-grid vehicle-fields"><div class="field"><label for="newVehicleClass">車輛類別</label><select id="newVehicleClass" class="control">${classes.map(c => `<option value="${esc(c[0])}" ${state.vehicleClass === c[0] ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMake">品牌</label><input id="newVehicleMake" class="control" value="${esc(initialBrand)}" placeholder="例如 Toyota"></div><div class="field"><label for="newVehicleModel">型號</label><input id="newVehicleModel" required placeholder="例如 Corolla Cross" value="${esc(initialModel)}"></div><div class="field"><label for="newVehicleYear">年份</label><input id="newVehicleYear" type="number" min="1950" max="2030" placeholder="例如 2021" value="${esc(String(initialYear))}"></div><div class="field"><label for="newVehicleFuel">能源</label><select id="newVehicleFuel" class="control">${['燃油','純電','油電混合'].map(e => `<option ${e === initialEnergy ? 'selected' : ''}>${e}</option>`).join('')}</select></div><div class="field"><label for="newVehicleMileage">目前里程</label><input id="newVehicleMileage" type="number" min="0" placeholder="例如 12680" value="${esc(initialMileage)}"></div><div class="field"><label for="newVehiclePlate">車牌</label><input id="newVehiclePlate" placeholder="例如 MA-00-00" value="${esc(initialPlate)}"></div></div></div><div class="confirm-inline-note">請核對照片辨識結果。系統未能確認的欄位會標示為「待確認」。</div><div class="confirm-actions"><button class="secondary" type="button" id="backFromConfirmBtn">返回</button><button class="primary" type="submit">確認並新增車輛</button></div><div class="ai-result" id="addVehicleResult"></div></div></div></form>`;
+        const metaText = [initialYear || '年份待確認', initialEnergy || '能源待確認'].join(' · ');
+        const confidenceLabels = { high: '較明確', medium: '請核對', low: '不確定' };
+        const fieldSource = (key, value) => aiMode ? `<small class="field-source">${value ? `AI 識別 · ${confidenceLabels[aiV.confidence?.[key]] || '請核對'}` : '未能識別 · 請填寫'}</small>` : '';
+        const reviewIntro = aiMode ? 'AI 已填入可辨認的資料。請核對車牌及其他欄位後儲存。' : '請填寫車輛資料，儲存前再核對。';
+        return `<span class="sheet__eyebrow">確認車輛資料</span><h2>請核對以下資料</h2><p>${reviewIntro}</p>
+          <form id="addVehicleForm"><input type="hidden" id="newVehicleEntryMode" value="${esc(state.mode)}"><div class="confirm-grid"><aside class="vehicle-preview"><div><div class="match-pill">${esc(matchText)}</div><h3 id="previewTitle">${esc(titleText)}</h3><p id="previewMeta">${esc(metaText)}</p></div><div class="vehicle-image ${showPhoto ? 'has-photo' : ''}" id="vehicleImage"><img id="confirmPhoto" alt="確認車輛照片" src="${esc(state.carDataUrl)}" class="${showPhoto ? 'show' : ''}"><svg viewBox="0 0 340 170" fill="none"><path d="M53 99h231l-13-37-41-12-30-30h-82L79 55 57 66z" fill="#1b2730"/><path d="M121 31h72l26 23H96z" fill="#dfe7eb"/><rect x="47" y="95" width="245" height="28" rx="10" fill="#1b2730"/><circle cx="103" cy="124" r="27" fill="#1b2730"/><circle cx="236" cy="124" r="27" fill="#1b2730"/></svg></div></aside>
+          <div><div class="form-panel"><div class="form-panel-head"><div><h4>車輛資料</h4><p>${aiMode ? '根據照片預填；你可修改每一項。' : '由你輸入；不會呼叫 AI。'}</p></div><span class="auto-pill">${aiMode ? 'AI 識別' : '手動輸入'}</span></div>
+          <div class="form-grid vehicle-fields">
+          <div class="field"><label for="newVehicleClass">車輛類別</label><select id="newVehicleClass" class="control" required><option value="">請選擇</option>${classes.map(c => `<option value="${esc(c[0])}" ${initialClass === c[0] ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select>${fieldSource('vehicle_class', initialClass)}</div>
+          <div class="field"><label for="newVehicleMake">品牌</label><input id="newVehicleMake" class="control" required value="${esc(initialBrand)}" placeholder="例如 Tesla">${fieldSource('make', initialBrand)}</div>
+          <div class="field"><label for="newVehicleModel">型號</label><input id="newVehicleModel" required value="${esc(initialModel)}" placeholder="例如 Model Y">${fieldSource('model', initialModel)}</div>
+          <div class="field"><label for="newVehicleYear">年份</label><input id="newVehicleYear" type="number" min="1950" max="2100" value="${esc(String(initialYear))}" placeholder="未能確認可留空">${fieldSource('year', initialYear)}</div>
+          <div class="field"><label for="newVehicleFuel">能源</label><select id="newVehicleFuel" class="control" required><option value="">請選擇</option>${['燃油','純電','油電混合'].map(e => `<option ${e === initialEnergy ? 'selected' : ''}>${e}</option>`).join('')}</select>${fieldSource('fuel_type', initialEnergy)}</div>
+          <div class="field"><label for="newVehicleColor">車身顏色</label><input id="newVehicleColor" value="${esc(initialColor)}" placeholder="例如 白色">${fieldSource('body_color', initialColor)}</div>
+          <div class="field"><label for="newVehicleMileage">目前里程（km）</label><input id="newVehicleMileage" type="number" min="0" value="${esc(initialMileage)}" placeholder="未提供可留空">${aiMode ? '<small class="field-source">只會從儀表盤照片讀取</small>' : ''}</div>
+          <div class="field"><label for="newVehiclePlate">車牌</label><input id="newVehiclePlate" value="${esc(initialPlate)}" placeholder="請核對每個字母及數字">${fieldSource('plate', initialPlate)}</div>
+          <div class="field"><label for="newVehicleVin">VIN</label><input id="newVehicleVin" value="${esc(aiMode ? (aiV.vin || '') : (draft.vin || ''))}" placeholder="未能確認可留空">${fieldSource('vin', aiMode ? aiV.vin : '')}</div>
+          </div></div><div class="confirm-inline-note">${aiMode ? '照片辨識結果可能有誤；請在儲存前核對。' : '確認資料正確後才會建立車輛護照。'}</div><div class="confirm-actions"><button class="secondary" type="button" id="backFromConfirmBtn">返回</button><button class="primary" type="submit">確認並新增車輛</button></div><div class="ai-result ${state.aiError ? 'show' : ''}" id="addVehicleResult">${esc(state.aiError)}</div></div></div></form>`;
       }
-      const classLabel = classes.find(c => c[0] === state.vehicleClass)?.[1] || '車輛類別待確認';
-      const powerLabel = powertrains.find(p => p[0] === state.powertrain)?.[1] || '能源待確認';
-      const makeLabel = state.make || '品牌待確認';
       const carSlot = (kind, title, iconPath, hint) => {
         const dataUrl = kind === 'car' ? state.carDataUrl : state.dashDataUrl;
         const fileName = (kind === 'car' ? state.carFile : state.dashFile)?.name || '';
         const hasFile = kind === 'car' ? !!state.carFile : !!state.dashFile;
         const status = hasFile ? '已加入' : '未加入';
-        return `<article class="capture-card"><div class="capture-head"><span>${title}</span><span class="capture-optional">可略過</span></div><label class="dropzone ${dataUrl ? 'has-file' : ''}" id="${kind}Zone"><input id="${kind}Input" type="file" accept="image/*" aria-label="${title}"><div class="dropzone-empty" id="${kind}Empty" ${dataUrl ? 'style="display:none"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconPath}</svg><strong>${kind === 'car' ? '拍照或從相簿選擇' : '拍攝啟動後的儀表盤'}</strong><span>${hint}</span></div><div class="dropzone-preview ${dataUrl ? 'show' : ''}" id="${kind}Preview"><img id="${kind}Img" alt="預覽" src="${esc(dataUrl)}"><div class="dropzone-preview-overlay"><b id="${kind}Name">${esc(fileName)}</b><span><button type="button" data-replace="${kind}">更換</button><button type="button" data-remove="${kind}">移除</button></span></div></div></label><div class="capture-footer"><button class="capture-skip" id="skip${kind === 'car' ? 'Car' : 'Dash'}" type="button">略過${kind === 'car' ? '車身照片' : '儀表盤照片'}</button><span class="capture-status ${hasFile ? 'ready' : ''}" id="${kind}Status">${esc(status)}</span></div></article>`;
+        return `<article class="capture-card"><div class="capture-head"><span>${title}</span><span class="capture-optional">${kind === 'car' ? '必需' : '可略過'}</span></div><label class="dropzone ${dataUrl ? 'has-file' : ''}" id="${kind}Zone"><input id="${kind}Input" type="file" accept="image/*" aria-label="${title}"><div class="dropzone-empty" id="${kind}Empty" ${dataUrl ? 'style="display:none"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${iconPath}</svg><strong>${kind === 'car' ? '拍照或從相簿選擇' : '拍攝啟動後的儀表盤'}</strong><span>${hint}</span></div><div class="dropzone-preview ${dataUrl ? 'show' : ''}" id="${kind}Preview"><img id="${kind}Img" alt="預覽" src="${esc(dataUrl)}"><div class="dropzone-preview-overlay"><b id="${kind}Name">${esc(fileName)}</b><span><button type="button" data-replace="${kind}">更換</button><button type="button" data-remove="${kind}">移除</button></span></div></div></label><div class="capture-footer">${kind === 'dash' ? '<button class="capture-skip" id="skipDash" type="button">略過儀表盤照片</button>' : '<span>請選擇照片</span>'}<span class="capture-status ${hasFile ? 'ready' : ''}" id="${kind}Status">${esc(status)}</span></div></article>`;
       };
       const cameraIcon = `<rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M8 6l1.2-2h5.6L16 6"/><circle cx="12" cy="12.5" r="3.2"/>`;
       const dashIcon = `<circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/><path d="M5.8 16.4h12.4"/>`;
-      return `<span class="sheet__eyebrow">4 / 4 · 選擇性照片</span><h2>用照片協助填寫</h2><p>車身照片可協助填入品牌和車款；儀表盤照片可嘗試讀取里程。辨識結果可能不完整，亦可略過並手動填寫。</p><div class="selection-strip"><span>已選：${esc(classLabel)} · ${esc(powerLabel)} · ${esc(makeLabel)}</span></div><div class="capture-grid">${carSlot('car', '車身照片', cameraIcon, '建議拍攝車頭、車尾或車身側面')}${carSlot('dash', '儀表盤照片', dashIcon, '請拍攝已啟動、可清楚看見里程的儀表盤')}</div><input type="hidden" id="newVehicleClass" value="${esc(state.vehicleClass)}"><input type="hidden" id="newVehiclePowertrain" value="${esc(state.powertrain)}"><div class="vehicle-form-actions"><button class="secondary" type="button" data-back>上一步</button><button class="primary" id="continueCaptureBtn" type="button">繼續</button></div>`;
+      return `<span class="sheet__eyebrow">照片識別</span><h2>上傳車身照片</h2><p>AI 會嘗試識別車款、顏色及車牌。儀表盤照片可選填，用來讀取里程。識別完成後你可以逐項修改。</p><div class="capture-grid">${carSlot('car', '車身照片', cameraIcon, '建議拍攝車頭、車尾或車身側面')}${carSlot('dash', '儀表盤照片', dashIcon, '請拍攝已啟動、可清楚看見里程的儀表盤')}</div><div class="vehicle-form-actions"><button class="secondary" type="button" data-switch-manual>改用手動輸入</button><button class="primary" id="continueCaptureBtn" type="button">開始識別</button></div><div class="ai-result ${state.aiError ? 'show' : ''}" id="captureError" role="status">${esc(state.aiError)}</div>`;
     };
 
     const refreshPreview = () => {
@@ -916,17 +948,25 @@ function appDialog(message, mode='notice') {
 
     const runAiSequence = async () => {
       const callAi = async (mode, image) => {
-        try {
-          const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, image }) });
-          return await r.json().catch(() => ({}));
-        } catch (err) { return {}; }
+        const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, image }) });
+        const result = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(result.error?.message || '照片識別失敗');
+        return result;
       };
-      const [vehicleResult, dashboardResult] = await Promise.all([
-        state.carDataUrl ? callAi('vehicle-image', state.carDataUrl) : Promise.resolve(null),
+      const [vehicleResult, dashboardResult] = await Promise.allSettled([
+        callAi('vehicle-image', state.carDataUrl),
         state.dashDataUrl ? callAi('dashboard-image', state.dashDataUrl) : Promise.resolve(null),
       ]);
-      state.aiVehicle = vehicleResult?.error ? null : vehicleResult;
-      state.aiDashboard = dashboardResult?.error ? null : dashboardResult;
+      const identity = vehicleResult.status === 'fulfilled' ? vehicleResult.value?.vehicle : null;
+      if (vehicleResult.status === 'rejected' || !['make','model','plate','body_color'].some(key => identity?.[key])) {
+        state.aiError = vehicleResult.reason?.message || '未能從照片辨認車輛。請重試或改用手動輸入。';
+        state.captureStep = 'capture';
+        render();
+        return;
+      }
+      state.aiVehicle = vehicleResult.value;
+      state.aiDashboard = dashboardResult.status === 'fulfilled' ? dashboardResult.value : null;
+      state.aiError = dashboardResult.status === 'rejected' ? '儀表盤照片未能讀取，里程請手動填寫。' : '';
       state.captureStep = 'confirm';
       render();
     };
@@ -1000,14 +1040,26 @@ function appDialog(message, mode='notice') {
       document.getElementById('skipCar')?.addEventListener('click', () => clearCaptureFile('car', true));
       document.getElementById('skipDash')?.addEventListener('click', () => clearCaptureFile('dash', true));
       document.getElementById('continueCaptureBtn')?.addEventListener('click', async () => {
+        if (!state.carDataUrl) {
+          state.aiError = '請先加入車身照片，或改用手動輸入。';
+          document.getElementById('captureError').textContent = state.aiError;
+          document.getElementById('captureError').classList.add('show');
+          return;
+        }
+        state.aiError = '';
         state.captureStep = 'analysis';
         render();
         await runAiSequence();
       });
+      document.querySelector('[data-switch-manual]')?.addEventListener('click', () => {
+        state.mode = 'manual'; state.step = 1; state.aiVehicle = null; state.aiDashboard = null;
+        state.carDataUrl = ''; state.dashDataUrl = ''; state.aiError = '';
+        newVehicleImageData = ''; newDashboardImageData = '';
+        render();
+      });
       document.getElementById('backFromConfirmBtn')?.addEventListener('click', () => {
-        state.captureStep = 'capture';
-        state.aiVehicle = null;
-        state.aiDashboard = null;
+        if (state.mode === 'manual') state.step = 3;
+        else state.captureStep = 'capture';
         render();
       });
       if (state.captureStep === 'confirm') {
@@ -1015,6 +1067,24 @@ function appDialog(message, mode='notice') {
           document.getElementById(id)?.addEventListener('input', refreshPreview);
         });
         document.getElementById('newVehicleFuel')?.addEventListener('change', refreshPreview);
+        if (state.mode === 'ai') {
+          document.querySelectorAll('#addVehicleForm input, #addVehicleForm select').forEach(input => {
+            if (input.type === 'hidden') return;
+            input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
+              const source = input.closest('.field')?.querySelector('.field-source');
+              if (source) source.textContent = '你已修改';
+            });
+          });
+        }
+        if (state.mode === 'manual') {
+          const draftIds = { newVehicleClass: 'vehicle_class', newVehicleMake: 'make', newVehicleModel: 'model',
+            newVehicleYear: 'year', newVehicleFuel: 'fuel_type', newVehicleColor: 'body_color',
+            newVehicleMileage: 'mileage_km', newVehiclePlate: 'plate', newVehicleVin: 'vin' };
+          for (const [id, field] of Object.entries(draftIds)) {
+            const input = document.getElementById(id);
+            input?.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => { state.manualDraft[field] = input.value; });
+          }
+        }
       }
     };
 
@@ -1408,7 +1478,7 @@ function appDialog(message, mode='notice') {
   if (hero) {
     if (heroPhoto && hero.image) heroPhoto.src = hero.image;
     if (heroEyebrow) heroEyebrow.textContent = '車輛資料';
-    if (heroMileage) heroMileage.textContent = hero.mileage_label;
+    if (heroMileage) heroMileage.textContent = hero.mileage_label || '里程未記錄';
     /* Subtitle below the mileage used to be hardcoded "登入後新增你的第一台車"
        — replace with a real identity line so a logged-in owner with a vehicle
        no longer sees the empty-state copy. */
@@ -1757,9 +1827,26 @@ function appDialog(message, mode='notice') {
       const submitBtn = e.target.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
       const result=document.getElementById('addVehicleResult'); result.classList.add('show'); result.textContent='正在新增…';
-      const payload={model:document.getElementById('newVehicleModel').value,make:document.getElementById('newVehicleMake').value,year:document.getElementById('newVehicleYear').value,fuel_type:document.getElementById('newVehicleFuel').value,vehicle_class:document.getElementById('newVehicleClass')?.value||null,powertrain_type:document.getElementById('newVehiclePowertrain')?.value||null,plate:document.getElementById('newVehiclePlate').value,mileage_km:document.getElementById('newVehicleMileage').value,image:newVehicleImageData||null};
+      const fuelType = document.getElementById('newVehicleFuel').value;
+      const payload = {
+        model: document.getElementById('newVehicleModel').value.trim(),
+        make: document.getElementById('newVehicleMake').value.trim(),
+        year: document.getElementById('newVehicleYear').value || null,
+        fuel_type: fuelType,
+        vehicle_class: document.getElementById('newVehicleClass').value,
+        powertrain_type: ({ '燃油': 'fuel', '純電': 'ev', '油電混合': 'hybrid' })[fuelType],
+        body_color: document.getElementById('newVehicleColor').value.trim(),
+        vin: document.getElementById('newVehicleVin').value.trim(),
+        plate: document.getElementById('newVehiclePlate').value.trim(),
+        mileage_km: document.getElementById('newVehicleMileage').value || null,
+        identity_source: document.getElementById('newVehicleEntryMode').value,
+        image: newVehicleImageData || null,
+      };
       try {
         const r=await fetch('/api/vehicles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json(); if(r.ok){window.booundlessTrack?.('vehicle_created',d.id);showVehicleOnboardingCompletion(d);}else {result.textContent=d.error?.message||'新增失敗'; if (submitBtn) submitBtn.disabled = false;}
+      } catch (error) {
+        result.textContent = '網路暫時無法連線，請重試。';
+        if (submitBtn) submitBtn.disabled = false;
       } finally {
         addVehicleInFlight = false;
       }
@@ -2564,7 +2651,7 @@ function appDialog(message, mode='notice') {
       if (!response.ok) return appDialog(data.error?.message || '無法讀取車輛');
       const modal = document.createElement('div'); modal.className = 'vp-editor is-open';
       const editable = data.permissions?.can_manage_service_records && ['owner','manager','staff'].includes(dealer.role);
-      modal.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">AUTHORIZED VEHICLE</span><h2>${esc([data.vehicle.make,data.vehicle.model].filter(Boolean).join(' '))}</h2><p>${esc(data.vehicle.plate || '未登記車牌')} · ${Number(data.vehicle.mileage_km || 0).toLocaleString()} km</p></div><button type="button" data-close aria-label="關閉">×</button></div>
+      modal.innerHTML = `<div class="vp-editor__panel"><div class="vp-editor__head"><div><span class="vp-page-label">AUTHORIZED VEHICLE</span><h2>${esc([data.vehicle.make,data.vehicle.model].filter(Boolean).join(' '))}</h2><p>${esc(data.vehicle.plate || '未登記車牌')} · ${data.vehicle.mileage_km == null ? '里程未記錄' : Number(data.vehicle.mileage_km).toLocaleString() + ' km'}</p></div><button type="button" data-close aria-label="關閉">×</button></div>
         <div class="vp-summary"><div class="vp-stat"><b>${data.status.length}</b><small>保養項目</small></div><div class="vp-stat"><b>${data.history.length}</b><small>保養紀錄</small></div></div>
         <h3>保養狀態</h3><div class="vp-list">${data.status.map(item=>`<div class="vp-row"><span><b>${esc(item.item)}</b><small>${item.last_done_at?'上次 '+esc(item.last_done_at.slice(0,10)):'尚未有紀錄'}</small></span><span class="vp-pill ${item.last_done_at?'':'unknown'}">${item.last_done_at?'已同步':'狀態未知'}</span></div>`).join('')}</div>
         <h3 style="margin-top:22px">保養紀錄</h3><div class="vp-list">${data.history.length?data.history.map(record=>`<div class="vp-row"><span><b>${esc(record.title)}</b><small>${esc(record.performed_at.slice(0,10))} · ${record.mileage_km==null?'未填里程':Number(record.mileage_km).toLocaleString()+' km'} · ${record.dealer_id?'車商紀錄':'車主紀錄'}</small></span>${editable&&record.dealer_id===dealer.id?`<button class="secondary" type="button" data-edit-dealer-history="${esc(record.id)}">修改</button>`:'<span class="vp-pill">唯讀</span>'}</div>`).join(''):'<div class="vp-note">暫時未有保養紀錄。</div>'}</div>
@@ -2583,7 +2670,7 @@ function appDialog(message, mode='notice') {
       const vehicleResponse = await fetch('/api/dealer/vehicles?dealer_id=' + encodeURIComponent(dealer.id));
       const vehiclePayload = await vehicleResponse.json().catch(() => ({}));
       const vehicleList = document.getElementById('dealerVehiclesList');
-      vehicleList.innerHTML = vehicleResponse.ok && vehiclePayload.data?.length ? vehiclePayload.data.map((vehicle) => `<div class="row"><span><b>${esc([vehicle.make,vehicle.model].filter(Boolean).join(' '))}</b><small>${esc(vehicle.plate || '未登記車牌')} · ${Number(vehicle.mileage_km || 0).toLocaleString()} km · ${vehicle.history_count} 筆紀錄 · ${vehicle.unknown_count} 項狀態未知</small></span><button class="secondary" type="button" data-dealer-vehicle="${esc(vehicle.id)}">查看及更新</button></div>`).join('') : '<div class="row"><span><b>尚未有車主授權車輛</b><small>車主在車輛護照內配對後，車輛才會在此出現。</small></span></div>';
+      vehicleList.innerHTML = vehicleResponse.ok && vehiclePayload.data?.length ? vehiclePayload.data.map((vehicle) => `<div class="row"><span><b>${esc([vehicle.make,vehicle.model].filter(Boolean).join(' '))}</b><small>${esc(vehicle.plate || '未登記車牌')} · ${vehicle.mileage_km == null ? '里程未記錄' : Number(vehicle.mileage_km).toLocaleString() + ' km'} · ${vehicle.history_count} 筆紀錄 · ${vehicle.unknown_count} 項狀態未知</small></span><button class="secondary" type="button" data-dealer-vehicle="${esc(vehicle.id)}">查看及更新</button></div>`).join('') : '<div class="row"><span><b>尚未有車主授權車輛</b><small>車主在車輛護照內配對後，車輛才會在此出現。</small></span></div>';
       vehicleList.querySelectorAll('[data-dealer-vehicle]').forEach(button=>button.onclick=()=>openDealerVehicle(button.dataset.dealerVehicle));
       const services = await fetch('/api/dealer/services?dealer_id=' + encodeURIComponent(dealer.id)).then((x) => x.json()).catch(() => ({}));
       const serviceList = document.getElementById('dealerServicesList'); serviceList.innerHTML = services.data?.length ? services.data.map((s) => `<div class="row"><span><b>${esc(s.name)}</b><small>${esc(s.service_item_type_key)} · ${(s.fitments || []).length} 配對規則</small></span><span class="state ok">服務</span></div>`).join('') : '<div class="row"><b>尚無服務</b></div>';

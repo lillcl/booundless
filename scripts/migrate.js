@@ -1,6 +1,6 @@
 /* Apply the app's schema outside request handling.
    Usage: node scripts/migrate.js [--seed-demo]
-   Uses SUPABASE_DB_URL or KC_DATABASE_URL.
+   Uses the Supabase database URL only.
    Per spec §12: production request path MUST NOT execute DDL/seed. Run this
    script via CI/CD before deploy. The migration runner is ledger-aware
    (scripts/_lib/migrations.js) — re-running it on a healthy DB is a no-op. */
@@ -15,8 +15,8 @@ const result = await runMigrations({ verbose: true });
 if (!result.ok) throw new Error('migration failed');
 
 if (seedDemo) {
-  const url = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
-  if (!url) throw new Error('SUPABASE_DB_URL or KC_DATABASE_URL required to seed demo data');
+  const url = process.env.SUPABASE_DB_URL || process.env.DIRECT_URL;
+  if (!url) throw new Error('SUPABASE_DB_URL is required; local databases are disabled');
   const pool = new pg.Pool({ connectionString: url, max: 1 });
   const client = await pool.connect();
   try {

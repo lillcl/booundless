@@ -25,7 +25,7 @@ async function collectExport(db, userId) {
   if (!userRow) return null;
   const ownerRows = (sql) => db.query(sql, [userId]);
   const vehicleRows = await ownerRows(
-    `SELECT id, model, make, year, fuel_type, plate, vin, mileage_km, mileage_label,
+    `SELECT id, model, make, year, fuel_type, body_color, plate, vin, mileage_km, mileage_label,
             image, onboarding_state, onboarding_completed_at, archived_at, created_at, updated_at
        FROM vehicles WHERE created_by_user_id=$1`
   );

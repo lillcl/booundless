@@ -13,14 +13,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 let _pool = null;
 
 function resolveDatabaseUrl() {
-  /* No hardcoded fallback: SUPABASE_DB_URL (cloud) or KC_DATABASE_URL (local)
-     must be set explicitly. Throwing here surfaces the misconfiguration at
-     boot instead of silently pointing at a Postgres that may not exist. */
-  const url = process.env.SUPABASE_DB_URL || process.env.KC_DATABASE_URL;
+  /* Production and development both use Supabase. DIRECT_URL is kept as a
+     compatibility fallback for the existing project env, but local Postgres
+     URLs are rejected so the app can never silently use 127.0.0.1. */
+  const url = process.env.SUPABASE_DB_URL || process.env.DIRECT_URL;
   if (!url) {
-    throw new Error(
-      'Database not configured: set SUPABASE_DB_URL (cloud) or KC_DATABASE_URL (local).'
-    );
+    throw new Error('Database not configured: set SUPABASE_DB_URL (Supabase).');
+  }
+  const hostname = new URL(url).hostname.toLowerCase();
+  const isolatedE2E = process.env.NODE_ENV === 'test' && process.env.TEST_DATABASE_URL === url;
+  if (['localhost', '127.0.0.1', '::1'].includes(hostname) && !isolatedE2E) {
+    throw new Error('Local database URLs are disabled. Configure SUPABASE_DB_URL for Supabase.');
   }
   return url;
 }
