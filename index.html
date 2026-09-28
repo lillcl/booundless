@@ -455,7 +455,7 @@ button,input,select,textarea{font-family:inherit}
     <a href="#/landing" data-nav="landing">首頁</a>
     <a href="/guide" target="_blank" rel="noopener">琴澳自駕指南</a>
     <a href="#/garage" data-nav="garage">我的車</a>
-    <a href="#/profile" data-nav="profile">我的</a>
+    <a href="#/profile" data-nav="profile">設定</a>
   </nav>
   <div class="kc-topbar__user" id="topbarUser">
     <a href="#/login" data-nav="login" data-anon-only>登入</a>
@@ -629,7 +629,7 @@ button,input,select,textarea{font-family:inherit}
 
 <section class="screen" id="profile">
   <div class="wrap">
-    <div class="top"><div><h1>我的帳戶</h1><p>查看帳戶資料、服務訂單和通知設定。</p></div></div>
+    <div class="top"><div><h1>設定</h1><p>管理帳戶資料、車輛紀錄和通知設定。</p></div></div>
     <div class="card profile-card profile-hero">
       <div class="profile-hero__copy">
         <span class="profile-hero__eyebrow" id="profileRoleEyebrow">帳戶資料</span>
@@ -651,6 +651,7 @@ button,input,select,textarea{font-family:inherit}
     </div>
     <div class="section-title">設定</div>
     <div class="card list">
+      <button class="row profile-action" type="button" data-profile-action="修改密碼"><span><b>修改密碼</b><small>更新登入密碼，保護帳戶安全</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="家庭 / 多車"><span><b>家庭 / 多車</b><small>需要時再開啟</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="支援"><span><b>支援</b><small>聯絡 BOOUNDLESS 團隊</small></span><span>›</span></button>
@@ -1215,7 +1216,9 @@ function appDialog(message, mode='notice') {
   }
 
   async function openProfileAction(action) {
-    if (action === '通知') {
+    if (action === '修改密碼') {
+      openSheet('<h2>修改密碼</h2><p>請輸入目前密碼，再設定新的登入密碼。</p><form id="changePasswordForm"><div class="field"><label for="currentPassword">目前密碼</label><input id="currentPassword" type="password" autocomplete="current-password" required></div><div class="field"><label for="newPassword">新密碼（至少 8 字元）</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div><div class="field"><label for="newPasswordConfirmation">確認新密碼</label><input id="newPasswordConfirmation" type="password" autocomplete="new-password" minlength="8" maxlength="72" required></div><div class="ai-result" id="changePasswordResult"></div><button class="primary" type="submit">儲存新密碼</button><button class="secondary" type="button" data-close-sheet>取消</button></form>');
+    } else if (action === '通知') {
       openSheet('<h2>通知</h2><div id="notificationPrefs"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
       const root = document.getElementById('notificationPrefs');
       try {
@@ -1854,6 +1857,22 @@ function appDialog(message, mode='notice') {
     if (e.target?.id === 'supportForm') {
       e.preventDefault(); const result=document.getElementById('supportResult'); result.classList.add('show'); result.textContent='正在送出…';
       const r=await fetch('/api/profile/support',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({subject:document.getElementById('supportSubject').value,message:document.getElementById('supportMessage').value})}); result.textContent=r.ok?'支援請求已送出。':'請先登入後再試。';
+    }
+    if (e.target?.id === 'changePasswordForm') {
+      e.preventDefault();
+      const form = e.target;
+      const result = document.getElementById('changePasswordResult');
+      const submit = form.querySelector('button[type="submit"]');
+      result.classList.add('show'); result.textContent = '正在更新…';
+      if (submit) submit.disabled = true;
+      try {
+        const r = await fetch('/api/auth/password', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({ current_password:document.getElementById('currentPassword').value, new_password:document.getElementById('newPassword').value, new_password_confirmation:document.getElementById('newPasswordConfirmation').value }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error?.message || '修改密碼失敗');
+        result.textContent = '密碼已更新。下次登入請使用新密碼。';
+        form.reset();
+      } catch (error) { result.textContent = error.message || '修改密碼失敗，請稍後再試。'; }
+      finally { if (submit) submit.disabled = false; }
     }
   });
 

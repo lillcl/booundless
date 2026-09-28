@@ -57,6 +57,30 @@ export default async function handler(req, res) {
     return sendJSON(res, 200, { ok: true });
   }
 
+  /* POST /api/auth/password — signed-in users change their own password. */
+  if (req.method === 'POST' && /^\/api\/auth\/password\/?$/.test(url)) {
+    const user = await readSession(req);
+    if (!user) return sendError(res, 401, 'unauthorized', 'Sign in required');
+    const body = await readBody(req);
+    const currentPassword = String(body?.current_password || '');
+    const newPassword = String(body?.new_password || '');
+    const confirmation = String(body?.new_password_confirmation || '');
+    if (!currentPassword || !newPassword || !confirmation) {
+      return sendError(res, 422, 'unprocessable', 'All password fields are required');
+    }
+    const passwordError = passwordValidationError(newPassword);
+    if (passwordError) return sendError(res, 422, 'unprocessable', passwordError);
+    if (newPassword !== confirmation) return sendError(res, 422, 'unprocessable', 'New passwords do not match');
+    const db = await getDb();
+    const stored = await db.query('SELECT password_hash FROM users WHERE id = $1 AND is_active = TRUE', [user.id]);
+    if (!stored.rowCount || !(await verifyPassword(currentPassword, stored.rows[0].password_hash))) {
+      return sendError(res, 422, 'unprocessable', 'Current password is incorrect');
+    }
+    await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [await hashPassword(newPassword), user.id]);
+    await audit({ actor: user, action: 'auth.password_change', targetType: 'user', targetId: user.id, req });
+    return sendJSON(res, 200, { ok: true });
+  }
+
   /* POST /api/auth/register */
   if (req.method === 'POST' && /^\/api\/auth\/register\/?$/.test(url)) {
     const body = await readBody(req);

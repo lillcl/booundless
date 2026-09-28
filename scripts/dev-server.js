@@ -105,6 +105,7 @@ app.get('/api/reminders/:id', adapt(remindersHandler));
 app.get('/api/auth/me', adapt(authHandler));
 app.post('/api/auth/login', adapt(authHandler));
 app.post('/api/auth/register', adapt(authHandler));
+app.post('/api/auth/password', adapt(authHandler));
 app.post('/api/auth/logout', adapt(authHandler));
 app.get('/api/me', adapt(meHandler));
 app.get('/api/me/export', adapt(meHandler));
