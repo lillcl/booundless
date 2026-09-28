@@ -558,15 +558,6 @@ button,input,select,textarea{font-family:inherit}
       <button class="mycar-add" id="addCarBtn2">＋</button>
     </div>
 
-    <div class="mycar-toolbar">
-      <button class="team-filter" id="teamFilterBtn">全部團隊 <span>⌄</span></button>
-      <div class="mycar-toggle">
-        <button class="active" data-mycar-view="all">全部車輛</button>
-        <span>/</span>
-        <button data-mycar-view="team">按團隊</button>
-      </div>
-    </div>
-
     <div class="mycar-list" id="mycarList">
       <div class="empty-state empty-state--garage"><b>尚未新增車輛</b><small>新增車款和目前里程，之後可補上保養紀錄。</small><button type="button" class="primary" id="emptyAddVehicleBtn">新增車輛</button></div>
     </div>
@@ -653,7 +644,6 @@ button,input,select,textarea{font-family:inherit}
     <div class="card list">
       <button class="row profile-action" type="button" data-profile-action="修改密碼"><span><b>修改密碼</b><small>更新登入密碼，保護帳戶安全</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="通知"><span><b>通知</b><small>保養與服務提醒</small></span><span>›</span></button>
-      <button class="row profile-action" type="button" data-profile-action="家庭 / 多車"><span><b>家庭 / 多車</b><small>需要時再開啟</small></span><span>›</span></button>
       <button class="row profile-action" type="button" data-profile-action="支援"><span><b>支援</b><small>聯絡 BOOUNDLESS 團隊</small></span><span>›</span></button>
       <button class="row profile-action" type="button" id="profileExportBtn" data-requires-auth><span><b>下載我的資料</b><small>JSON 副本 · 依隱私政策</small></span><span>↓</span></button>
       <button class="row profile-action profile-action--danger" type="button" id="profileDeleteBtn" data-requires-auth><span><b>刪除我的帳號</b><small>將永久停用並去識別化</small></span><span>›</span></button>
@@ -731,7 +721,6 @@ function appDialog(message, mode='notice') {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
   const unwrap = (p) => Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : []);
-  const teamLabel = (t) => ({ personal: '個人車輛', company: '公司車隊', family: '家庭車隊' }[t] || '共享車隊');
   /* Route handlers can run on the first paint, so every shared state value
      they read must exist before routing is initialized. */
   let me = null; // { id, email, role, display_name, is_active }
@@ -848,8 +837,6 @@ function appDialog(message, mode='notice') {
       ['light_goods','輕型客貨車','載人及載貨用途'],
       ['heavy_passenger','重型客車','巴士或大型客車'],
       ['heavy_goods','重型客貨車','大型客貨兩用車'],
-      ['light_motorcycle','輕型摩托車','≤50cc / ≤4kW'],
-      ['heavy_motorcycle','重型摩托車','>50cc / >4kW'],
     ];
     const powertrains = [['fuel','燃油車','引擎與傳統保養'],['ev','純電車','電池、充電與電驅'],['hybrid','油電混合','引擎與高壓系統']];
     const brands = ['Toyota','Honda','BMW','Mercedes-Benz','Tesla','BYD','Lexus','Audi','Volkswagen','其他'];
@@ -1161,13 +1148,6 @@ function appDialog(message, mode='notice') {
     if (profileAction) openProfileAction(profileAction.dataset.profileAction);
     if (e.target.closest?.('#profileExportBtn')) downloadMyExport();
     if (e.target.closest?.('#profileDeleteBtn')) confirmDeleteMyAccount();
-    const viewButton = e.target.closest?.('[data-mycar-view]');
-    if (viewButton) {
-      document.querySelectorAll('[data-mycar-view]').forEach((b) => b.classList.toggle('active', b === viewButton));
-      document.querySelectorAll('.v10-car-card').forEach((card) => {
-        card.style.display = viewButton.dataset.mycarView === 'team' && !card.dataset.team ? 'none' : '';
-      });
-    }
     /* 「建議先去做一個保養」CTA on home + detail — reopens the same
        onboarding-completion sheet the user saw right after creating the
        vehicle. The vehicle id comes from the data attribute. */
@@ -1178,7 +1158,6 @@ function appDialog(message, mode='notice') {
       showVehicleOnboardingCompletion(vehicle || { id: vehicleId, model: '你的車' });
     }
   });
-  document.getElementById('teamFilterBtn')?.addEventListener('click', () => openSheet('<h2>車隊篩選</h2><p>目前顯示全部團隊車輛。</p><button class="secondary" type="button" data-close-sheet>關閉</button>'));
   async function downloadMyExport() {
     try {
       const r = await fetch('/api/me/export', { credentials: 'same-origin' });
@@ -1227,14 +1206,6 @@ function appDialog(message, mode='notice') {
         const p = await r.json();
         root.innerHTML = `<label class="row toggle-row"><span><b>保養提醒</b></span><input type="checkbox" data-pref="maintenance_reminders" ${p.maintenance_reminders ? 'checked' : ''}></label><label class="row toggle-row"><span><b>行程更新</b></span><input type="checkbox" data-pref="trip_updates" ${p.trip_updates ? 'checked' : ''}></label><label class="row toggle-row"><span><b>AI 保養建議</b></span><input type="checkbox" data-pref="ai_suggestions" ${p.ai_suggestions ? 'checked' : ''}></label><button class="primary" type="button" id="savePrefsBtn">儲存設定</button>`;
       } catch (e) { root.innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
-    } else if (action === '家庭 / 多車') {
-      openSheet('<h2>家庭 / 多車</h2><div id="teamSheet"><p>載入中…</p></div><button class="secondary" type="button" data-close-sheet>關閉</button>');
-      try {
-        const r = await fetch('/api/profile/teams');
-        if (r.status === 401) throw new Error('請先登入以管理家庭與車隊。');
-        const d = await r.json();
-        document.getElementById('teamSheet').innerHTML = d.data?.length ? d.data.map((t) => `<div class="row"><span><b>${esc(t.name)}</b><small>${esc(t.role)}</small></span></div>`).join('') : '<p>目前未加入任何家庭或車隊。</p>';
-      } catch (e) { document.getElementById('teamSheet').innerHTML = `<p>${esc(e.message)}</p><a href="#/login">前往登入</a>`; }
     } else {
       openSheet('<h2>聯絡無界啟程</h2><form id="supportForm"><div class="field"><label>主題</label><input id="supportSubject" required></div><div class="field"><label>內容</label><textarea id="supportMessage" required rows="4"></textarea></div><button class="primary" type="submit">送出支援請求</button><button class="secondary" type="button" id="supportAiBtn">先查看 AI 建議</button><div class="ai-result" id="supportResult"></div></form>');
     }
@@ -1371,8 +1342,7 @@ function appDialog(message, mode='notice') {
       const subtitle = [v.year, v.fuel_type].filter(Boolean).join(' · ');
       const isPlaceholder = !v.image || /vehicle-placeholder(?:\.svg|-ai\.png)$/.test(v.image);
       return `
-        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-team="${esc(v.team || 'personal')}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder-ai.png')}')">
-          <span class="v10-shared">👥 ${esc(teamLabel(v.team || 'personal'))}</span>
+        <button type="button" class="v10-car-card ${isPlaceholder ? 'is-placeholder' : ''}" data-carid="${esc(v.id)}" onclick="openCarDetail('${esc(v.id)}')" style="background-image:url('${esc(v.image || 'assets/vehicle-placeholder-ai.png')}')">
           ${isPlaceholder ? '<span class="v10-photo-tag">尚未上傳照片</span>' : ''}
           <span class="v10-dots">•••</span>
           <span class="v10-name">${esc(cardName)}</span>
@@ -1740,13 +1710,6 @@ function appDialog(message, mode='notice') {
   };
 
   /* 4. Update team filter button to reflect current count */
-  const teamBtn = document.getElementById('teamFilterBtn');
-  if (teamBtn) {
-    const teams = new Set(vehicles.map((v) => v.team).filter(Boolean));
-    teamBtn.innerHTML = teams.size
-      ? `全部團隊 · ${teams.size} 個團隊 <span>⌄</span>`
-      : '全部團隊 <span>⌄</span>';
-  }
 
   /* 5. Render home page "最近" (recent service records) from /api/history/recent */
   const recentEl = document.getElementById('recentRecords');

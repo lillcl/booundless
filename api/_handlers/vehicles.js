@@ -374,6 +374,9 @@ export default async function handler(req, res) {
       const db = await getDb();
       const body = await readBody(req);
       if (!body?.model) return sendError(res, 422, 'unprocessable', 'model is required');
+      if (['light_motorcycle', 'heavy_motorcycle'].includes(body.vehicle_class)) {
+        return sendError(res, 422, 'unprocessable', 'Motorcycles are not supported');
+      }
       const id = randomUUID();
       const mileage = body.mileage_km === '' || body.mileage_km == null ? null : Number(body.mileage_km);
       if (mileage != null && (!Number.isInteger(mileage) || mileage < 0 || mileage > 3000000)) return sendError(res, 422, 'unprocessable', 'Invalid mileage');
@@ -382,7 +385,7 @@ export default async function handler(req, res) {
       const r = await db.query(`INSERT INTO vehicles
         (id,model,make,year,fuel_type,vehicle_class,powertrain_type,onboarding_state,plate,vin,body_color,mileage_km,mileage_label,image,owner,team,created_by_user_id,updated_by_user_id)
         VALUES ($1,$2,$3,$4,$5,$6,$7,'identity_confirmed',$8,$9,$10,$11,$12,$13,$14,$15,$16,$16) RETURNING *`,
-      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,powertrain,body.plate||null,body.vin||null,body.body_color||null,mileage,mileage == null ? '' : `${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,body.team||'personal',user.id]);
+      [id,body.model,body.make||null,body.year||null,body.fuel_type||null,body.vehicle_class||null,powertrain,body.plate||null,body.vin||null,body.body_color||null,mileage,mileage == null ? '' : `${mileage.toLocaleString()} km`,body.image||'/assets/vehicle-placeholder.svg',user.display_name||user.email,'personal',user.id]);
       const vehicle = r.rows[0];
 
       /* Seed a default maintenance scope from the powertrain template so the
