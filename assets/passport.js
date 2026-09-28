@@ -183,6 +183,7 @@ export async function renderVehiclePassports(root, context = {}) {
     const spreads = [...reader.querySelectorAll('.vp-spread')];
     activeSpread = Math.max(0, Math.min(index, spreads.length - 1));
     spreads.forEach((spread, position) => spread.classList.toggle('is-active', position === activeSpread));
+    reader.querySelector('.vp-reader__book').scrollTop = 0;
     reader.querySelector('[data-page-count]').textContent = `${activeSpread + 1} / ${spreads.length}`;
     reader.querySelector('[data-page-prev]').disabled = activeSpread === 0;
     reader.querySelector('[data-page-next]').disabled = activeSpread === spreads.length - 1;
