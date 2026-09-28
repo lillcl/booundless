@@ -23,6 +23,15 @@ const dateLabel = (value) => {
 const mileageLabel = (vehicle) => vehicle.mileage_label
   || (vehicle.mileage_km != null ? `${Number(vehicle.mileage_km).toLocaleString()} km` : '尚未記錄');
 
+const permitLabel = (vehicle) => vehicle.cross_border_permit || '未設定';
+const permitRenewalLabel = (vehicle) => {
+  if (!vehicle.cross_border_renewal_date) return vehicle.cross_border_permit && vehicle.cross_border_permit !== '沒有' ? '尚未設定續期日' : '如有需要可在此補充';
+  const renewal = new Date(`${vehicle.cross_border_renewal_date}T00:00:00`);
+  const days = Math.ceil((renewal.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000);
+  const status = days < 0 ? '已過期' : days <= 30 ? `尚餘 ${days} 日` : '有效期內';
+  return `續期日：${dateLabel(vehicle.cross_border_renewal_date)} · ${status}`;
+};
+
 const seal = `<span class="vp-book__seal" aria-hidden="true"><svg viewBox="0 0 80 52" fill="none"><path d="M10 35h60M18 35l7-14h29l9 14M31 21l6-9h11l8 9M22 35a8 8 0 0 0 16 0m12 0a8 8 0 0 0 16 0" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
 
 async function getJSON(url) {
@@ -99,6 +108,7 @@ function identityPage(vehicle) {
   return `<div class="vp-paper"><span class="vp-page-label">01 · 車輛資料</span><h3>${esc(passportName(vehicle))}</h3>
     <img class="vp-identity-photo ${placeholder ? 'is-placeholder' : ''}" src="${esc(vehicle.image || 'assets/vehicle-placeholder.svg')}" alt="${esc(vehicleName(vehicle))}">
     <div class="vp-data-grid">${fields.map(([label, value]) => `<span><small>${label}</small><b>${esc(value)}</b></span>`).join('')}</div>
+    <div class="vp-permit-card"><div><small>跨境資格</small><b>${esc(permitLabel(vehicle))}</b><span>${esc(permitRenewalLabel(vehicle))}</span></div><span class="vp-pill ${vehicle.cross_border_permit ? '' : 'unknown'}">${vehicle.cross_border_permit ? '已記錄' : '待補充'}</span></div>
     <button class="vp-edit-trigger" type="button" data-edit-passport>修改護照</button>
   </div>`;
 }
@@ -259,6 +269,8 @@ export async function renderVehiclePassports(root, context = {}) {
         <label>車牌<input name="plate" value="${esc(vehicle.plate || '')}"></label>
         <label>VIN<input name="vin" value="${esc(vehicle.vin || '')}"></label>
         <label>目前里程（km）<input name="mileage_km" type="number" min="0" value="${esc(vehicle.mileage_km ?? '')}"></label>
+        <label>跨境資格<select name="cross_border_permit"><option value="">未設定</option>${['澳車北上','橫琴單牌車','兩者皆有','沒有'].map((value) => `<option value="${value}" ${vehicle.cross_border_permit === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>續期／有效日期<input name="cross_border_renewal_date" type="date" value="${esc(vehicle.cross_border_renewal_date || '')}"><small class="vp-field-help">按牌證或保險文件上的到期日填寫。</small></label>
       </div><div class="vp-editor__actions"><button type="button" data-editor-cancel>取消</button><button type="submit">儲存護照</button></div></form></div>`;
     reader.appendChild(editor);
     const statusLine = editor.querySelector('[data-editor-status]');

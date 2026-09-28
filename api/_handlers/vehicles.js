@@ -324,7 +324,7 @@ export default async function handler(req, res) {
       const db = await getDb();
       if (req.method === 'PATCH') {
         const body = await readBody(req, { limit: '8mb' });
-        const allowed = ['passport_name', 'passport_color', 'model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'body_color', 'vin', 'plate', 'mileage_km', 'image'];
+        const allowed = ['passport_name', 'passport_color', 'model', 'make', 'year', 'fuel_type', 'vehicle_class', 'powertrain_type', 'body_color', 'vin', 'plate', 'mileage_km', 'image', 'cross_border_permit', 'cross_border_renewal_date'];
         const updates = [];
         const values = [];
         for (const field of allowed) {
@@ -332,6 +332,8 @@ export default async function handler(req, res) {
           let value = body[field];
           if (field === 'passport_name' && String(value || '').length > 80) return sendError(res, 422, 'unprocessable', 'Passport name must be 80 characters or fewer');
           if (field === 'passport_color' && !['blue','green','burgundy','purple'].includes(value)) return sendError(res, 422, 'unprocessable', 'Invalid passport color');
+          if (field === 'cross_border_permit' && !['澳車北上','橫琴單牌車','兩者皆有','沒有',''].includes(String(value || ''))) return sendError(res, 422, 'unprocessable', 'Invalid cross-border permit');
+          if (field === 'cross_border_renewal_date' && value && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return sendError(res, 422, 'unprocessable', 'Invalid renewal date');
           if (field === 'model' && !String(value || '').trim()) return sendError(res, 422, 'unprocessable', 'model is required');
           if (field === 'mileage_km') {
             if (value === '' || value == null) value = null;
@@ -353,7 +355,7 @@ export default async function handler(req, res) {
           `UPDATE vehicles SET ${updates.join(', ')}, updated_by_user_id=$${values.length - 1}, updated_at=NOW()
            WHERE id=$${values.length} AND created_by_user_id=$${values.length - 1} AND archived_at IS NULL
            RETURNING id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, body_color,
-             onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label,
+             onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, cross_border_permit, cross_border_renewal_date,
              image, owner, team, created_at, updated_at`,
           values,
         );
@@ -362,7 +364,7 @@ export default async function handler(req, res) {
       }
       if (req.method !== 'GET') return sendError(res, 405, 'method_not_allowed', 'Only GET or PATCH allowed');
       const r = await db.query(
-        `SELECT id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, body_color, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, image, owner, team, created_at, updated_at
+        `SELECT id, passport_name, passport_color, model, make, year, fuel_type, vehicle_class, powertrain_type, body_color, onboarding_state, onboarding_completed_at, vin, plate, mileage_km, mileage_label, cross_border_permit, cross_border_renewal_date, image, owner, team, created_at, updated_at
          FROM vehicles WHERE id = $1 AND created_by_user_id = $2 AND archived_at IS NULL`,
         [id, user.id],
       );
@@ -437,7 +439,7 @@ export default async function handler(req, res) {
       const r = await db.query(
         `SELECT v.id, v.passport_name, v.passport_color, v.model, v.make, v.year, v.fuel_type, v.vehicle_class, v.powertrain_type, v.body_color,
                 v.onboarding_state, v.onboarding_completed_at, v.vin, v.plate,
-                v.mileage_km, v.mileage_label, v.image, v.owner, v.team,
+                v.mileage_km, v.mileage_label, v.cross_border_permit, v.cross_border_renewal_date, v.image, v.owner, v.team,
                 v.created_at, v.updated_at,
                 EXISTS (SELECT 1 FROM service_history sh WHERE sh.vehicle_id = v.id) AS has_service_history,
                 (v.onboarding_state = 'ready'

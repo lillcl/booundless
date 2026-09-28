@@ -85,6 +85,11 @@
 
 /* Keep mobile content inside the visible viewport and clear of reader controls. */
 .vp-data-grid>span,.vp-row>span,.vp-editor__head>div{min-width:0;overflow-wrap:anywhere}
+.vp-permit-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:13px 14px;border:1px solid #d8e3e1;border-radius:8px;background:#f7faf9}
+.vp-permit-card small,.vp-permit-card span{display:block;color:#71858b;font-size:11px}
+.vp-permit-card b{display:block;margin:3px 0;color:#234957;font-size:14px}
+.vp-permit-card .vp-pill{display:inline-block;flex:0 0 auto}
+.vp-field-help{display:block;margin-top:5px;color:#71858b;font-size:11px;font-weight:400}
 @media(max-width:820px){
   .vp-reader__stage{inset:0;width:100%;height:100%;height:100dvh}
   .vp-reader__book{padding:calc(56px + env(safe-area-inset-top)) 0 calc(88px + env(safe-area-inset-bottom));overscroll-behavior-y:contain;scroll-padding-block:56px 88px;-webkit-overflow-scrolling:touch}
