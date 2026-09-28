@@ -114,6 +114,98 @@
 @media(max-width:950px){.service-ch .warranty-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.service-ch .warranty-card:last-child{grid-column:1/-1}.service-ch .receipt-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.service-ch .warranty-grid,.service-ch .receipt-list{grid-template-columns:1fr}.service-ch .warranty-card:last-child{grid-column:auto}.service-ch .warranty-source{grid-template-columns:1fr;gap:8px}.service-ch .warranty-card{padding:17px 18px}.service-ch .receipt{padding:18px}.service-ch .receipt-list li{padding-top:10px;padding-bottom:10px}}
 </style>
+<style>
+/* Application guide hierarchy: scheme → stage → group → individual check. */
+#apply{--apply-ink:#12394c;--apply-line:#d5e3e7;background:linear-gradient(180deg,#f2f7f8 0,#fff 300px)}
+#apply .chapter-title{align-items:flex-start}
+#apply .chapter-title .kicker{display:inline-flex;align-items:center;gap:9px;margin-bottom:13px;padding:6px 11px;border-radius:999px;background:#e1f0f0;color:#096f73;font-size:12px;font-weight:800;letter-spacing:.1em}
+#apply .chapter-title .kicker:before{content:"路線";padding-right:9px;border-right:1px solid #9dc7c8;color:#315a67}
+#apply .chapter-title h2{max-width:720px;color:var(--apply-ink);font-size:clamp(34px,4vw,52px);letter-spacing:-.025em}
+#apply .chapter-title p{max-width:760px;margin-top:12px;font-size:17px}
+#apply .permit-jump{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 38px;padding:8px;border:1px solid var(--apply-line);border-radius:14px;background:#fff;box-shadow:0 12px 35px rgba(20,62,87,.06)}
+#apply .permit-jump a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;min-height:72px;padding:15px 18px;border-radius:9px;background:#e9f5f3;color:#086e70;text-decoration:none;font-size:18px;font-weight:800}
+#apply .permit-jump a:nth-child(2){background:#eef3fa;color:#285f9e}
+#apply .permit-jump a:before{content:"A";display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#fff;font-size:13px;box-shadow:0 2px 7px rgba(23,57,77,.07)}
+#apply .permit-jump a:nth-child(2):before{content:"B"}
+#apply .permit-jump a:after{display:none}
+#apply .permit-jump a:hover{filter:brightness(.98)}
+#apply .permit{margin-top:48px;padding-top:0;border:1px solid var(--apply-line);border-radius:18px;background:#fff;box-shadow:0 18px 50px rgba(20,62,87,.08);overflow:hidden}
+#apply .permit-head{position:relative;min-height:118px;padding:28px 38px;background:var(--permit);overflow:hidden}
+#apply .permit-head:after{content:"";position:absolute;right:-35px;top:-75px;width:220px;height:220px;border:1px solid rgba(255,255,255,.2);border-radius:50%;box-shadow:0 0 0 36px rgba(255,255,255,.04),0 0 0 72px rgba(255,255,255,.025)}
+#apply .permit-head h3{position:relative;z-index:1;font-size:32px;letter-spacing:-.02em}
+#apply .permit-head h3:before{content:"制度 A · 橫琴口岸";display:block;margin-bottom:5px;color:#d9ffff;font-size:11px;font-weight:800;letter-spacing:.14em}
+#apply .permit.north .permit-head h3:before{content:"制度 B · 港珠澳大橋";color:#deebff}
+#apply .permit-head p{position:relative;z-index:1;color:#fff;font-size:15px;font-weight:700;letter-spacing:.08em}
+#apply .permit-body{padding:38px;background:#f7fafb}
+#apply .application-checks{margin:0;padding:0;border:0;background:transparent}
+#apply .application-checks>h4,#apply .application-stage>h4{display:flex;align-items:center;gap:12px;margin:0 0 8px;color:var(--apply-ink);font-size:26px;letter-spacing:-.015em}
+#apply .application-checks>h4:before,#apply .application-stage>h4:before{content:"STEP";display:inline-grid;place-items:center;align-self:stretch;min-width:52px;padding:4px 8px;border-radius:6px;background:var(--permit);color:#fff;font-size:10px;font-weight:900;letter-spacing:.12em}
+#apply .application-checks>p{max-width:850px;margin:0 0 23px;font-size:16px;line-height:1.75}
+#apply .application-checks fieldset{margin:18px 0;padding:0;border:1px solid var(--apply-line);border-radius:12px;background:#fff;overflow:hidden}
+#apply .application-checks legend{float:left;width:100%;padding:18px 21px;border:0;background:#edf5f5;color:var(--apply-ink);font-size:19px;font-weight:800}
+#apply .north .application-checks legend{background:#eef3fa}
+#apply .application-check-status{clear:both;margin:0;padding:11px 21px;border-bottom:1px solid #e4edef;background:#f9fbfb}
+#apply .application-check-status output{font-size:14px;font-variant-numeric:tabular-nums}
+#apply .application-check-status button{padding:6px 10px;border:0;background:transparent;color:#647983;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+#apply .application-check{gap:15px;margin:0;padding:17px 21px;border:0;border-bottom:1px solid #e6edef;background:#fff;transition:background .15s ease}
+#apply .application-check:last-child{border-bottom:0}
+#apply .application-check:hover{background:#f8fbfb}
+#apply .application-check input{width:22px;height:22px;flex-basis:22px;margin-top:2px}
+#apply .application-check strong{color:#183e50;font-size:16px;line-height:1.5}
+#apply .application-check small{max-width:900px;margin-top:5px;color:#5b707b;font-size:14px;line-height:1.7}
+#apply .application-check:has(input:checked){background:#edf7f3}
+#apply .application-check:has(input:checked) strong{color:#176a55}
+#apply .application-category{margin:22px 0;padding:21px;border:1px solid #c9dde3;border-left:5px solid var(--permit);border-radius:10px;background:#fff}
+#apply .application-category label{display:block;margin-bottom:9px;color:var(--apply-ink);font-size:17px;font-weight:800}
+#apply .application-category select{width:min(100%,420px);min-height:48px;padding:0 13px;border:1px solid #b9cfd7;border-radius:7px;background:#fff;color:var(--ink);font:inherit;font-size:16px}
+#apply .application-category p{margin-top:9px;font-size:14px}
+#apply .application-stage{margin-top:32px;padding:29px;border:1px solid var(--apply-line);border-radius:14px;background:#fff}
+#apply .application-stage>h4{margin-bottom:18px}
+#apply .application-primary{margin-bottom:22px;background:var(--permit);border-color:var(--permit);border-radius:7px}
+#apply .process{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+#apply .process li{min-height:0;padding:56px 18px 19px;border:1px solid #dce7ea;border-radius:10px;background:#f8fbfb}
+#apply .process li:before{top:16px;left:18px;width:28px;height:28px;line-height:28px;box-shadow:0 0 0 5px rgba(17,111,115,.1)}
+#apply .process li:after{display:none!important}
+#apply .process li b{color:var(--apply-ink);font-size:17px}
+#apply .process li p{margin-top:8px;font-size:14px;line-height:1.7}
+#apply .after-approval{border-color:#b9d9cb;background:linear-gradient(135deg,#edf8f3,#fff 70%)}
+#apply .after-approval>h4:before{content:"READY";background:#377c61}
+#apply .after-approval>a{display:inline-flex;margin-top:17px;padding:10px 14px;border-radius:7px;background:#173f50;color:#fff;text-decoration:none;font-size:15px;font-weight:750}
+#apply .application-extra{margin-top:18px;padding:0 19px;border:1px solid #d6e2e5;border-radius:9px;background:#fff}
+#apply .application-extra summary{padding:15px 0;color:#274c5c;font-size:15px;font-weight:800}
+#apply .application-extra[open] summary{border-bottom:1px solid #e3ecee}
+#apply .application-extra p,#apply .application-extra li{font-size:14px;line-height:1.75}
+#apply .application-sources{margin-top:18px;background:#f8fafb}
+@media(max-width:700px){
+  #apply{background:linear-gradient(180deg,#f2f7f8 0,#fff 220px)}
+  #apply .chapter-title{grid-template-columns:52px 1fr;gap:13px}
+  #apply .chapter-title .number{font-size:48px}
+  #apply .chapter-title h2{font-size:29px}
+  #apply .chapter-title p{font-size:15px}
+  #apply .permit-jump{grid-template-columns:1fr;gap:7px;margin-bottom:28px;padding:6px}
+  #apply .permit-jump a{min-height:58px;padding:11px 13px;font-size:16px}
+  #apply .permit{margin-top:28px;border-radius:14px}
+  #apply .permit-head{min-height:104px;padding:23px}
+  #apply .permit-head h3{font-size:27px}
+  #apply .permit-body{padding:23px 15px}
+  #apply .application-checks>h4,#apply .application-stage>h4{gap:9px;font-size:22px}
+  #apply .application-checks>h4:before,#apply .application-stage>h4:before{min-width:47px;padding:3px 6px}
+  #apply .application-checks>p{font-size:15px}
+  #apply .application-checks fieldset{margin:14px 0}
+  #apply .application-checks legend{padding:15px 16px;font-size:17px}
+  #apply .application-check-status{padding:9px 16px}
+  #apply .application-check{gap:12px;padding:15px 16px}
+  #apply .application-check strong{font-size:15px}
+  #apply .application-check small{font-size:14px}
+  #apply .application-category{padding:17px 15px}
+  #apply .application-stage{margin-top:22px;padding:21px 15px}
+  #apply .process{grid-template-columns:1fr}
+  #apply .process li{min-height:76px;padding:15px 14px 15px 54px}
+  #apply .process li:before{top:18px;left:15px}
+  #apply .application-primary{display:flex;width:100%;justify-content:center;text-align:center}
+}
+@media print{#apply .permit{box-shadow:none}#apply .permit-body{background:#fff}#apply .permit-jump{display:none}}
+</style>
 <link rel="stylesheet" href="assets/qinao-readability.css">
 <link rel="canonical" href="https://www.booundless.com/guide">
 </head>
