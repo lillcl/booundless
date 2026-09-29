@@ -459,7 +459,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('[vehicles-api] request failed', {
       method: req.method,
-      route: url,
+      route: req.url || '',
       code: err.code || null,
       message: err.message,
     });
