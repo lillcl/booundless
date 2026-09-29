@@ -501,8 +501,16 @@ export async function renderVehiclePassports(root, context = {}) {
 
     }
   } catch (error) {
-    content.innerHTML = '<div class="vp-error"><b>暫時無法載入車輛護照</b><br><small>請檢查連線後重新整理頁面。</small><br><button class="vp-add" type="button" onclick="location.reload()">重新載入</button></div>';
     console.error('[vehicle-passport] failed to render', error);
+    if (window.errorState) {
+      window.errorState.render(content, 'server', {
+        code: 'vehicle_passport_load_failed',
+        title: '暫時無法載入車輛護照',
+        message: '請檢查連線後重新整理頁面。',
+      });
+    } else {
+      content.innerHTML = '<div class="vp-error"><b>暫時無法載入車輛護照</b><br><small>請檢查連線後重新整理頁面。</small><br><button class="vp-add" type="button" onclick="location.reload()">重新載入</button></div>';
+    }
   }
 
   cleanup = () => {

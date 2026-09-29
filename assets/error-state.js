@@ -33,12 +33,14 @@
     var cfg = SCENARIOS[state] || SCENARIOS.server;
     var code = (ctx && ctx.code) || state || 'error';
     var message = (ctx && ctx.message) || cfg.desc;
+    var flag = (ctx && ctx.flag) || ('ERR-' + String(code).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 7).toUpperCase());
     var titleOverride = ctx && ctx.title;
     var html = ''
-      + '<div class="wrap"><div class="route-state" data-error-state="' + esc(code) + '">'
+      + '<div class="wrap"><div class="route-state" data-error-state="' + esc(code) + '" data-error-flag="' + esc(flag) + '">'
       +   '<span class="sheet__eyebrow">' + esc(cfg.eyebrow) + '</span>'
       +   '<h1>' + esc(titleOverride || cfg.title) + '</h1>'
       +   '<p>' + esc(message) + '</p>'
+      +   '<small class="error-flag">錯誤編號：' + esc(flag) + '</small>'
       +   '<div class="route-state__actions">';
     html += '<a class="landing__primary" href="#/landing">返回首頁</a>';
     if (cfg.retry) {
@@ -50,6 +52,8 @@
     html += '</div></div></div>';
     host.innerHTML = html;
     host.setAttribute('data-error-state', code);
+    host.setAttribute('data-error-flag', flag);
+    console.error('[ui-error]', { code: code, flag: flag, message: message });
   }
 
   function esc(s) {
@@ -65,12 +69,13 @@
     if (err.code === 'not_found') return render(host, 'not_found');
     if (err.code === 'rate_limited') return render(host, 'rate_limited');
     if (err.code === 'unprocessable' || err.code === 'validation') return render(host, 'validation', { message: err.message });
-    return render(host, 'server', { message: err.message });
+    return render(host, 'server', { message: '服務暫時無法回應，請稍後再試。', flag: 'ERR-API-' + String(err.code || 'SERVER').toUpperCase().replace(/[^A-Z0-9]+/g, '-') });
   }
 
   window.errorState = {
     render: render,
     fromApiError: fromApiError,
+    flag: function (code) { return 'ERR-' + String(code || 'ERROR').toUpperCase().replace(/[^A-Z0-9]+/g, '-'); },
     scenarios: SCENARIOS,
   };
 })();
