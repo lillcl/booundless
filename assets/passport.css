@@ -96,6 +96,19 @@
   .vp-reader__close{top:calc(8px + env(safe-area-inset-top));right:12px}
   .vp-progress{bottom:calc(12px + env(safe-area-inset-bottom))}
   .vp-paper,.vp-paper--right{min-width:0;overflow-wrap:anywhere}
+  /* Keep the identity page discoverable in one mobile viewport. The photo is
+     supporting context; the passport fields and next action are primary. */
+  .vp-paper:first-child{padding:16px 18px 14px}
+  .vp-paper:first-child h3{margin:5px 0 9px;font-size:19px;line-height:1.15}
+  .vp-paper:first-child .vp-identity-photo{height:104px;margin:0 0 10px;border-radius:10px}
+  .vp-paper:first-child .vp-data-grid{gap:5px 12px;margin-top:8px}
+  .vp-paper:first-child .vp-data-grid span{padding-bottom:5px}
+  .vp-paper:first-child .vp-data-grid small{font-size:8px}
+  .vp-paper:first-child .vp-data-grid b{margin-top:2px;font-size:12px;line-height:1.15}
+  .vp-paper:first-child .vp-permit-card{margin-top:9px;padding:8px 10px}
+  .vp-paper:first-child .vp-permit-card small,.vp-paper:first-child .vp-permit-card span{font-size:9px}
+  .vp-paper:first-child .vp-permit-card b{margin:1px 0;font-size:13px}
+  .vp-paper:first-child .vp-edit-trigger{margin-top:9px;min-height:38px;padding:7px 10px}
   .vp-editor{padding:0;height:100%;height:100dvh;overscroll-behavior-y:contain}
   .vp-editor__panel,.vp-editor__panel--compact{width:100%;max-width:100%;height:100%;max-height:100%;border-radius:0;padding:calc(18px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom));overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
   .vp-editor__grid input,.vp-editor__grid select,.vp-editor__grid textarea,.vp-access-select select{min-width:0;font-size:16px}
