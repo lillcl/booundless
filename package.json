@@ -13,6 +13,7 @@
     "seed": "node db/seed.js",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test tests/*.test.js",
+    "test:agent-integration": "node --test tests/integration/assistant-policy-usage.test.js",
     "test:e2e": "playwright test"
   },
   "dependencies": {

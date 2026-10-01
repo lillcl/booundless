@@ -503,7 +503,7 @@ button,input,select,textarea{font-family:inherit}
   <a class="kc-topbar__brand" href="#/landing" aria-label="無界啟程 BOOUNDLESS 首頁"><img src="assets/icons/booundless-car.png" width="36" height="34" alt=""><b>無界啟程</b></a>
   <nav class="kc-topbar__nav">
     <a href="#/landing" data-nav="landing">首頁</a>
-    <a href="/guide" target="_blank" rel="noopener">琴澳自駕指南</a>
+    <a href="/guide">琴澳自駕指南</a>
     <a href="#/garage" data-nav="garage">我的車</a>
     <a href="#/profile" data-nav="profile">設定</a>
   </nav>
@@ -723,7 +723,7 @@ button,input,select,textarea{font-family:inherit}
     <span class="site-footer__brand">© 2026 無界啟程 BOOUNDLESS</span>
     <a class="site-footer__association" href="https://mjsseya.org/" target="_blank" rel="noopener"><img src="assets/icons/mjsseya-logo.png" alt="澳門聯校科學展覽青年協會 MJSSEYA"><span>澳門聯校科學展覽青年協會<br>青年科創實踐</span></a>
     <nav class="site-footer__links" aria-label="法律資訊">
-      <a href="/guide" target="_blank" rel="noopener">琴澳自駕指南</a>
+      <a href="/guide">琴澳自駕指南</a>
       <a href="/legal/privacy.html" rel="noopener">隱私</a>
       <a href="/legal/terms.html" rel="noopener">條款</a>
     </nav>
@@ -986,15 +986,14 @@ function appDialog(message, mode='notice') {
 
     const runAiSequence = async () => {
       const callAi = async (mode, image) => {
-        const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, image }) });
+        const r = await fetch('/api/ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ request_id: crypto.randomUUID(), mode, image }) });
         const result = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(result.error?.message || '照片識別失敗');
         return result;
       };
-      const [vehicleResult, dashboardResult] = await Promise.allSettled([
-        callAi('vehicle-image', state.carDataUrl),
-        state.dashDataUrl ? callAi('dashboard-image', state.dashDataUrl) : Promise.resolve(null),
-      ]);
+      const settle = async (operation) => { try { return { status: 'fulfilled', value: await operation() }; } catch (reason) { return { status: 'rejected', reason }; } };
+      const vehicleResult = await settle(() => callAi('vehicle-image', state.carDataUrl));
+      const dashboardResult = await settle(() => state.dashDataUrl && vehicleResult.status === 'fulfilled' ? callAi('dashboard-image', state.dashDataUrl) : Promise.resolve(null));
       const identity = vehicleResult.status === 'fulfilled' ? vehicleResult.value?.vehicle : null;
       if (vehicleResult.status === 'rejected' || !['make','model','plate','body_color'].some(key => identity?.[key])) {
         state.aiError = vehicleResult.reason?.message || '未能從照片辨認車輛。請重試或改用手動輸入。';
@@ -1269,7 +1268,7 @@ function appDialog(message, mode='notice') {
       result.classList.add('show'); result.textContent = '正在讀取儀表盤照片…';
       try {
         newDashboardImageData = newDashboardImageData || await prepareVehicleImage(file);
-        const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'dashboard-image',image:newDashboardImageData}) });
+        const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),mode:'dashboard-image',image:newDashboardImageData}) });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error?.message || '讀取失敗');
         const info = d.dashboard || {};
@@ -1287,7 +1286,7 @@ function appDialog(message, mode='notice') {
       const recognize = async () => {
         try {
           newVehicleImageData = newVehicleImageData || await prepareVehicleImage(file);
-          const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({mode:'vehicle-image',image:newVehicleImageData}) });
+          const r = await fetch('/api/ai', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),mode:'vehicle-image',image:newVehicleImageData}) });
           const d = await r.json();
           if (!r.ok) throw new Error(d.error?.message || '識別失敗');
           const info = d.vehicle || {};
@@ -1319,18 +1318,18 @@ function appDialog(message, mode='notice') {
     }
     if (e.target.closest?.('#supportAiBtn')) {
       const result = document.getElementById('supportResult'); result.classList.add('show'); result.textContent = 'AI 助手正在整理回覆…';
-      const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,message:document.getElementById('supportMessage').value}) });
+      const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),stream:false,thread_id:agentThreadId,message:document.getElementById('supportMessage').value}) });
       const d = await r.json(); showAgentResult(result, r, d);
     }
     if (e.target.closest?.('#agentConfirmBtn')) {
       if (!pendingAgentConfirmation || !agentThreadId) return;
       const result = e.target.closest('.ai-result'); e.target.disabled = true; result.textContent = '正在執行已確認的操作…';
-      const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,confirmation:{tool_call_id:pendingAgentConfirmation.tool_call_id,approved:true}}) });
+      const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),stream:false,thread_id:agentThreadId,confirmation:{tool_call_id:pendingAgentConfirmation.tool_call_id,approved:true}}) });
       const d = await r.json(); pendingAgentConfirmation = null; showAgentResult(result, r, d);
     }
     if (e.target.closest?.('#agentCancelBtn')) {
       if (!pendingAgentConfirmation || !agentThreadId) return;
-      const result = e.target.closest('.ai-result'); const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,confirmation:{tool_call_id:pendingAgentConfirmation.tool_call_id,approved:false}}) });
+      const result = e.target.closest('.ai-result'); const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),stream:false,thread_id:agentThreadId,confirmation:{tool_call_id:pendingAgentConfirmation.tool_call_id,approved:false}}) });
       const d = await r.json(); pendingAgentConfirmation = null; showAgentResult(result, r, d);
     }
     const requestButton = e.target.closest?.('[data-request-dealer][data-request-service]');
@@ -1820,7 +1819,7 @@ function appDialog(message, mode='notice') {
 
   document.getElementById('serviceAiForm')?.addEventListener('submit', async (e) => {
     e.preventDefault(); const result = document.getElementById('serviceAiResult'); result.classList.add('show'); result.textContent = '正在整理保養建議…';
-    const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({stream:false,thread_id:agentThreadId,message:`請分析車輛 ${document.getElementById('serviceVehicle').value}，${document.getElementById('serviceQuestion').value}`}) });
+    const r = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({request_id:crypto.randomUUID(),stream:false,thread_id:agentThreadId,message:`請分析車輛 ${document.getElementById('serviceVehicle').value}，${document.getElementById('serviceQuestion').value}`}) });
     const d = await r.json(); showAgentResult(result, r, d);
   });
   document.getElementById('tripForm')?.addEventListener('submit', async (e) => {
@@ -1829,7 +1828,7 @@ function appDialog(message, mode='notice') {
   });
   document.getElementById('tripAiBtn')?.addEventListener('click', async () => {
     const result=document.getElementById('tripAiResult'); result.classList.add('show'); result.textContent='正在整理路線建議…'; const trip={vehicle_id:document.getElementById('tripVehicle').value,origin:document.getElementById('tripOrigin').value,destination:document.getElementById('tripDestination').value};
-    const r=await fetch('/api/agent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({stream:false,thread_id:agentThreadId,message:`請規劃由 ${trip.origin} 前往 ${trip.destination} 的行程，使用車輛 ${trip.vehicle_id}。`})}); const d=await r.json(); showAgentResult(result, r, d);
+    const r=await fetch('/api/agent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({request_id:crypto.randomUUID(),stream:false,thread_id:agentThreadId,message:`請規劃由 ${trip.origin} 前往 ${trip.destination} 的行程，使用車輛 ${trip.vehicle_id}。`})}); const d=await r.json(); showAgentResult(result, r, d);
   });
   let addVehicleInFlight = false;
   document.addEventListener('submit', async (e) => {

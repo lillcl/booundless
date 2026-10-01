@@ -95,6 +95,13 @@ test('customer-facing HTML entry points load the shared mascot assistant', () =>
   }
 });
 
+test('琴澳 guide links stay in the current browser tab', () => {
+  const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const guideLinks = [...source.matchAll(/<a\b[^>]*href=["']\/guide["'][^>]*>/g)].map((match) => match[0]);
+  assert.ok(guideLinks.length >= 2);
+  for (const link of guideLinks) assert.doesNotMatch(link, /target=["']_blank["']/i);
+});
+
 test('file previews send login to the hosted API-backed application', () => {
   assert.match(html, /window\.location\.protocol === 'file:'/);
   assert.match(html, /href="https:\/\/www\.booundless\.com\/#\/login"/);

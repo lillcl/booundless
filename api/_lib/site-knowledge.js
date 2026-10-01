@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 const KNOWLEDGE_URL = new URL('../../assets/knowledge/qinao.json', import.meta.url);
+const WEBSITE_URL = new URL('../../assets/knowledge/website.json', import.meta.url);
 let cachedDocuments = null;
 
 function normalize(value) {
@@ -19,10 +20,27 @@ function tokens(value) {
 
 export async function loadSiteKnowledge() {
   if (cachedDocuments) return cachedDocuments;
-  const payload = JSON.parse(await readFile(KNOWLEDGE_URL, 'utf8'));
-  if (!Array.isArray(payload?.documents)) throw new Error('Site knowledge index is invalid');
-  cachedDocuments = payload.documents;
+  const payloads = await Promise.all([KNOWLEDGE_URL, WEBSITE_URL].map(async (url) => JSON.parse(await readFile(url, 'utf8'))));
+  if (payloads.some((payload) => !Array.isArray(payload?.documents))) throw new Error('Site knowledge index is invalid');
+  cachedDocuments = payloads.flatMap((payload) => payload.documents);
   return cachedDocuments;
+}
+
+export function relevantExcerpt(content, query, maxChars = 1900) {
+  const text = String(content || '');
+  if (text.length <= maxChars) return text;
+  const queryTokens = tokens(query);
+  const windows = [];
+  for (let start = 0; start < text.length; start += 680) {
+    const excerpt = text.slice(start, start + 800);
+    const normalized = normalize(excerpt);
+    const score = queryTokens.reduce((total, token) => total + (normalized.includes(token) ? token.length : 0), 0);
+    windows.push({ start, excerpt, score });
+  }
+  const selected = windows.sort((a, b) => b.score - a.score || a.start - b.start).slice(0, 2).sort((a, b) => a.start - b.start);
+  // Keep the title/introduction and query-matching passages, not just the first
+  // page of a long document. Never cut the enclosing context JSON/fence.
+  return `${text.slice(0, 160)}\n[…]\n${selected.map((part) => part.excerpt).join('\n[…]\n')}`.slice(0, maxChars);
 }
 
 function scoreDocument(document, queryTokens, pageContext = {}) {
@@ -57,8 +75,9 @@ export async function searchSiteKnowledge(query, { limit = 4, pageContext = {} }
     .map(({ document, score }) => ({
       id: document.id,
       source: document.source,
+      kind: document.kind || (document.source === 'BOOUNDLESS 網站功能' ? 'website_function' : 'guide'),
       title: document.title,
-      excerpt: String(document.content || '').slice(0, 2400),
+      excerpt: relevantExcerpt(document.content, query),
       url: `${document.page_url}${document.anchor || ''}`,
       route_key: document.route_key,
       verified_at: document.verified_at,

@@ -1,6 +1,8 @@
+import { agentLimits, estimateInputTokens, usageTokens } from './agent-usage.js';
+
 const DEFAULT_TIMEOUT_MS = 25000;
 
-export async function askAI({ system, user, temperature = 0.2, maxTokens = 700, model: requestedModel = null }) {
+export async function askAI({ system, user, temperature = 0.2, maxTokens = 700, model: requestedModel = null, accounting = null }) {
   const key = process.env.AI_API_KEY;
   if (!key) throw new Error('AI_API_KEY is not configured');
   const base = String(process.env.AI_BASE_URL || 'https://api.minimax.io/v1').replace(/\/$/, '');
@@ -11,21 +13,29 @@ export async function askAI({ system, user, temperature = 0.2, maxTokens = 700, 
   })();
   const anthropic = /\/anthropic$/i.test(base);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Number(process.env.AI_TIMEOUT_MS || DEFAULT_TIMEOUT_MS));
+  const timer = setTimeout(() => controller.abort(), Math.min(DEFAULT_TIMEOUT_MS, Number(process.env.AI_TIMEOUT_MS || DEFAULT_TIMEOUT_MS)));
   try {
     const messages = [{ role: 'user', content: anthropic ? toAnthropicContent(user) : user }];
+    const body = anthropic
+      ? { model, max_tokens: Math.min(1024, maxTokens), temperature, system, messages }
+      : { model, temperature, max_tokens: Math.min(1024, maxTokens), messages: [{ role: 'system', content: system }, ...messages] };
+    const reservation = estimateInputTokens(body) + Math.min(1024, maxTokens);
+    if (accounting) {
+      if (reservation + accounting.tokens > agentLimits().requestTokens || accounting.modelCalls >= agentLimits().modelCalls) throw new Error('Agent request budget exceeded');
+      accounting.tokens += reservation; accounting.modelCalls += 1;
+    }
     const response = await fetch(anthropic ? `${base}/v1/messages` : `${base}/chat/completions`, {
       method: 'POST',
       headers: anthropic
         ? { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }
         : { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify(anthropic
-        ? { model, max_tokens: maxTokens, temperature, system, messages }
-        : { model, temperature, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, ...messages] }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload?.error?.message || `AI request failed (${response.status})`);
+    const actualTokens = usageTokens(payload.usage);
+    if (accounting && actualTokens > 0) accounting.tokens += actualTokens - reservation;
     const text = anthropic
       ? (payload?.content || []).filter((part) => part.type === 'text').map((part) => part.text).join('')
       : payload?.choices?.[0]?.message?.content || '';

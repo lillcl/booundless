@@ -4,7 +4,7 @@
    need a try/catch around the call — the worst case is that no AI
    extras are added and the template-only scope is returned. */
 
-import { askAI } from './ai.js';
+import { askMeteredAI } from './metered-ai.js';
 import { defaultScopeRows } from './scope-template.js';
 
 /* Mirror of db/schema.sql:325-339 — service_item_types.key values.
@@ -138,7 +138,7 @@ function parseJsonArray(text) {
   }
 }
 
-export async function suggestExtraScope(vehicle) {
+export async function suggestExtraScope(vehicle, { userId = vehicle?.created_by_user_id } = {}) {
   if (!vehicle || !vehicle.powertrain_type) return [];
   const templateLabels = templateItemLabels(vehicle);
   const payload = {
@@ -152,7 +152,8 @@ export async function suggestExtraScope(vehicle) {
     already_in_scope: templateLabels,
   };
   try {
-    const { text } = await askAI({
+    const { text } = await askMeteredAI({
+      userId, purpose: 'maintenance-scope',
       system: SYSTEM_PROMPT,
       user: JSON.stringify(payload),
       temperature: 0.2,

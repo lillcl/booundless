@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { sanitizePageContext } from '../api/_lib/assistant-context.js';
-import { searchSiteKnowledge, _resetSiteKnowledgeCache } from '../api/_lib/site-knowledge.js';
+import { relevantExcerpt, searchSiteKnowledge, _resetSiteKnowledgeCache } from '../api/_lib/site-knowledge.js';
 import { queryKnowledgeGraph, _resetKnowledgeGraphCache } from '../api/_lib/knowledge-graph.js';
 import { ASSISTANT_ROUTES, resolveAssistantRoute } from '../shared/assistant-routes.js';
 import { runPublicAssistant } from '../api/_lib/public-assistant.js';
@@ -65,6 +65,24 @@ test('knowledge graph connects reviewed topics, documents, and official sources'
   assert.ok(result.documents.some((document) => document.id === 'qinao.check'));
   assert.ok(result.relations.some((relation) => relation.type === 'about'));
   assert.match(result.verified_at, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('website feature knowledge distinguishes Vehicle Passport from border documents', async () => {
+  for (const query of ['車輛護照可以記錄哪些資料', 'How do I find my vehicle passport?']) {
+    const results = await searchSiteKnowledge(query);
+    assert.equal(results[0].id, 'website.passport');
+    assert.match(results[0].excerpt, /不是通關證件/);
+  }
+  assert.equal((await searchSiteKnowledge('如何保存琴澳行程'))[0].id, 'website.trips');
+  const graph = await queryKnowledgeGraph('車輛護照');
+  assert.ok(graph.matches.some((node) => node.id === 'website.passport'));
+  assert.ok(graph.relations.some((edge) => edge.type === 'derived_from'));
+});
+
+test('retrieval includes matching passages after the start of a long document', () => {
+  const content = `申請指南 ${'一般說明。'.repeat(800)}澳車北上 車主身份證、回鄉證及內地駕駛證。`;
+  assert.match(relevantExcerpt(content, '澳車北上 回鄉證'), /回鄉證及內地駕駛證/);
+  assert.ok(relevantExcerpt(content, '澳車北上').length <= 1900);
 });
 
 test('public assistant retrieves sources before the model and emits safe navigation', async () => {

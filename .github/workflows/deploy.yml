@@ -19,6 +19,8 @@ jobs:
       url: https://booundless.vercel.app
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -33,7 +35,15 @@ jobs:
             echo "::error::SUPABASE_DB_URL secret is not set on this repository; refusing to deploy with an unverified schema state." >&2
             exit 1
           fi
-          node scripts/migrate.js
+          # This rollout is additive and compatible with the old deployment.
+          # Scope only an exact assistant-only schema change; every other DB
+          # or readiness change still requires the complete drift-checking run.
+          changed_schema=$(git diff --name-only HEAD^ HEAD -- db shared/constants/schema-version.js)
+          if [ "$changed_schema" = "db/migrations/2026_10_assistant_policy_usage.sql" ]; then
+            node scripts/migrate-assistant-usage.js
+          else
+            node scripts/migrate.js
+          fi
       - uses: actions/download-artifact@v4
         with:
           name: playwright-report

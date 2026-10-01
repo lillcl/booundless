@@ -120,7 +120,7 @@ async function handleScopeGenerate(req, res, id, user) {
      empty book never waits on an external model. Full generation still adds
      model-specific AI rows when called without template_only=1. */
   const templateOnly = options?.template_only === true;
-  const aiRows = templateOnly ? [] : await suggestExtraScope(vehicle);
+  const aiRows = templateOnly ? [] : await suggestExtraScope(vehicle, { userId: user.id });
   for (const row of aiRows) {
     const labelKey = `label:${String(row.item || '').trim().toLowerCase()}`;
     const fpKey = `fp:${scopeFingerprint(row.item)}`;

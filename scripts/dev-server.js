@@ -126,6 +126,7 @@ app.get('/api/profile/teams', adapt(profileHandler));
 app.post('/api/profile/support', adapt(profileHandler));
 app.post('/api/ai', adapt(aiHandler));
 app.post('/api/agent', adapt(agentHandler));
+app.get('/api/agent', adapt(agentHandler));
 app.get('/api/admin/dealers', adapt(dealersHandler));
 app.get('/api/service-item-types', adapt(dealersHandler));
 app.get('/api/dealers', adapt(dealersHandler));

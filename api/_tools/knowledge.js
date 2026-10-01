@@ -4,7 +4,7 @@ import { text, toolResult } from '../_lib/tool-utils.js';
 
 export const knowledgeTools = {
   search_site_knowledge: {
-    description: 'Search reviewed BOOUNDLESS first-party content about vehicles, maintenance, repairs, and 琴澳 travel. Use it before answering those topics and cite the returned page and verification date.',
+    description: 'Search reviewed BOOUNDLESS first-party content only when the preloaded sources do not cover a different topic or follow-up. Do not repeat preloaded retrieval or search for fault procedures the sources explicitly say are unavailable. Cite returned ids and dates.',
     input_schema: {
       type: 'object',
       required: ['query'],

@@ -11,7 +11,7 @@ export const vehicleTools = {
     async execute({ user }) {
       const db = await getDb();
       const r = await db.query(`SELECT ${vehicleFields} FROM vehicles
-        WHERE archived_at IS NULL AND (created_by_user_id = $1 OR created_by_user_id IS NULL) ORDER BY created_at ASC`, [user.id]);
+        WHERE archived_at IS NULL AND created_by_user_id = $1 ORDER BY created_at ASC LIMIT 50`, [user.id]);
       return toolResult(r.rows, { count: r.rowCount });
     },
   },

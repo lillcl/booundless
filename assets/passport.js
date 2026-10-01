@@ -293,7 +293,7 @@ export async function renderVehiclePassports(root, context = {}) {
       try {
         const image = await prepareImage(input.files[0]);
         if (kind === 'vehicle') vehicleImage = image;
-        const result = await sendJSONRequest('/api/ai', 'POST', { mode: kind === 'vehicle' ? 'vehicle-image' : 'dashboard-image', image });
+        const result = await sendJSONRequest('/api/ai', 'POST', { request_id: crypto.randomUUID(), mode: kind === 'vehicle' ? 'vehicle-image' : 'dashboard-image', image });
         let changed = 0;
         if (kind === 'vehicle') {
           const info = result.vehicle || {};

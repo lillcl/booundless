@@ -75,7 +75,56 @@ All responses are JSON. Errors use the envelope `{ "error": { "code", "message" 
 | GET    | `/api/reminders`            | List upcoming/overdue reminders       |
 | GET    | `/api/reminders/:id`        | Fetch one reminder                   |
 
-## Database
+## AI assistant access and costs
+
+The assistant requires an active signed-in account. Chat questions, photo
+recognition and AI-generated maintenance scopes share **5 uses per account
+per Macau calendar day**, resetting at 00:00 Asia/Macau. Admin accounts have
+no per-user question or daily-token limit; per-request and global cost guards
+still apply. Rejected questions
+and provider failures count once because they may incur AI cost. Invalid
+requests, quota denials and confirming/cancelling an existing write do not.
+Switching devices, clearing browser history or starting a new chat does not
+reset the server-side quota. This is an account limit, not proof of a unique
+human; account-creation abuse requires separate signup controls.
+
+The first model response makes a semantic scope decision and either answers,
+rejects with a relevant suggested question, asks for clarification, or plans
+authorized tools. There is no separate classifier call or keyword gate.
+Knowledge snippets, graph context and recent conversation are sent together;
+private answers require authorized tool results. Writes require an explicit
+confirmation card. Tool-based answers can need extra model turns.
+
+Hard ceilings: 3 model calls, 6 business tools, 1,024 output tokens per call,
+40,000 cumulative request tokens, 25-second agent deadline, 1 active request
+per account, 8 globally, 200,000 daily tokens per account and 2,000,000 globally.
+Shared database reservations enforce budgets before reaching the provider.
+Missing provider usage or a crashed request is charged conservatively. The
+environment settings can lower these caps, not raise them. The token ceiling
+is an application-side guard using provider usage and conservative estimates,
+not a provider billing guarantee or monetary spending cap.
+
+`GET /api/agent` returns authenticated quota. Every POST requires a UUID
+`request_id`; reuse it only for an identical retry. Completed responses replay
+without another model call or deduction. Quota denials return HTTP 429 and
+`Retry-After`. Do not expose AI keys in the browser.
+
+Before deploying this change, run `node scripts/migrate-assistant-usage.js` to
+apply only `2026_10_assistant_policy_usage.sql`. This additive migration leaves
+the existing application readiness marker and unrelated ledger entries intact,
+so the old deployment remains compatible during rollout. The full migration
+runner remains available for clean ledgers. Quota tables are server-only in
+`app_private` with RLS and no browser-facing role access.
+
+Run `npm run test:unit`. For shared-quota and tool tests, supply a disposable
+PostgreSQL `TEST_DATABASE_URL` and run `npm run test:agent-integration`; the
+suite applies schemas and inserts synthetic fixtures and refuses the app's
+configured database. No live AI calls are made by these automated tests.
+`scripts/test-assistant-live.js` is an opt-in real-provider 30-question regression
+requiring a disposable local database, local server and isolated admin fixture.
+It does not submit any confirmations or write production vehicle data.
+
+## Database setup
 
 The app requires PostgreSQL. It reads `SUPABASE_DB_URL` in cloud environments
 or `KC_DATABASE_URL` locally. Development can apply the base schema, additive

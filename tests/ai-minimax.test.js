@@ -1,6 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { askAI } from '../api/_lib/ai.js';
+import { toAnthropicContent } from '../api/_lib/agent.js';
+
+test('Anthropic-compatible tool calls retain ids for the matching tool results', () => {
+  const toolUse = {
+    type: 'tool_use',
+    id: 'call_01a0f6e251807345907f7e14',
+    name: 'list_my_vehicles',
+    input: {},
+  };
+  const toolResult = {
+    type: 'tool_result',
+    tool_use_id: toolUse.id,
+    content: '{"ok":true,"data":[]}',
+  };
+
+  assert.deepEqual(toAnthropicContent([toolUse]), [toolUse]);
+  assert.deepEqual(toAnthropicContent([toolResult]), [toolResult]);
+});
 
 test('vision messages are sent directly to the MiniMax chat completions API', async () => {
   const originalFetch = global.fetch;

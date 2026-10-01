@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { searchSiteKnowledge } from './site-knowledge.js';
+import { loadSiteKnowledge, searchSiteKnowledge } from './site-knowledge.js';
 
 const GRAPH_URL = new URL('../../assets/knowledge/graph.json', import.meta.url);
 let cachedGraph = null;
@@ -22,6 +22,20 @@ export async function loadKnowledgeGraph() {
   if (cachedGraph) return cachedGraph;
   const graph = JSON.parse(await readFile(GRAPH_URL, 'utf8'));
   if (!Array.isArray(graph?.nodes) || !Array.isArray(graph?.edges)) throw new Error('Knowledge graph is invalid');
+  const ids = new Set(graph.nodes.map((node) => node.id));
+  for (const document of await loadSiteKnowledge()) {
+    if (ids.has(document.id)) continue;
+    graph.nodes.push({ id: document.id, type: 'document', label: document.title, aliases: document.topics, url: `${document.page_url}${document.anchor || ''}`, route_key: document.route_key, verified_at: document.verified_at });
+    const sourceId = `source.${document.source}`;
+    if (!ids.has(sourceId)) { graph.nodes.push({ id: sourceId, type: 'source', label: document.source }); ids.add(sourceId); }
+    graph.edges.push({ from: document.id, to: sourceId, type: 'derived_from' });
+    for (const topic of document.topics || []) {
+      const id = `website.topic.${topic}`;
+      if (!ids.has(id)) { graph.nodes.push({ id, type: 'topic', label: topic }); ids.add(id); }
+      graph.edges.push({ from: document.id, to: id, type: 'about' });
+    }
+    ids.add(document.id);
+  }
   cachedGraph = graph;
   return graph;
 }

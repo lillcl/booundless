@@ -20,10 +20,10 @@ export const maintenanceTools = {
     readOnly: true,
     async execute({ args, user }) {
       const db = await getDb(); const vehicleId = args.vehicle_id ? id(args.vehicle_id, 'vehicle_id') : null;
-      const params = [user.id]; let filter = '(v.created_by_user_id=$1 OR v.created_by_user_id IS NULL)';
+      const params = [user.id]; let filter = 'v.created_by_user_id=$1';
       if (vehicleId) { params.push(vehicleId); filter += ` AND r.vehicle_id=$${params.length}`; }
       const r = await db.query(`SELECT r.id, r.vehicle_id, r.kind, r.title, r.due_in, r.icon, r.status, v.model AS vehicle_model, v.plate AS vehicle_plate
-        FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND v.archived_at IS NULL AND ${filter} ORDER BY r.created_at DESC`, params);
+        FROM reminders r JOIN vehicles v ON v.id=r.vehicle_id WHERE r.status IN ('upcoming','overdue') AND v.archived_at IS NULL AND ${filter} ORDER BY r.created_at DESC LIMIT 50`, params);
       return toolResult(r.rows, { count: r.rowCount });
     },
   },

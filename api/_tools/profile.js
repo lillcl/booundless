@@ -8,9 +8,8 @@ export const profileTools = {
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
     readOnly: true,
     async execute({ user }) {
-      const db = await getDb(); const r = await db.query(`INSERT INTO user_notification_preferences (user_id) VALUES ($1)
-        ON CONFLICT (user_id) DO UPDATE SET user_id=EXCLUDED.user_id RETURNING user_id,maintenance_reminders,trip_updates,ai_suggestions,updated_at`, [user.id]);
-      return toolResult(r.rows[0]);
+      const db = await getDb(); const r = await db.query('SELECT user_id,maintenance_reminders,trip_updates,ai_suggestions,updated_at FROM user_notification_preferences WHERE user_id=$1', [user.id]);
+      return toolResult(r.rows[0] || { user_id: user.id, maintenance_reminders: true, trip_updates: true, ai_suggestions: true, updated_at: null });
     },
   },
   create_support_ticket: {

@@ -2,8 +2,17 @@ import { resolveAssistantRoute } from '../shared/assistant-routes.js';
 
 const THREAD_KEY = 'kc_assistant_thread';
 const MESSAGES_KEY = 'kc_assistant_messages';
+const USER_KEY = 'kc_assistant_user';
 const MAX_SAVED_MESSAGES = 30;
 const MASCOT_URL = '/assets/mascot/jiezai-assistant.webp';
+
+function friendlyAssistantError(value) {
+  const message = String(value || '');
+  if (/tool result['’]s tool id|invalid params|\(2013\)|internal server error/i.test(message)) {
+    return '界仔剛才未能完成工具查詢，請再試一次。';
+  }
+  return message || 'AI 助手暫時無法回覆，請稍後再試。';
+}
 
 function pageContext() {
   const isGuide = location.pathname === '/guide' || location.pathname.endsWith('/qinao-guide.html');
@@ -21,7 +30,9 @@ function pageContext() {
 function safeLoadMessages() {
   try {
     const value = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-    return Array.isArray(value) ? value.slice(-MAX_SAVED_MESSAGES).filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item.text === 'string') : [];
+    return Array.isArray(value) ? value.slice(-MAX_SAVED_MESSAGES)
+      .filter((item) => ['user', 'assistant'].includes(item?.role) && typeof item.text === 'string')
+      .map((item) => item.role === 'assistant' ? { ...item, text: friendlyAssistantError(item.text) } : item) : [];
   } catch { return []; }
 }
 
@@ -73,11 +84,13 @@ function buildAssistant() {
         <div><b id="assistantTitle">界仔 · AI 車主助手</b><small>車輛、維修與琴澳同行</small></div>
         <button class="assistant-close" type="button" aria-label="關閉 AI 助手">×</button>
       </header>
+      <div class="assistant-access"><span class="assistant-quota" role="status">正在確認登入狀態…</span><a class="assistant-login" href="/#/login" hidden>登入使用界仔</a><button class="assistant-new" type="button" aria-label="開始新對話">新對話</button></div>
       <div class="assistant-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
       <div class="assistant-status" role="status" aria-live="polite"></div>
       <form class="assistant-composer">
         <textarea maxlength="4000" rows="1" aria-label="輸入問題" placeholder="問車輛、維修或琴澳同行…"></textarea>
         <button class="assistant-send" type="submit">送出</button>
+        <button class="assistant-stop" type="button" hidden>停止</button>
       </form>
     </section>`;
   document.body.append(root);
@@ -90,9 +103,61 @@ function buildAssistant() {
   const input = form.querySelector('textarea');
   const sendButton = form.querySelector('.assistant-send');
   const status = root.querySelector('.assistant-status');
+  const quotaLabel = root.querySelector('.assistant-quota');
+  const loginLink = root.querySelector('.assistant-login');
+  const stopButton = root.querySelector('.assistant-stop');
   let threadId = localStorage.getItem(THREAD_KEY) || null;
-  let messages = safeLoadMessages();
+  let messages = [];
   let isBusy = false;
+  let userId = null;
+  let quota = null;
+  let accessReady = false;
+  let activeRequest = null;
+  let resetTimer = null;
+
+  function updateAccess() {
+    const available = accessReady && userId && (quota?.unlimited || quota?.remaining > 0);
+    input.disabled = isBusy || !available;
+    sendButton.disabled = isBusy || !available;
+    root.querySelectorAll('.assistant-quick-prompts button').forEach((button) => { button.disabled = isBusy || !available; });
+    loginLink.hidden = !accessReady || Boolean(userId);
+    quotaLabel.textContent = !accessReady ? '正在確認登入狀態…' : !userId ? '登入後使用 · 每個帳戶每日最多 5 次' : quota?.unlimited ? '管理員 · 提問次數不限' : quota ? `今日剩餘 ${quota.remaining}／${quota.limit} 次 · 澳門時間 00:00 重置` : '暫時未能取得今日額度，請稍後再試。';
+  }
+
+  function updateQuota(value) {
+    if (!value) return;
+    quota = value;
+    clearTimeout(resetTimer);
+    const wait = Date.parse(value.resets_at) - Date.now();
+    if (wait > 0) resetTimer = setTimeout(() => refreshAccess(), Math.min(wait + 100, 86400100));
+    updateAccess();
+  }
+
+  async function refreshAccess() {
+    try {
+      const response = await fetch('/api/agent', { cache: 'no-store' });
+      const data = await response.json().catch(() => ({}));
+      if (response.status !== 401 && !response.ok) throw new Error('Access check failed');
+      const nextUser = response.ok ? data.user_id : null;
+      const previous = localStorage.getItem(USER_KEY);
+      if (previous !== nextUser) {
+        localStorage.removeItem(THREAD_KEY); localStorage.removeItem(MESSAGES_KEY);
+        threadId = null;
+      }
+      if (nextUser) localStorage.setItem(USER_KEY, nextUser);
+      else localStorage.removeItem(USER_KEY);
+      if (userId !== nextUser || !accessReady) {
+        messagesRoot.replaceChildren(); messages = nextUser ? safeLoadMessages() : [];
+        addWelcome();
+        for (const message of messages) addMessage(message.role, message.text, { persist: false });
+      }
+      userId = nextUser; accessReady = true; quota = data.quota || null;
+      updateQuota(quota); updateAccess();
+    } catch {
+      accessReady = true; quota = null; updateAccess();
+      status.textContent = '暫時未能連線，請重新開啟界仔再試。';
+    }
+  }
 
   function scrollToEnd() { messagesRoot.scrollTop = messagesRoot.scrollHeight; }
 
@@ -120,7 +185,7 @@ function buildAssistant() {
   function addWelcome() {
     const welcome = createElement('div', 'assistant-welcome');
     const heading = createElement('b', '', '你好，我是界仔。');
-    const copy = createElement('p', '', '我可以帶你使用網站，亦可查找已核對的車輛、維修及琴澳同行資料。登入後還可以查看你的車輛紀錄。');
+    const copy = createElement('p', '', '登入後，我可以帶你使用網站、查找車輛維修與琴澳同行資料，以及查看你的車輛紀錄。一般帳戶每日最多 5 次 AI 使用，管理員不設提問次數上限。');
     welcome.append(heading, copy);
     const prompts = createElement('div', 'assistant-quick-prompts');
     const context = pageContext();
@@ -142,6 +207,7 @@ function buildAssistant() {
     card.append(createElement('b', '', `已查閱 ${items.length} 個 BOOUNDLESS 資料來源`));
     const list = createElement('div', 'assistant-sources');
     for (const item of items.slice(0, 4)) {
+      if (resolveAssistantRoute(item.route_key)?.href !== item.url) continue;
       const link = createElement('a', 'assistant-source');
       link.href = item.url;
       const title = createElement('span', '', item.title || item.source || '資料來源');
@@ -170,6 +236,12 @@ function buildAssistant() {
   function addConfirmation(event) {
     const card = createElement('div', 'assistant-confirm');
     card.append(createElement('p', '', event.message || `界仔準備執行 ${event.tool_name}，請確認。`));
+    const fields = { model: '車款', make: '品牌', year: '年份', fuel_type: '動力', plate: '車牌', vin: '車架號', mileage_km: '公里數', vehicle_id: '車輛', title: '名稱', performed_at: '維修日期', kind: '類型', notes: '備註', cost: '費用', origin: '起點', destination: '目的地', start_at: '出發日期', distance_km: '距離（公里）', duration_min: '時間（分鐘）', maintenance_reminders: '保養提醒', trip_updates: '行程更新', ai_suggestions: 'AI 建議', subject: '主題', message: '內容' };
+    const details = createElement('dl', 'assistant-confirm__details');
+    for (const [key, value] of Object.entries(event.input || {})) {
+      details.append(createElement('dt', '', fields[key] || key), createElement('dd', '', typeof value === 'boolean' ? (value ? '開啟' : '關閉') : typeof value === 'object' ? JSON.stringify(value) : String(value)));
+    }
+    card.append(details);
     const actions = createElement('div', 'assistant-confirm__actions');
     const approve = createElement('button', '', '確認執行'); approve.type = 'button'; approve.dataset.assistantApprove = 'true';
     const cancel = createElement('button', '', '取消'); cancel.type = 'button'; cancel.dataset.assistantCancel = 'true';
@@ -180,8 +252,8 @@ function buildAssistant() {
 
   function setBusy(busy, label = '') {
     isBusy = busy;
-    sendButton.disabled = busy;
-    input.disabled = busy;
+    stopButton.hidden = !busy;
+    updateAccess();
     status.dataset.busy = String(busy);
     status.textContent = label;
   }
@@ -190,7 +262,11 @@ function buildAssistant() {
     const contentType = response.headers.get('content-type') || '';
     if (!response.ok || !contentType.includes('text/event-stream')) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload?.error?.message || `AI 助手暫時無法回覆 (${response.status})`);
+      if (payload.quota) updateQuota(payload.quota);
+      if (response.status === 401) await refreshAccess();
+      const error = new Error(payload?.error?.message || `AI 助手暫時無法回覆 (${response.status})`);
+      error.code = payload?.error?.code;
+      throw error;
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -205,7 +281,9 @@ function buildAssistant() {
         const line = chunk.split('\n').find((part) => part.startsWith('data:'));
         if (!line) continue;
         const event = JSON.parse(line.slice(5).trim());
-        if (event.type === 'text') {
+        if (event.type === 'quota') {
+          updateQuota(event.quota);
+        } else if (event.type === 'text') {
           answer += event.text || '';
           renderAssistantText(assistantBubble, answer);
           scrollToEnd();
@@ -215,6 +293,7 @@ function buildAssistant() {
         } else if (event.type === 'confirmation_required') {
           addConfirmation(event);
         } else if (event.type === 'done') {
+          updateQuota(event.result?.quota);
           if (event.result?.thread_id) {
             threadId = event.result.thread_id;
             localStorage.setItem(THREAD_KEY, threadId);
@@ -234,26 +313,30 @@ function buildAssistant() {
   }
 
   async function request(body, placeholder = '界仔正在整理資料…') {
+    const controller = new AbortController();
+    activeRequest = controller;
     setBusy(true, '正在查閱資料');
     const bubble = addMessage('assistant', placeholder, { persist: false });
     try {
       const response = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ stream: true, thread_id: threadId, page_context: pageContext(), ...body }),
+        body: JSON.stringify({ stream: true, request_id: crypto.randomUUID(), thread_id: threadId, page_context: pageContext(), ...body }),
+        signal: controller.signal,
       });
       await consumeResponse(response, bubble);
     } catch (error) {
-      const message = error?.message || 'AI 助手暫時無法回覆，請稍後再試。';
+      if (error.code === 'thread_not_found') { threadId = null; localStorage.removeItem(THREAD_KEY); }
+      const message = error.name === 'AbortError' ? '已停止回覆。本次 AI 使用已計入今日額度。' : friendlyAssistantError(error?.message);
       renderAssistantText(bubble, message);
       messages.push({ role: 'assistant', text: message });
       saveMessages(messages);
-    } finally { setBusy(false, ''); input.focus(); }
+    } finally { activeRequest = null; setBusy(false, ''); await refreshAccess(); if (!input.disabled) input.focus(); }
   }
 
   async function sendMessage(value) {
     const text = String(value ?? input.value).trim();
-    if (!text || isBusy) return;
+    if (!text || isBusy || !userId || (!quota?.unlimited && !quota?.remaining)) return;
     input.value = '';
     addMessage('user', text);
     await request({ message: text });
@@ -266,9 +349,16 @@ function buildAssistant() {
     card.remove();
   }
 
-  launcher.addEventListener('click', () => {
-    root.classList.add('is-open'); launcher.setAttribute('aria-expanded', 'true'); panel.removeAttribute('inert'); input.focus(); scrollToEnd();
+  launcher.addEventListener('click', async () => {
+    root.classList.add('is-open'); launcher.setAttribute('aria-expanded', 'true'); panel.removeAttribute('inert'); await refreshAccess(); if (!input.disabled) input.focus(); scrollToEnd();
   });
+  root.querySelector('.assistant-new').addEventListener('click', () => {
+    if (isBusy) return;
+    threadId = null; messages = []; localStorage.removeItem(THREAD_KEY); localStorage.removeItem(MESSAGES_KEY);
+    messagesRoot.replaceChildren(); addWelcome(); updateAccess();
+  });
+  stopButton.addEventListener('click', () => activeRequest?.abort());
+  window.addEventListener('hashchange', () => { if (!isBusy && root.classList.contains('is-open')) refreshAccess(); });
   close.addEventListener('click', () => { root.classList.remove('is-open'); launcher.setAttribute('aria-expanded', 'false'); launcher.focus(); });
   form.addEventListener('submit', (event) => { event.preventDefault(); sendMessage(); });
   input.addEventListener('keydown', (event) => {
@@ -276,7 +366,7 @@ function buildAssistant() {
   });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && root.classList.contains('is-open')) close.click(); });
   addWelcome();
-  for (const message of messages) addMessage(message.role, message.text, { persist: false });
+  updateAccess();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildAssistant, { once: true });
