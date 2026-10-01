@@ -470,10 +470,25 @@ button,input,select,textarea{font-family:inherit}
 .landing__passport{margin-top:48px}
 .mjsse-affiliation{margin-top:48px}
 @media(max-width:760px){
-  .passport-hero{gap:30px;padding:42px 20px 36px}
+  .passport-hero{grid-template-columns:minmax(0,1fr);gap:30px;padding:42px 20px 36px}
+  .passport-hero__copy{width:100%;min-width:0}
   .passport-hero__copy h1{font-size:clamp(40px,12vw,58px)}
-  .passport-hero__visual{aspect-ratio:1.35;border-radius:8px}
+  .passport-hero__visual{width:100%;aspect-ratio:1.35;border-radius:8px}
+  .passport-hero__copy .landing__actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .passport-hero__copy .landing__actions a{display:flex;width:100%;min-width:0;justify-self:stretch;box-sizing:border-box}
   .landing__terms{padding-top:40px}
+  .landing__terms-head{min-width:0}
+  .landing__terms h2{font-size:clamp(25px,7vw,32px)}
+  .journey-flow{grid-template-columns:minmax(0,1fr);gap:22px;padding:0;margin-top:22px}
+  .journey-stage{min-width:0;padding-left:0}
+  .journey-stage__node{position:static;left:auto;top:auto;width:30px;height:30px;margin:0 0 14px;border:0;border-radius:6px;background:#e9f0ef;color:#315e55;box-shadow:none;font-size:12px}
+  .journey-stage__card{min-width:0}
+  .landing__passport{width:100%;padding:18px}
+  .landing__passport-model{align-items:flex-start;flex-wrap:wrap}
+  .landing__status{align-items:flex-start;line-height:1.5}
+  .mjsse-affiliation{grid-template-columns:64px minmax(0,1fr);gap:12px;padding:16px}
+  .mjsse-affiliation__logo{min-height:56px}
+  .mjsse-affiliation__link{width:100%}
   .landing__passport,.mjsse-affiliation{margin-top:34px}
 }
 </style>
