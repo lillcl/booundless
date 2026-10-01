@@ -123,7 +123,7 @@ function mockedModel(decisions) {
   let count = 0;
   return { get count() { return count; }, fetch: async (_url, opts) => {
     const body = JSON.parse(opts.body); const d = decisions[count++];
-    assert.equal(body.tool_choice.name, 'assistant_decision');
+    assert.ok(body.tool_choice.name === 'assistant_decision' || body.tool_choice.type === 'none');
     if (count > 1) {
       if (typeof body.messages.at(-1).content === 'string') {
         assert.match(body.messages.at(-1).content, /伺服器格式檢查未通過/);
@@ -166,6 +166,88 @@ integration('one bounded format repair cannot execute a malformed or rejected wr
     await assert.rejects(runAgent({ user: u, message: '網站問題' }));
     assert.equal(mock.count, 2);
   });
+});
+
+integration('missing scope call recovers through JSON without a second quota admission', async () => {
+  const u = await user(); const events = []; const originalFetch = global.fetch;
+  await withModel([], async () => {
+    let calls = 0;
+    global.fetch = async (_url, opts) => {
+      const body = JSON.parse(opts.body); calls++;
+      if (calls === 1) assert.equal(body.tool_choice.name, 'assistant_decision');
+      else assert.equal(body.tool_choice.type, 'none');
+      const text = calls === 1 ? '普通自由文字，不能展示' : JSON.stringify({ decision: 'reject', domain: 'none', reply: '這個問題不在服務範圍。', suggested_question: '橫琴有咩玩？', tool_name: '', tool_arguments: '{}' });
+      return new Response(JSON.stringify({ content: [{ type: 'text', text }], usage: { input_tokens: 20, output_tokens: 10 } }));
+    };
+    const opt = options(u.id); await admitAgentRequest(db, opt);
+    const result = await runAgent({ user: u, message: '特朗普是誰', onEvent: (e) => events.push(e) });
+    await complete(opt, result.usage.total_tokens);
+    assert.equal(result.decision, 'reject'); assert.equal(calls, 2);
+    assert.equal(result.usage.total_tokens, 60); assert.equal((await getAgentQuota(db, u.id)).used, 1);
+    assert.equal(events.some((e) => e.type === 'text' && e.text.includes('普通自由文字')), false);
+    assert.equal((await db.query('SELECT id FROM agent_tool_calls WHERE run_id=$1', [result.run_id])).rowCount, 0);
+    assert.equal(result.usage.attempts, undefined);
+    const stored = (await db.query('SELECT token_usage FROM agent_runs WHERE id=$1', [result.run_id])).rows[0].token_usage;
+    assert.equal(stored.attempts[0].status, 'invalid'); assert.equal(stored.attempts[1].format, 'json');
+  });
+  assert.equal(global.fetch, originalFetch);
+});
+
+integration('JSON read continuation does not fabricate provider tool ids', async () => {
+  const u = await user();
+  await withModel([], async () => {
+    let calls = 0;
+    global.fetch = async (_url, opts) => {
+      const body = JSON.parse(opts.body); calls++;
+      if (calls === 3) {
+        assert.equal(body.messages.at(-1).role, 'user');
+        assert.match(body.messages.at(-1).content, /TOOL_RESULT_UNTRUSTED/);
+        assert.equal(body.messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === 'tool_use' || p.type === 'tool_result')), false);
+      }
+      const text = calls === 1 ? '不能驗證' : JSON.stringify(calls === 2
+        ? { decision: 'tools', domain: 'vehicles', reply: '', tool_name: 'list_my_vehicles', tool_arguments: '{}' }
+        : { decision: 'answer', domain: 'vehicles', reply: '你未有登記車輛。', tool_name: '', tool_arguments: '{}' });
+      return new Response(JSON.stringify({ content: [{ type: 'text', text }], usage: { input_tokens: 20, output_tokens: 10 } }));
+    };
+    const result = await runAgent({ user: u, message: '我有幾架車？' });
+    assert.equal(result.status, 'completed'); assert.equal(calls, 3);
+    assert.equal((await db.query('SELECT id FROM agent_tool_calls WHERE run_id=$1', [result.run_id])).rowCount, 1);
+  });
+});
+
+integration('transient transport retry is bounded and does not duplicate a read tool', async () => {
+  const u = await user();
+  await withModel([], async () => {
+    let calls = 0;
+    global.fetch = async () => {
+      calls++;
+      if (calls === 1) return new Response('{}', { status: 503 });
+      const input = calls === 2 ? d({ decision: 'tools', domain: 'vehicles', reply: '', calls: [{ tool: 'list_my_vehicles', args: {} }] }) : d({ domain: 'vehicles', reply: '你未有車輛。' });
+      return new Response(JSON.stringify({ content: [{ type: 'tool_use', name: 'assistant_decision', id: `transport-${calls}`, input }], usage: { input_tokens: 20, output_tokens: 10 } }));
+    };
+    const result = await runAgent({ user: u, message: '我有幾架車？' });
+    assert.equal(calls, 3); assert.equal(result.usage.tool_calls, 1);
+    assert.equal((await db.query('SELECT id FROM agent_tool_calls WHERE run_id=$1', [result.run_id])).rowCount, 1);
+  });
+  await withModel([], async () => {
+    let calls = 0; global.fetch = async () => { calls++; return new Response('{}', { status: 503 }); };
+    await assert.rejects(runAgent({ user: u, message: '網站資料' }), { code: 'agent_provider_busy' });
+    assert.equal(calls, 2);
+  });
+});
+
+integration('transport failure with no safe retry budget preserves its cause without another fetch', async () => {
+  const u = await user();
+  const original = process.env.AGENT_REQUEST_TOKEN_LIMIT;
+  process.env.AGENT_REQUEST_TOKEN_LIMIT = '35000';
+  try {
+    await withModel([], async () => {
+      let calls = 0;
+      global.fetch = async () => { calls++; process.env.AGENT_REQUEST_TOKEN_LIMIT = '1'; throw new TypeError('fetch failed'); };
+      await assert.rejects(runAgent({ user: u, message: '橫琴有咩玩？' }), { code: 'agent_provider_unavailable' });
+      assert.equal(calls, 1);
+    });
+  } finally { if (original === undefined) delete process.env.AGENT_REQUEST_TOKEN_LIMIT; else process.env.AGENT_REQUEST_TOKEN_LIMIT = original; }
 });
 
 integration('browser database roles cannot access quota or idempotency tables', async () => {

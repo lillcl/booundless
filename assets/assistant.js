@@ -266,6 +266,8 @@ function buildAssistant() {
       if (response.status === 401) await refreshAccess();
       const error = new Error(payload?.error?.message || `AI 助手暫時無法回覆 (${response.status})`);
       error.code = payload?.error?.code;
+      error.requestId = payload?.error?.request_id;
+      error.threadId = payload?.error?.thread_id;
       throw error;
     }
     const reader = response.body.getReader();
@@ -302,7 +304,13 @@ function buildAssistant() {
             answer = event.result.text;
             renderAssistantText(assistantBubble, answer);
           }
-        } else if (event.type === 'error') throw new Error(event.message || 'AI 助手暫時無法回覆');
+        } else if (event.type === 'progress') {
+          setBusy(true, event.message || '正在核對回覆');
+        } else if (event.type === 'error') {
+          const error = new Error(event.message || '界仔未能完成這次處理。');
+          error.code = event.code; error.requestId = event.request_id; error.threadId = event.thread_id;
+          throw error;
+        }
       }
       if (done) break;
     }
@@ -327,7 +335,8 @@ function buildAssistant() {
       await consumeResponse(response, bubble);
     } catch (error) {
       if (error.code === 'thread_not_found') { threadId = null; localStorage.removeItem(THREAD_KEY); }
-      const message = error.name === 'AbortError' ? '已停止回覆。本次 AI 使用已計入今日額度。' : friendlyAssistantError(error?.message);
+      if (error.threadId) { threadId = error.threadId; localStorage.setItem(THREAD_KEY, threadId); }
+      const message = error.name === 'AbortError' ? '已停止回覆。本次 AI 使用已計入今日額度。' : `${friendlyAssistantError(error?.message)}${error.requestId ? `\n查詢編號：${error.requestId.slice(0, 8)}` : ''}`;
       renderAssistantText(bubble, message);
       messages.push({ role: 'assistant', text: message });
       saveMessages(messages);

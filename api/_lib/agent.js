@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { getDb } from './db.js';
 import { audit } from './auth.js';
 import { vehicleTools } from '../_tools/vehicles.js';
@@ -9,7 +10,8 @@ import { knowledgeTools } from '../_tools/knowledge.js';
 import { navigationTools } from '../_tools/navigation.js';
 import { getResearchTools } from '../_tools/research.js';
 import { fenceUserContext, fenceToolResult } from './agent-safety.js';
-import { DECISION_TOOL, decisionTool, policyPrompt, validateDecision } from './agent-policy.js';
+import { DECISION_TOOL, decisionTool, normalizeDecisionResponse, policyPrompt, validateDecision } from './agent-policy.js';
+import { AgentRuntimeError } from './agent-errors.js';
 import { agentLimits, estimateInputTokens, usageTokens } from './agent-usage.js';
 import { searchSiteKnowledge } from './site-knowledge.js';
 import { queryKnowledgeGraph } from './knowledge-graph.js';
@@ -68,12 +70,13 @@ function toOpenAIMessage(message) {
   return result;
 }
 
-export async function callMinimax({ messages, tools, system, signal, accounting = { tokens: 0, modelCalls: 0 } }) {
+export async function callMinimax({ messages, tools, system, signal, json = false, timeoutMs, accounting = { tokens: 0, modelCalls: 0 } }) {
   const config = providerConfig();
   const limits = agentLimits();
   const controller = new AbortController();
+  let timedOut = false;
   const abort = () => controller.abort();
-  const timer = setTimeout(abort, Math.min(limits.timeoutMs, Number(process.env.AI_TIMEOUT_MS || limits.timeoutMs)));
+  const timer = setTimeout(() => { timedOut = true; abort(); }, Math.max(1, Math.min(timeoutMs || limits.timeoutMs, Number(process.env.AI_TIMEOUT_MS || 25000))));
   if (signal?.aborted) abort();
   signal?.addEventListener('abort', abort, { once: true });
   const toolList = Object.values(tools).map((tool) => config.anthropic
@@ -82,12 +85,12 @@ export async function callMinimax({ messages, tools, system, signal, accounting 
   const body = config.anthropic ? {
     model: config.model, max_tokens: limits.outputTokens, temperature: Number(process.env.AI_TEMPERATURE || 0.2), system,
     messages: messages.map((message) => ({ ...message, content: toAnthropicContent(message.content) })), tools: toolList,
-    tool_choice: { type: 'tool', name: DECISION_TOOL },
+    tool_choice: json ? { type: 'none' } : { type: 'tool', name: DECISION_TOOL },
     ...(config.model === 'MiniMax-M3' ? { thinking: { type: 'disabled' } } : {}),
   } : {
     model: config.model, max_tokens: limits.outputTokens, temperature: Number(process.env.AI_TEMPERATURE || 0.2),
     messages: [{ role: 'system', content: system }, ...messages.map(toOpenAIMessage)], tools: toolList,
-    tool_choice: { type: 'function', function: { name: DECISION_TOOL } },
+    tool_choice: json ? 'none' : { type: 'function', function: { name: DECISION_TOOL } },
     ...(config.model === 'MiniMax-M3' ? { thinking: { type: 'disabled' } } : {}),
   };
   const url = config.anthropic ? `${config.base}/v1/messages` : `${config.base}/chat/completions`;
@@ -96,13 +99,21 @@ export async function callMinimax({ messages, tools, system, signal, accounting 
     : { 'content-type': 'application/json', authorization: `Bearer ${config.key}` };
   try {
     const reservation = estimateInputTokens(body) + limits.outputTokens;
-    if (accounting.modelCalls >= limits.modelCalls || accounting.tokens + reservation > limits.requestTokens) throw new Error('Agent request budget exceeded');
-    if (controller.signal.aborted) throw new Error('Agent request cancelled');
+    if (accounting.modelCalls >= limits.modelCalls || accounting.tokens + reservation > limits.requestTokens) throw new AgentRuntimeError('agent_request_budget', 'Agent request budget exceeded', { status: 422 });
+    if (controller.signal.aborted) throw new AgentRuntimeError('agent_cancelled', 'Agent request cancelled', { status: 499 });
     accounting.modelCalls += 1;
     accounting.tokens += reservation;
     const response = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: controller.signal });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload?.error?.message || `AI request failed (${response.status})`);
+    const payload = await response.json().catch((error) => { if (controller.signal.aborted) throw error; return {}; });
+    const providerCode = Number(payload?.base_resp?.status_code || payload?.error?.code || 0);
+    if (!response.ok || providerCode) {
+      const transient = [408, 429, 500, 502, 503, 504].includes(response.status) || [1000, 1001, 1002, 1024, 1033, 1039, 1041].includes(providerCode);
+      const configuration = [401, 403].includes(response.status) || [1004, 1008, 2049, 2056].includes(providerCode);
+      const retryAfter = Number(response.headers.get('retry-after') || 0);
+      throw new AgentRuntimeError(configuration ? 'agent_provider_configuration' : transient ? 'agent_provider_busy' : 'agent_provider_unavailable', `AI request failed (${response.status}, ${providerCode})`, {
+        retryable: transient && retryAfter <= 1, diagnostics: { provider_status: response.status, provider_code: providerCode, retry_after: Number.isFinite(retryAfter) ? retryAfter : null },
+      });
+    }
     // Usage belongs to this invocation, not a cumulative counter. Missing usage
     // or a transport failure keeps the conservative reservation charged.
     const actualTokens = usageTokens(payload.usage);
@@ -116,13 +127,20 @@ export async function callMinimax({ messages, tools, system, signal, accounting 
     const message = payload?.choices?.[0]?.message || {};
     return { provider: 'openai', model: payload.model || config.model, raw: payload, content: message.content || '', text: message.content || '',
       toolCalls: (message.tool_calls || []).filter((call) => call.type === 'function').map((call) => ({ id: call.id, name: call.function.name, args: parseArgs(call.function.arguments) })), assistantMessage: message, usage: payload.usage || {} };
+  } catch (error) {
+    if (error instanceof AgentRuntimeError) throw error;
+    if (controller.signal.aborted) throw new AgentRuntimeError(timedOut ? 'agent_timeout' : 'agent_cancelled', timedOut ? 'Model request timed out' : 'Agent request cancelled', { status: timedOut ? 504 : 499, retryable: timedOut && !signal?.aborted });
+    if (error instanceof TypeError && /fetch|network/i.test(error.message)) throw new AgentRuntimeError('agent_provider_unavailable', 'AI connection failed', { retryable: true });
+    throw error;
   } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
 }
 
 function parseArgs(value) {
   if (!value) return {};
   if (typeof value === 'object') return value;
-  try { return JSON.parse(value); } catch { throw new Error('AI returned invalid tool arguments'); }
+  // Keep malformed output in the decision-validation path so the same bounded
+  // format repair is available on OpenAI-compatible transport as Anthropic.
+  try { return JSON.parse(value); } catch { return null; }
 }
 
 function safePersist(value) {
@@ -215,11 +233,13 @@ export async function runAgent({ user, threadId, message, pageContext = {}, onEv
   const run = await db.query('INSERT INTO agent_runs (thread_id,user_id,model,status) VALUES ($1,$2,$3,$4) RETURNING id', [thread.id,user.id,config.model,'running']);
   const runId = run.rows[0].id;
   const started = Date.now(); const limits = agentLimits();
+  const deadline = started + limits.timeoutMs;
   const controller = new AbortController(); const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) abort();
   const timer = setTimeout(abort, limits.timeoutMs);
   let research = { tools: [], close: async () => {} };
+  const attempts = [];
   try {
     const currentMessage = inputMessage(message);
     const priorMessages = await history(db, thread.id);
@@ -237,21 +257,44 @@ export async function runAgent({ user, threadId, message, pageContext = {}, onEv
     const messages = [...priorMessages, wrapped];
     let toolCount = 0; let hasPersonalResults = false;
     const knownSources = new Map(sources.map((source) => [source.id, source]));
-    let formatRepairUsed = false;
+    let formatRepairUsed = false; let transportRetryUsed = false; let pendingTransportError = null;
     const usage = () => ({ total_tokens: accounting.tokens, model_calls: accounting.modelCalls, tool_calls: toolCount });
     for (let step = 0; step < limits.modelCalls; step += 1) {
-      if (controller.signal.aborted) throw new Error('Agent request cancelled or timed out');
-      const response = await callMinimax({ messages, tools: { [DECISION_TOOL]: decisionTool(tools) }, system: policyPrompt(tools), signal: controller.signal, accounting });
+      if (controller.signal.aborted) throw new AgentRuntimeError(signal?.aborted ? 'agent_cancelled' : 'agent_timeout', 'Agent request cancelled or timed out', { status: signal?.aborted ? 499 : 504 });
+      let response;
+      const attemptStarted = Date.now();
+      try {
+        response = normalizeDecisionResponse(await callMinimax({ messages, tools: { [DECISION_TOOL]: decisionTool(tools) }, system: policyPrompt(tools, { json: formatRepairUsed }), json: formatRepairUsed, timeoutMs: deadline - Date.now(), signal: controller.signal, accounting }));
+      } catch (error) {
+        attempts.push({ status: 'failed', code: error.code || 'agent_internal', elapsed_ms: Date.now() - attemptStarted, ...error.diagnostics });
+        // A timeout with unknown usage retains its reservation. If that leaves
+        // no safe retry budget, report the real transport failure, not blame a
+        // short user question for exceeding the budget. No second fetch occurs.
+        if (error.code === 'agent_request_budget' && pendingTransportError) throw pendingTransportError;
+        const retryDelay = Math.max(0, Number(error.diagnostics?.retry_after || 0)) * 1000;
+        if (!transportRetryUsed && error.retryable && !controller.signal.aborted && step + 1 < limits.modelCalls && deadline - Date.now() >= 3000 + retryDelay) {
+          transportRetryUsed = true;
+          pendingTransportError = error;
+          await onEvent({ type: 'progress', message: 'AI 服務剛才連線不穩，正在重試一次…' });
+          if (retryDelay) await delay(retryDelay, undefined, { signal: controller.signal });
+          continue;
+        }
+        throw error;
+      }
+      pendingTransportError = null;
       let decision;
       try { decision = validateDecision(response, tools, { sources: [...knownSources.values()], hasPersonalResults }); }
       catch (error) {
+        attempts.push({ status: 'invalid', elapsed_ms: Date.now() - attemptStarted, reason: error.message.slice(0, 300), stop_reason: response.raw?.stop_reason || response.raw?.choices?.[0]?.finish_reason || null, tool_calls: response.toolCalls?.length || 0, text_chars: response.text?.length || 0 });
         // A single bounded repair, not a second classifier on every request.
         // Do not append unmatched tool calls or execute unvalidated plans.
-        if (formatRepairUsed || step + 1 >= limits.modelCalls) throw error;
+        if (formatRepairUsed || step + 1 >= limits.modelCalls || deadline - Date.now() < 3000) throw new AgentRuntimeError('agent_decision_invalid', error.message, { status: 502 });
         formatRepairUsed = true;
-        messages.push({ role: 'user', content: `伺服器格式檢查未通過：${error.message.slice(0, 300)}。沒有執行該回應的工具。請重新呼叫 assistant_decision，填齊 decision、domain、reply、tool_name、tool_arguments；不得以自由文字回答。知識不足用 insufficient_data，final 不可包含工具。` });
+        await onEvent({ type: 'progress', message: '正在重新核對回覆格式，尚未執行任何未驗證操作…' });
+        messages.push({ role: 'user', content: `伺服器格式檢查未通過：${error.message.slice(0, 300)}。沒有執行該回應的工具。改用完整 JSON 決策物件，填齊 decision、domain、reply、tool_name、tool_arguments；不得自由文字回答或呼叫 assistant_decision。知識不足用 insufficient_data，final 不可包含工具。` });
         continue;
       }
+      attempts.push({ status: 'validated', format: response.decisionFormat || 'tool', elapsed_ms: Date.now() - attemptStarted });
       await db.query('UPDATE agent_runs SET scope_decision=$2,latency_ms=$3 WHERE id=$1', [runId, JSON.stringify(decision), Date.now() - started]);
       if (decision.decision !== 'tools') {
         const selected = decision.source_ids.map((id) => knownSources.get(id));
@@ -260,10 +303,10 @@ export async function runAgent({ user, threadId, message, pageContext = {}, onEv
         const text = decision.decision === 'reject' ? `${decision.reply}\n你可以問：「${decision.suggested_question}」` : decision.reply;
         await onEvent({ type: 'text', text });
         await saveMessage(db, thread.id, 'assistant', [{ type: 'text', text }]);
-        await finishRun(db, runId, 'completed', usage());
+        await finishRun(db, runId, 'completed', { ...usage(), attempts });
         return { thread_id: thread.id, run_id: runId, status: 'completed', decision: decision.decision, text, model: response.model, usage: usage() };
       }
-      if (toolCount + decision.calls.length > limits.toolCalls || step + 1 >= limits.modelCalls && !decision.calls.some((call) => tools[call.tool]?.write)) throw new Error('Agent reached its tool or model limit');
+      if (toolCount + decision.calls.length > limits.toolCalls || step + 1 >= limits.modelCalls && !decision.calls.some((call) => tools[call.tool]?.write)) throw new AgentRuntimeError('agent_request_budget', 'Agent reached its tool or model limit', { status: 422 });
       if (response.provider === 'anthropic') messages.push({ role: 'assistant', content: response.content });
       else messages.push({ ...response.assistantMessage, role: 'assistant' });
       const write = decision.calls.find((call) => tools[call.tool].write);
@@ -272,7 +315,7 @@ export async function runAgent({ user, threadId, message, pageContext = {}, onEv
         const callId = await toolRecord(db, runId, write.tool, write.args, 'awaiting_confirmation', null, null, true);
         const text = '請核對以下資料，確認後我才會寫入。';
         await saveMessage(db, thread.id, 'assistant', [{ type: 'text', text: `${text}\n${JSON.stringify(write.args)}` }]);
-        await finishRun(db, runId, 'awaiting_confirmation', usage());
+        await finishRun(db, runId, 'awaiting_confirmation', { ...usage(), attempts });
         await onEvent({ type: 'text', text });
         await onEvent({ type: 'confirmation_required', tool_call_id: callId, tool_name: write.tool, input: safePersist(write.args), message: text });
         return { thread_id: thread.id, run_id: runId, status: 'awaiting_confirmation', text, usage: usage(), confirmation: { tool_call_id: callId, tool_name: write.tool, input: safePersist(write.args) } };
@@ -295,12 +338,16 @@ export async function runAgent({ user, threadId, message, pageContext = {}, onEv
       const boundedOutputs = outputs.map((output) => JSON.stringify(output).length > 10000 ? { tool: output.tool, status: output.status, output: { ok: output.output?.ok, truncated: true, message: 'Result exceeds the answer context budget; request a narrower query.' } } : output);
       const fencedOutput = fenceToolResult(boundedOutputs);
       const decisionCall = response.toolCalls[0];
-      if (response.provider === 'anthropic') messages.push({ role: 'user', content: [{ type: 'tool_result', tool_use_id: decisionCall.id, content: fencedOutput }] });
+      if (response.decisionFormat === 'json') messages.push({ role: 'user', content: fencedOutput });
+      else if (response.provider === 'anthropic') messages.push({ role: 'user', content: [{ type: 'tool_result', tool_use_id: decisionCall.id, content: fencedOutput }] });
       else messages.push({ role: 'tool', tool_call_id: decisionCall.id, content: fencedOutput });
     }
-    throw new Error('Agent reached its step limit');
+    throw new AgentRuntimeError('agent_request_budget', 'Agent reached its step limit', { status: 422 });
   } catch (error) {
-    await finishRun(db, runId, 'failed', { total_tokens: accounting.tokens, model_calls: accounting.modelCalls }, error.message);
+    if (controller.signal.aborted) error = new AgentRuntimeError(signal?.aborted ? 'agent_cancelled' : 'agent_timeout', error.message, { status: signal?.aborted ? 499 : 504 });
+    error.runId = runId; error.threadId = thread.id;
+    await db.query('UPDATE agent_runs SET latency_ms=$2 WHERE id=$1', [runId, Date.now() - started]);
+    await finishRun(db, runId, 'failed', { total_tokens: accounting.tokens, model_calls: accounting.modelCalls, attempts, failure_code: error.code || 'agent_internal' }, error.message);
     throw error;
   } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); await research.close().catch(() => {}); }
 }

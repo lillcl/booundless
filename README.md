@@ -96,13 +96,29 @@ private answers require authorized tool results. Writes require an explicit
 confirmation card. Tool-based answers can need extra model turns.
 
 Hard ceilings: 3 model calls, 6 business tools, 1,024 output tokens per call,
-40,000 cumulative request tokens, 25-second agent deadline, 1 active request
+40,000 cumulative request tokens, 30-second agent deadline (each model call
+is at most 25 seconds), 1 active request
 per account, 8 globally, 200,000 daily tokens per account and 2,000,000 globally.
 Shared database reservations enforce budgets before reaching the provider.
 Missing provider usage or a crashed request is charged conservatively. The
 environment settings can lower these caps, not raise them. The token ceiling
 is an application-side guard using provider usage and conservative estimates,
 not a provider billing guarantee or monetary spending cap.
+
+Malformed decisions get one JSON-format recovery, with the same scope,
+source, ownership and tool-schema checks. Whole JSON responses can be
+validated without a recovery call; arbitrary prose is never rendered or
+executed. Temporary transport/429/5xx failures get at most one retry if time,
+tokens and model-call allowance remain. These recoveries share the original
+quota admission and the three-call ceiling. Long Retry-After values are not
+retried. There is no extra classifier on the successful path.
+
+Failures have distinct public codes for timeout, invalid decision, provider
+availability and request budget, plus a request reference in the UI. Private
+run records retain attempt timing, stop reason and validation failure, not
+raw provider reasoning in the public response. SSE keepalives and progress
+events keep a waiting connection alive. Provider/network failures remain
+possible; recovery is bounded, not a promise of 100% availability.
 
 `GET /api/agent` returns authenticated quota. Every POST requires a UUID
 `request_id`; reuse it only for an identical retry. Completed responses replay

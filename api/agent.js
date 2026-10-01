@@ -5,6 +5,7 @@ import { admitAgentRequest, finishAgentRequest, getAgentQuota, requestFingerprin
 import { sanitizePageContext } from './_lib/assistant-context.js';
 import { readBody, sendError, sendJSON } from './_lib/http.js';
 import { originCheckWrap } from './_lib/origin-check.js';
+import { publicRuntimeError } from './_lib/agent-errors.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,7 +21,7 @@ function sse(res, event) {
 
 function publicAgentError(error) {
   if (error instanceof AgentUsageError) return error.message;
-  return 'AI 助手暫時無法回覆，請稍後再試。';
+  return publicRuntimeError(error);
 }
 
 // Dependency injection keeps the route contract testable without live AI usage.
@@ -28,7 +29,7 @@ export function createAgentHandler(dependencies = {}) {
   const services = { readSession, getDb, runAgent, confirmAgentTool, admitAgentRequest, finishAgentRequest, getAgentQuota, ...dependencies };
   return async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) return sendError(res, 405, 'method_not_allowed', 'Only GET or POST allowed');
-  let streaming = false; let user; let db; let admitted = false; let requestId;
+  let streaming = false; let user; let db; let admitted = false; let requestId; let heartbeat;
   const accounting = { tokens: 0, modelCalls: 0 };
   const controller = new AbortController();
   const disconnect = () => { if (!res.writableEnded) controller.abort(); };
@@ -65,6 +66,7 @@ export function createAgentHandler(dependencies = {}) {
       res.setHeader('Cache-Control', 'no-cache, no-transform');
       res.setHeader('Connection', 'keep-alive');
       res.flushHeaders?.();
+      heartbeat = setInterval(() => { if (!res.writableEnded && !res.destroyed) res.write(': keepalive\n\n'); }, 5000);
     }
     const onEvent = async (event) => {
       events.push(event);
@@ -92,12 +94,15 @@ export function createAgentHandler(dependencies = {}) {
     if (streaming) { sse(res, { type: 'done', result }); return res.end(); }
     return sendJSON(res, 200, result);
   } catch (error) {
-    const payload = { code: error instanceof AgentUsageError ? error.code : 'agent_error', message: publicAgentError(error) };
-    if (admitted) await services.finishAgentRequest(db, { userId: user.id, requestId, tokens: accounting.tokens, failed: true, response: { error: payload, status: error.status || 500 } }).catch(() => {});
+    const code = error instanceof AgentUsageError ? error.code : typeof error.code === 'string' && error.code.startsWith('agent_') ? error.code : 'agent_internal';
+    const payload = { code, message: publicAgentError(error), ...(requestId && UUID.test(requestId) ? { request_id: requestId } : {}), ...(error.runId ? { run_id: error.runId, thread_id: error.threadId } : {}) };
+    if (!(error instanceof AgentUsageError)) console.error(JSON.stringify({ event: 'assistant_request_failed', code, request_id: payload.request_id, run_id: error.runId || null }));
+    if (admitted) await services.finishAgentRequest(db, { userId: user.id, requestId, tokens: accounting.tokens, failed: true, response: { error: payload, status: error.status || 503 } }).catch(() => {});
     if (streaming && res.headersSent) { if (!res.writableEnded && !res.destroyed) { sse(res, { type: 'error', ...payload }); res.end(); } return; }
     if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter));
     return sendJSON(res, error.status || 503, { error: payload, ...(error.quota ? { quota: error.quota } : {}) });
   } finally {
+    clearInterval(heartbeat);
     res.off?.('close', disconnect);
   }
   };

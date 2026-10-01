@@ -18,7 +18,8 @@ export function agentLimits() {
     dailyTokens: boundedEnv('AGENT_DAILY_TOKEN_LIMIT', 200000, 200000),
     globalTokens: boundedEnv('AGENT_GLOBAL_DAILY_TOKEN_LIMIT', 2000000, 2000000),
     globalConcurrency: boundedEnv('AGENT_GLOBAL_CONCURRENCY', 8, 8),
-    timeoutMs: boundedEnv('AGENT_TIMEOUT_MS', 25000, 25000),
+    // Leaves room for one format/transport recovery under the existing 40s lease.
+    timeoutMs: boundedEnv('AGENT_TIMEOUT_MS', 30000, 30000),
   };
 }
 
