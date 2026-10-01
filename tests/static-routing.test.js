@@ -79,7 +79,7 @@ test('development server applies rate and origin guards to every API route', () 
 test('legal pages use root-relative assets and the canonical production host', () => {
   for (const page of ['privacy', 'terms']) {
     const source = readFileSync(new URL(`../legal/${page}.html`, import.meta.url), 'utf8');
-    assert.match(source, /href="\/assets\/icons\/booundless-car\.png"/);
+    assert.match(source, /href="\/favicon\.ico"/);
     assert.match(source, /src="\/assets\/icons\/booundless-car\.png"/);
     assert.match(source, new RegExp(`href="https://www\\.booundless\\.com/legal/${page}\\.html"`));
     assert.match(source, /href="\/assets\/assistant\.css"/);
