@@ -281,6 +281,7 @@
 @media print{#trip .itinerary-switch{display:none}#trip .destination-card{box-shadow:none}#trip .route-builder{background:#fff;color:#153c4f;border:1px solid #ccdce1}#trip .route-builder h3,#trip .route-options h4{color:#153c4f}#trip .route-builder>header p,#trip .route-options p{color:#526b79}}
 </style>
 <link rel="canonical" href="https://www.booundless.com/guide">
+<link rel="stylesheet" href="/assets/assistant.css">
 </head>
 <body>
 <a class="skip" href="#main">跳至主要內容</a>
@@ -603,4 +604,5 @@ document.querySelectorAll('[data-app-route]').forEach((link) => {
   link.href = appRoot + '#/' + link.dataset.appRoute;
 });
 </script>
+<script type="module" src="/assets/assistant.js"></script>
 </body></html>

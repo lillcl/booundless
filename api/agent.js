@@ -1,6 +1,9 @@
-import { requireUser } from './_lib/auth.js';
+import { readSession } from './_lib/auth.js';
 import { confirmAgentTool, runAgent } from './_lib/agent.js';
+import { sanitizePageContext } from './_lib/assistant-context.js';
 import { readBody, sendError, sendJSON } from './_lib/http.js';
+import { runPublicAssistant } from './_lib/public-assistant.js';
+import { originCheckWrap } from './_lib/origin-check.js';
 
 const rateBuckets = new Map();
 const RATE_WINDOW_MS = 60_000;
@@ -25,17 +28,20 @@ function sse(res, event) {
   res.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return sendError(res, 405, 'method_not_allowed', 'Only POST allowed');
-  const user = await requireUser(req, res); if (!user) return;
-  if (!allowRequest(user.id)) return sendError(res, 429, 'rate_limited', 'Too many AI assistant requests; please try again shortly');
+  const user = await readSession(req);
+  const requestKey = user?.id || `anonymous:${String(req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()}`;
+  if (!allowRequest(requestKey)) return sendError(res, 429, 'rate_limited', 'Too many AI assistant requests; please try again shortly');
   let streaming = false;
   try {
     const body = await readBody(req, { limit: '8mb' });
     const message = lastMessage(body);
     const confirmation = body?.confirmation;
+    const pageContext = sanitizePageContext(body?.page_context);
     if (!confirmation && message == null) return sendError(res, 422, 'unprocessable', 'message is required');
     if (confirmation && (!body.thread_id || !confirmation.tool_call_id || typeof confirmation.approved !== 'boolean')) return sendError(res, 422, 'unprocessable', 'thread_id, confirmation.tool_call_id and confirmation.approved are required');
+    if (confirmation && !user) return sendError(res, 401, 'unauthorized', 'Sign in required to confirm data changes');
     streaming = body?.stream !== false;
     if (streaming) {
       res.statusCode = 200;
@@ -47,7 +53,9 @@ export default async function handler(req, res) {
     const onEvent = async (event) => { if (streaming && !res.writableEnded) sse(res, event); };
     const result = confirmation
       ? await confirmAgentTool({ user, threadId: body.thread_id, toolCallId: confirmation.tool_call_id, approved: confirmation.approved, onEvent })
-      : await runAgent({ user, threadId: body.thread_id, message, onEvent });
+      : user
+        ? await runAgent({ user, threadId: body.thread_id, message, pageContext, onEvent })
+        : await runPublicAssistant({ message, pageContext, budgetKey: requestKey, onEvent });
     if (streaming) { sse(res, { type: 'done', result }); return res.end(); }
     return sendJSON(res, 200, result);
   } catch (error) {
@@ -55,3 +63,5 @@ export default async function handler(req, res) {
     return sendError(res, 500, 'agent_error', error.message);
   }
 }
+
+export default originCheckWrap(handler);

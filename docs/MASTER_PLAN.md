@@ -35,9 +35,13 @@
 | 06 | QA / Playwright | P0 | 05 | 07 | QA Agent | `tasks/06_QA.md` |
 | 07 | Security Review | P0 | 02,04,05 | 06 | Security Agent | `tasks/07_Security.md` |
 | 08 | Release / Hardening | P1 | 06,07 | — | Orchestrator | `tasks/08_Release.md` |
+| 16 | Mascot AI Assistant & Site Knowledge | P0 | Existing agent + guide build | — | Lead / Orchestrator | `tasks/16_Mascot_AI_Assistant.md` |
 
 ## Phase 7 — Dealer Self-Registration Refactor (2026-09-24)
 Task file: [`tasks/15_Dealer_Self_Registration.md`](tasks/15_Dealer_Self_Registration.md). Replaces the admin-invite-token flow with a hidden `#/dealer/register` page. Self-register creates user + active dealer + first branch + owner membership in one transaction. Admin gains full edit + member management + suspend that cascades to `users.is_active` for every member. `dealer_invites` table dropped; invite endpoints removed.
+
+## Phase 8 — Mascot AI Assistant & Site Knowledge (2026-09-30)
+Task file: [`tasks/16_Mascot_AI_Assistant.md`](tasks/16_Mascot_AI_Assistant.md). Adds a persistent branded assistant across the customer website, page-aware allowlisted navigation, and reviewed first-party knowledge generated from the 琴澳同行 source alongside the existing vehicle, maintenance, trip, and profile tools.
 
 ## Recommended Execution Waves
 - **Wave 1 — Foundation:** 01

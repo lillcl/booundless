@@ -285,6 +285,19 @@ Mutating routes accept `Idempotency-Key: <uuid>`; same key + same payload return
 
 Errors: `401` unauthorized, `403` forbidden, `404` not_found, `409` conflict (stale version / full slot / duplicate payload), `422` unprocessable, `429` rate_limited, `503` service_unavailable.
 
+## Mascot AI assistant — 2026-09-30
+
+### POST /api/agent
+
+- Auth: optional for public site-knowledge questions; required for personal vehicle data and every confirmation of a write tool.
+- Request: `{message, thread_id?, page_context?, stream?}` or `{thread_id, confirmation:{tool_call_id,approved}, stream?}`. `page_context` accepts only bounded `path`, `hash`, `route`, `section`, `title`, and `locale` strings and is treated as untrusted context.
+- Public mode: searches the generated first-party `assets/knowledge/qinao.json`, traverses `assets/knowledge/graph.json`, returns no personal data, creates no database thread, and may suggest only routes registered in `shared/assistant-routes.js`.
+- Signed-in mode: retains the existing persisted tool-loop agent and its vehicle, maintenance, trip, profile, research, confirmation, audit, and token-budget controls, with additional read-only `search_site_knowledge`, `query_knowledge_graph`, and `suggest_navigation` tools.
+- Streaming response: SSE events remain `text`, `tool_activity`, `confirmation_required`, `done`, and `error`. Completed knowledge tool activity contains source title, exact guide URL, `verified_at`, and official source links. Navigation contains `route_key`, label, href, and auth requirement.
+- Safety: tool output and page/user context are fenced as untrusted data. Navigation is server allowlisted and revalidated by the client. Time-sensitive rules must identify their verification date and link to official sources.
+- Rate/cost limits: `/api/agent` applies its own 20 requests/minute bucket and rolling daily token budget per signed-in user or anonymous IP, in addition to the global API guard. The standalone serverless function also enforces the production origin allowlist before doing AI work.
+- Deployment: the function bundles `assets/knowledge/*.json`; `node outputs/qinao/build-guide.mjs` regenerates the guide, six searchable content sections, and the topic/document/official-source knowledge graph.
+
 ## Rules
 - Frontend and backend consume the same documented contract.
 - Never silently change request/response/error shapes.

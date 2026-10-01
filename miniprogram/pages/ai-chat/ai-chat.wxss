@@ -38,6 +38,16 @@
   box-shadow: var(--shadow);
 }
 
+.kc-chat__avatar--assistant {
+  background: #e9f7f6;
+  overflow: hidden;
+}
+
+.kc-chat__mascot {
+  width: 58rpx;
+  height: 58rpx;
+}
+
 .kc-chat__bubble {
   max-width: 70%;
   padding: 20rpx 24rpx;

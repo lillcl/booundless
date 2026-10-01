@@ -35,6 +35,7 @@
 @media(max-width:760px){.destination-grid{grid-template-columns:1fr;gap:19px}.destination-art{height:200px}.destination-copy{padding:20px}.destination-copy h3{font-size:24px}.route-recipe{align-items:flex-start;flex-direction:column;padding:21px}.recipe-time{width:100%;text-align:left}.route-recipe p{font-size:16px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.destination-card,.route-recipe,.family-checks>div{will-change:auto}}
 </style>
+<link rel="stylesheet" href="/assets/assistant.css">
 </head>
 <body>
 <a class="skip" href="#main">跳至主要內容</a>
@@ -72,4 +73,6 @@
 <script>
 const checks=[...document.querySelectorAll('.checklist input')];const progress=document.querySelector('.progress');function updateChecks(){progress.value=checks.filter(c=>c.checked).length+' / '+checks.length+' 已確認';}checks.forEach(c=>c.addEventListener('change',updateChecks));document.querySelector('#reset').addEventListener('click',()=>{checks.forEach(c=>c.checked=false);updateChecks();});let printClosed=[];window.addEventListener('beforeprint',()=>{printClosed=[...document.querySelectorAll('details:not([open])')];printClosed.forEach(d=>d.open=true);});window.addEventListener('afterprint',()=>printClosed.forEach(d=>d.open=false));document.querySelector('#print').addEventListener('click',()=>window.print());const navLinks=[...document.querySelectorAll('.nav a')];const navSections=navLinks.map(a=>document.querySelector(a.hash));let queued=false;function updateNav(){let current=0;navSections.forEach((s,i)=>{if(s.getBoundingClientRect().top<150)current=i;});navLinks.forEach((a,i)=>{if(i===current)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});queued=false;}window.addEventListener('scroll',()=>{if(!queued){queued=true;requestAnimationFrame(updateNav);}},{passive:true});updateNav();
 window.addEventListener('load',()=>{if(!window.gsap||!window.ScrollTrigger||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;gsap.registerPlugin(ScrollTrigger);gsap.from('.destination-card',{y:34,opacity:0,duration:.7,ease:'power2.out',stagger:.12,scrollTrigger:{trigger:'.destination-grid',start:'top 82%',once:true}});gsap.from('.route-recipe',{y:22,opacity:0,duration:.65,ease:'power2.out',stagger:.18,scrollTrigger:{trigger:'.route-recipe',start:'top 88%',once:true}});gsap.from('.family-checks>div',{y:18,opacity:0,duration:.5,stagger:.1,ease:'power2.out',scrollTrigger:{trigger:'.family-checks',start:'top 88%',once:true}});});
-</script></body></html>
+</script>
+<script type="module" src="/assets/assistant.js"></script>
+</body></html>

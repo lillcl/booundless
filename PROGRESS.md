@@ -1,9 +1,9 @@
 # PROGRESS.md
 
 ## Project Status
-- Current Phase: Phase 7 — Dealer self-registration refactor (T7.1–T7.5 done; awaiting independent reviewer)
-- Overall Status: Service MVP shipped (Phase 6, 2026-09-23); Phase 7 refactor shipped (2026-09-24); invite-token flow retired; `dealer_invites` table dropped; admin can edit any dealer + add/remove members; suspension cascades to `users.is_active` for all members.
-- Last Updated: 2026-09-24
+- Current Phase: Phase 8 — Mascot AI assistant and first-party site knowledge
+- Overall Status: Phase 8 first vertical slice is code-complete and browser-verified 2026-09-30; formal DB-backed Playwright and independent review remain. Phase 7 also remains awaiting independent review.
+- Last Updated: 2026-09-30
 - Orchestrator: `Lead / Orchestrator`
 
 ## Phase 0 — Initialization
@@ -607,6 +607,32 @@ Signature: `Lead / Orchestrator` @ 2026-09-23
 - Signature: `Lead / Orchestrator` @ 2026-09-24
 
 ---
+
+## Phase 8 — Mascot AI assistant and site knowledge (2026-09-30)
+
+**Goal:** Add the branded 「界仔」 assistant across the website, 琴澳 guide, and Mini Program, backed by reviewed first-party content and allowlisted site navigation.
+
+### Task 8.1 — First vertical slice
+- Status: ✅ First vertical slice code-complete; formal E2E environment and independent review pending
+- Agent: `Lead / Orchestrator`
+- Deliverables:
+  - [x] Generated transparent mascot artwork and installed optimized web + Mini Program assets.
+  - [x] Added responsive persistent website assistant with page-aware prompts, keyboard handling, source cards, route actions, error states, and confirmation UI.
+  - [x] Extended the 琴澳 build pipeline to emit six deterministic knowledge documents with anchors, official links, verification dates, and route keys.
+  - [x] Added a generated 64-node / 82-edge provenance graph linking topics, guide sections, and official sources.
+  - [x] Added read-only `search_site_knowledge`, `query_knowledge_graph`, and `suggest_navigation` agent tools; anonymous visitors can use public knowledge while personal/write capabilities remain authenticated.
+  - [x] Added bounded untrusted `page_context`, fenced tool results, and a shared navigation allowlist.
+  - [x] Added origin enforcement and anonymous-IP token budgeting to the standalone agent function.
+  - [x] Replaced the Mini Program's generic assistant robot with 「界仔」.
+  - [x] Synchronized API and shared-key documentation.
+- Validation:
+  - [x] Targeted knowledge, context, route-allowlist, and mocked public-agent tests pass.
+  - [x] Full unit suite (67/67).
+  - [x] Desktop/mobile browser verification on the main app and `/guide`; live sourced answers and navigation passed with no console errors.
+  - [x] Live MiniMax API, Supabase read tool, rolled-back database write, graph traversal, and `/api/agent` HTTP smoke checks passed.
+  - [ ] DB-backed Playwright suite (`TEST_DATABASE_URL` is not available in this workspace).
+  - [ ] Independent review.
+- Signature: `Lead / Orchestrator` @ 2026-09-30
 
 ## Cross-Agent Handoff
 - Read the latest phase before starting.

@@ -48,6 +48,8 @@
 <link rel="modulepreload" href="assets/request-flow.js">
 <link rel="stylesheet" href="assets/shop.css">
 <link rel="stylesheet" href="assets/passport.css">
+<link rel="stylesheet" href="/assets/assistant.css">
+<script type="module" src="/assets/assistant.js"></script>
 <style>
 :root{
   --bg:#f5f6f7;--card:#fff;--ink:#131516;--muted:#747b80;--line:#e5e8ea;
@@ -1903,10 +1905,13 @@ function appDialog(message, mode='notice') {
     'admin/marketing': renderMarketing,
     shop: async root => (await import('./assets/shop.js')).renderShop(root, { me }),
     orders: async root => (await import('./assets/shop.js')).renderOrders(root, { me }),
-    garage: async root => (await import('./assets/passport.js')).renderVehiclePassports(root, {
-      me,
-      onAddVehicle: openAddVehicleSheet,
-    }),
+    garage: async (root, params) => {
+      await (await import('./assets/passport.js')).renderVehiclePassports(root, {
+        me,
+        onAddVehicle: openAddVehicleSheet,
+      });
+      if (params?.qs?.assistant_action === 'add_vehicle') openAddVehicleSheet();
+    },
     'admin/shop': async root => (await import('./assets/shop.js')).renderAdminShop(root, { me }),
     'requests': renderRequests,
     'notifications': async root => window.serviceNotificationsView && window.serviceNotificationsView(root),
@@ -1967,7 +1972,7 @@ function appDialog(message, mode='notice') {
     if (segments[0] === 'admin' && segments[1]) {
       return { name: 'admin/' + segments[1], params: {} };
     }
-    return { name: segments[0] || 'landing', params: {} };
+    return { name: segments[0] || 'landing', params: { qs } };
   }
 
   async function dispatch() {

@@ -1,0 +1,879 @@
+{
+  "version": 1,
+  "source_url": "/guide",
+  "verified_at": "2026-09-27",
+  "generated_from": [
+    "assets/knowledge/qinao.json"
+  ],
+  "nodes": [
+    {
+      "id": "source.qinao",
+      "type": "source",
+      "label": "琴澳同行",
+      "url": "/guide",
+      "verified_at": "2026-09-27"
+    },
+    {
+      "id": "qinao.compare",
+      "type": "document",
+      "label": "橫琴單牌車與澳車北上比較",
+      "url": "/guide#compare",
+      "route_key": "qinao.compare",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.55C05r6z5ZCM6KGM",
+      "type": "topic",
+      "label": "琴澳同行"
+    },
+    {
+      "id": "topic.6Leo5aKD6Ieq6aeV",
+      "type": "topic",
+      "label": "跨境自駕"
+    },
+    {
+      "id": "topic.5qmr55C05Zau54mM6LuK",
+      "type": "topic",
+      "label": "橫琴單牌車"
+    },
+    {
+      "id": "topic.5r6z6LuK5YyX5LiK",
+      "type": "topic",
+      "label": "澳車北上"
+    },
+    {
+      "id": "topic.6YCa6Zec5Y-j5bK4",
+      "type": "topic",
+      "label": "通關口岸"
+    },
+    {
+      "id": "official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw",
+      "type": "official_source",
+      "label": "澳門機動車入出橫琴綜合管理系統 橫琴單牌車申請入口",
+      "url": "https://tgsq.hengqin.gov.cn/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA",
+      "type": "official_source",
+      "label": "澳門海關｜橫琴單牌車 車輛邊境通行及相關要求",
+      "url": "https://www.customs.gov.mo/cn/vehicle_clearance_item4.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv",
+      "type": "official_source",
+      "label": "交通事務局｜澳車北上 申請、驗車、預約、通關",
+      "url": "https://www.dsat.gov.mo/mcars-to-gd/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv",
+      "type": "official_source",
+      "label": "澳門金融管理局｜跨境車輛保險 強制及商業保障資訊",
+      "url": "https://www.amcm.gov.mo/pt/insurance-sector/crossbordervehicle/crossbordervehicle-backgroundinfo"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA",
+      "type": "official_source",
+      "label": "橫琴官方｜停車與出行資訊 泊車、充電、繳費及出行工具",
+      "url": "https://www.hengqin.gov.cn/macao_zh_hans/hzqgl/dtyw/dtxx/content/post_3784997.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s",
+      "type": "official_source",
+      "label": "交通運輸部｜機動車維修管理規定 結算、配件及維修經營規則",
+      "url": "https://xxgk.mot.gov.cn/jigou/fgs/202312/t20231204_3961931.html"
+    },
+    {
+      "id": "qinao.apply",
+      "type": "document",
+      "label": "琴澳跨境自駕申請準備",
+      "url": "/guide#apply",
+      "route_key": "qinao.apply",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.55Sz6KuL6LOH5qC8",
+      "type": "topic",
+      "label": "申請資格"
+    },
+    {
+      "id": "topic.55Sz6KuL5paH5Lu2",
+      "type": "topic",
+      "label": "申請文件"
+    },
+    {
+      "id": "topic.6amX6LuK",
+      "type": "topic",
+      "label": "驗車"
+    },
+    {
+      "id": "topic.5L-d6Zqq",
+      "type": "topic",
+      "label": "保險"
+    },
+    {
+      "id": "topic.54mM6K2J",
+      "type": "topic",
+      "label": "牌證"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMTY0ODAxLw",
+      "type": "official_source",
+      "label": "政府公告：共用電子標籤",
+      "url": "https://www.gov.mo/zh-hant/news/1164801/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMjAwNjA4Lw",
+      "type": "official_source",
+      "label": "政府公告：單牌車北上政策進度",
+      "url": "https://www.gov.mo/zh-hant/news/1200608/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2QvP2FfaWQ9MjAwMDEzOQ",
+      "type": "official_source",
+      "label": "查閱聲明書及提交方式",
+      "url": "https://www.dsat.gov.mo/mcars-to-gd/?a_id=2000139"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9tYWNhb2FwcGx5LnNpbmdsZXdpbmRvdy5nZC5jbi8",
+      "type": "official_source",
+      "label": "前往澳車北上官方申請系統",
+      "url": "https://macaoapply.singlewindow.gd.cn/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTIuaHRtbA",
+      "type": "official_source",
+      "label": "海關：申請人、車輛與駕駛人資格",
+      "url": "https://www.customs.gov.mo/cn/vehicle_clearance_item2.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnMvbmV3cy83NDI1NzEv",
+      "type": "official_source",
+      "label": "政府公告：未處理違規審查",
+      "url": "https://www.gov.mo/zh-hans/news/742571/"
+    },
+    {
+      "id": "qinao.trip",
+      "type": "document",
+      "label": "橫琴與珠海行程編排",
+      "url": "/guide#trip",
+      "route_key": "qinao.trip",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.5qmr55C05pmv6bue",
+      "type": "topic",
+      "label": "橫琴景點"
+    },
+    {
+      "id": "topic.54-g5rW35pmv6bue",
+      "type": "topic",
+      "label": "珠海景點"
+    },
+    {
+      "id": "topic.6Kaq5a2Q6KGM56iL",
+      "type": "topic",
+      "label": "親子行程"
+    },
+    {
+      "id": "topic.5rOK6LuK",
+      "type": "topic",
+      "label": "泊車"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOkhlbmdxaW5fRmxvd2VyX1NlYV9Db3JyaWRvci5qcGc",
+      "type": "official_source",
+      "label": "橫琴花海長廊實景照 · Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:Hengqin_Flower_Sea_Corridor.jpg"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL3B1YmxpY2RvbWFpbi96ZXJvLzEuMC8",
+      "type": "official_source",
+      "label": "CC0",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9saW5rcy90b3VyaXNtL2NvbnRlbnQvcG9zdF8zNzc2OTY3Lmh0bWw",
+      "type": "official_source",
+      "label": "合作區民生事務局｜花海長廊介紹",
+      "url": "https://www.hengqin.gov.cn/macao_zh_hans/links/tourism/content/post_3776967.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjIwMjYwNzEwX1RpYW5tdV9RaW50YWkuanBn",
+      "type": "official_source",
+      "label": "照片：Yumeto／Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:20260710_Tianmu_Qintai.jpg"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LXNhLzQuMC8",
+      "type": "official_source",
+      "label": "裁切版依 CC BY-SA 4.0 授權",
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9jaGFybS9jb250ZW50L3Bvc3RfMzkxMTIzNC5odG1s",
+      "type": "official_source",
+      "label": "合作區官方｜橫琴景點與天沐河介紹",
+      "url": "https://www.hengqin.gov.cn/macao_zh_hans/charm/content/post_3911234.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3OTMwNjIuaHRtbA",
+      "type": "official_source",
+      "label": "合作區官方｜橫琴生態空間介紹",
+      "url": "https://www.hengqin.gov.cn/macao_zh_hans/hzqgl/dtyw/dtxx/content/post_3793062.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM5MzA5NzYuaHRtbA",
+      "type": "official_source",
+      "label": "合作區官方｜步道及開放資訊",
+      "url": "https://www.hengqin.gov.cn/macao_zh_hans/hzqgl/dtyw/dtxx/content/post_3930976.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbGl2ZWxpaG9vZC9tc2drL3doc3MvZ2svaW5kZXguaHRtbA",
+      "type": "official_source",
+      "label": "合作區官方｜文化設施概況",
+      "url": "https://www.hengqin.gov.cn/livelihood/msgk/whss/gk/index.html"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjExNTkxLU9jZWFuLUtpbmdkb20uanBn",
+      "type": "official_source",
+      "label": "照片：xiquinhosilva／Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:11591-Ocean-Kingdom.jpg"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LzIuMC8",
+      "type": "official_source",
+      "label": "CC BY 2.0，裁切顯示",
+      "url": "https://creativecommons.org/licenses/by/2.0/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9iay5jaGltZWxvbmcuY29tL3poL29jZWFua2luZ2RvbS8",
+      "type": "official_source",
+      "label": "長隆官方｜園區資訊、票務、營業時間",
+      "url": "https://bk.chimelong.com/zh/oceankingdom/"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9GaXNoZXJfR2lybF9zdGF0dWVfZGxsdS5qcGc",
+      "type": "official_source",
+      "label": "照片：Dllu／Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:Zhuhai_Fisher_Girl_statue_dllu.jpg"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93aGx5LmdkLmdvdi5jbi9hdHRhY2htZW50LzAvNTUwLzU1MDg1NC80NDMzODQ4LnBkZg",
+      "type": "official_source",
+      "label": "廣東省文化和旅遊廳｜情侶路旅遊服務資訊",
+      "url": "https://whly.gd.gov.cn/attachment/0/550/550854/4433848.pdf"
+    },
+    {
+      "id": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9ncmFuZF90aGVhdHJlX3NvdXRoX3ZpZXcuanBn",
+      "type": "official_source",
+      "label": "照片：Charlie fong／Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:Zhuhai_grand_theatre_south_view.jpg"
+    },
+    {
+      "id": "official.aHR0cHM6Ly93d3cubWN0Lmdvdi5jbi93bGJwaG9uZS93bGJ5ZGQveHhmYi9xZ2xiL2dkLzIwMjQwNC90MjAyNDA0MTBfOTUyMTg0Lmh0bWw",
+      "type": "official_source",
+      "label": "文化和旅遊部｜珠海觀景地標介紹",
+      "url": "https://www.mct.gov.cn/wlbphone/wlbydd/xxfb/qglb/gd/202404/t20240410_952184.html"
+    },
+    {
+      "id": "qinao.service",
+      "type": "document",
+      "label": "北上汽車維修與保固",
+      "url": "/guide#service",
+      "route_key": "qinao.service",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.5rG96LuK57at5L-u",
+      "type": "topic",
+      "label": "汽車維修"
+    },
+    {
+      "id": "topic.57at5L-u5aCx5YO5",
+      "type": "topic",
+      "label": "維修報價"
+    },
+    {
+      "id": "topic.6Zu25Lu2",
+      "type": "topic",
+      "label": "零件"
+    },
+    {
+      "id": "topic.5bel5pmC",
+      "type": "topic",
+      "label": "工時"
+    },
+    {
+      "id": "topic.5L-d5Zu6",
+      "type": "topic",
+      "label": "保固"
+    },
+    {
+      "id": "topic.5Lqk6LuK57SA6YyE",
+      "type": "topic",
+      "label": "交車紀錄"
+    },
+    {
+      "id": "qinao.check",
+      "type": "document",
+      "label": "琴澳自駕出發前檢查",
+      "url": "/guide#check",
+      "route_key": "qinao.check",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.5Ye655m85qqi5p-l",
+      "type": "topic",
+      "label": "出發檢查"
+    },
+    {
+      "id": "topic.6aeV6aeb6K2J",
+      "type": "topic",
+      "label": "駕駛證"
+    },
+    {
+      "id": "topic.6aCQ57SE",
+      "type": "topic",
+      "label": "預約"
+    },
+    {
+      "id": "topic.6LuK6Lyb5a6J5YWo",
+      "type": "topic",
+      "label": "車輛安全"
+    },
+    {
+      "id": "qinao.official",
+      "type": "document",
+      "label": "琴澳同行官方入口",
+      "url": "/guide#official",
+      "route_key": "qinao.official",
+      "verified_at": "2026-09-27",
+      "time_sensitive": true
+    },
+    {
+      "id": "topic.5a6Y5pa55YWl5Y-j",
+      "type": "topic",
+      "label": "官方入口"
+    },
+    {
+      "id": "topic.5r6z6ZaA5rW36Zec",
+      "type": "topic",
+      "label": "澳門海關"
+    },
+    {
+      "id": "topic.5Lqk6YCa5LqL5YuZ5bGA",
+      "type": "topic",
+      "label": "交通事務局"
+    },
+    {
+      "id": "topic.5qmr55C05a6Y5pa5",
+      "type": "topic",
+      "label": "橫琴官方"
+    },
+    {
+      "id": "topic.5rG96LuK57at5L-u6KaP5a6a",
+      "type": "topic",
+      "label": "汽車維修規定"
+    }
+  ],
+  "edges": [
+    {
+      "id": "source.qinao|contains|qinao.compare",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.compare"
+    },
+    {
+      "id": "qinao.compare|about|topic.55C05r6z5ZCM6KGM",
+      "from": "qinao.compare",
+      "type": "about",
+      "to": "topic.55C05r6z5ZCM6KGM"
+    },
+    {
+      "id": "qinao.compare|about|topic.6Leo5aKD6Ieq6aeV",
+      "from": "qinao.compare",
+      "type": "about",
+      "to": "topic.6Leo5aKD6Ieq6aeV"
+    },
+    {
+      "id": "qinao.compare|about|topic.5qmr55C05Zau54mM6LuK",
+      "from": "qinao.compare",
+      "type": "about",
+      "to": "topic.5qmr55C05Zau54mM6LuK"
+    },
+    {
+      "id": "qinao.compare|about|topic.5r6z6LuK5YyX5LiK",
+      "from": "qinao.compare",
+      "type": "about",
+      "to": "topic.5r6z6LuK5YyX5LiK"
+    },
+    {
+      "id": "qinao.compare|about|topic.6YCa6Zec5Y-j5bK4",
+      "from": "qinao.compare",
+      "type": "about",
+      "to": "topic.6YCa6Zec5Y-j5bK4"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA"
+    },
+    {
+      "id": "qinao.compare|cites|official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s",
+      "from": "qinao.compare",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s"
+    },
+    {
+      "id": "source.qinao|contains|qinao.apply",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.apply"
+    },
+    {
+      "id": "qinao.apply|about|topic.55C05r6z5ZCM6KGM",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.55C05r6z5ZCM6KGM"
+    },
+    {
+      "id": "qinao.apply|about|topic.55Sz6KuL6LOH5qC8",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.55Sz6KuL6LOH5qC8"
+    },
+    {
+      "id": "qinao.apply|about|topic.55Sz6KuL5paH5Lu2",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.55Sz6KuL5paH5Lu2"
+    },
+    {
+      "id": "qinao.apply|about|topic.6amX6LuK",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.6amX6LuK"
+    },
+    {
+      "id": "qinao.apply|about|topic.5L-d6Zqq",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.5L-d6Zqq"
+    },
+    {
+      "id": "qinao.apply|about|topic.54mM6K2J",
+      "from": "qinao.apply",
+      "type": "about",
+      "to": "topic.54mM6K2J"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMTY0ODAxLw",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMTY0ODAxLw"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMjAwNjA4Lw",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnQvbmV3cy8xMjAwNjA4Lw"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2QvP2FfaWQ9MjAwMDEzOQ",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2QvP2FfaWQ9MjAwMDEzOQ"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly9tYWNhb2FwcGx5LnNpbmdsZXdpbmRvdy5nZC5jbi8",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9tYWNhb2FwcGx5LnNpbmdsZXdpbmRvdy5nZC5jbi8"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTIuaHRtbA",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTIuaHRtbA"
+    },
+    {
+      "id": "qinao.apply|cites|official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnMvbmV3cy83NDI1NzEv",
+      "from": "qinao.apply",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZ292Lm1vL3poLWhhbnMvbmV3cy83NDI1NzEv"
+    },
+    {
+      "id": "source.qinao|contains|qinao.trip",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.trip"
+    },
+    {
+      "id": "qinao.trip|about|topic.55C05r6z5ZCM6KGM",
+      "from": "qinao.trip",
+      "type": "about",
+      "to": "topic.55C05r6z5ZCM6KGM"
+    },
+    {
+      "id": "qinao.trip|about|topic.5qmr55C05pmv6bue",
+      "from": "qinao.trip",
+      "type": "about",
+      "to": "topic.5qmr55C05pmv6bue"
+    },
+    {
+      "id": "qinao.trip|about|topic.54-g5rW35pmv6bue",
+      "from": "qinao.trip",
+      "type": "about",
+      "to": "topic.54-g5rW35pmv6bue"
+    },
+    {
+      "id": "qinao.trip|about|topic.6Kaq5a2Q6KGM56iL",
+      "from": "qinao.trip",
+      "type": "about",
+      "to": "topic.6Kaq5a2Q6KGM56iL"
+    },
+    {
+      "id": "qinao.trip|about|topic.5rOK6LuK",
+      "from": "qinao.trip",
+      "type": "about",
+      "to": "topic.5rOK6LuK"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOkhlbmdxaW5fRmxvd2VyX1NlYV9Db3JyaWRvci5qcGc",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOkhlbmdxaW5fRmxvd2VyX1NlYV9Db3JyaWRvci5qcGc"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL3B1YmxpY2RvbWFpbi96ZXJvLzEuMC8",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL3B1YmxpY2RvbWFpbi96ZXJvLzEuMC8"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9saW5rcy90b3VyaXNtL2NvbnRlbnQvcG9zdF8zNzc2OTY3Lmh0bWw",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9saW5rcy90b3VyaXNtL2NvbnRlbnQvcG9zdF8zNzc2OTY3Lmh0bWw"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjIwMjYwNzEwX1RpYW5tdV9RaW50YWkuanBn",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjIwMjYwNzEwX1RpYW5tdV9RaW50YWkuanBn"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LXNhLzQuMC8",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LXNhLzQuMC8"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9jaGFybS9jb250ZW50L3Bvc3RfMzkxMTIzNC5odG1s",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9jaGFybS9jb250ZW50L3Bvc3RfMzkxMTIzNC5odG1s"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3OTMwNjIuaHRtbA",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3OTMwNjIuaHRtbA"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM5MzA5NzYuaHRtbA",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM5MzA5NzYuaHRtbA"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbGl2ZWxpaG9vZC9tc2drL3doc3MvZ2svaW5kZXguaHRtbA",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbGl2ZWxpaG9vZC9tc2drL3doc3MvZ2svaW5kZXguaHRtbA"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjExNTkxLU9jZWFuLUtpbmdkb20uanBn",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOjExNTkxLU9jZWFuLUtpbmdkb20uanBn"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LzIuMC8",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LzIuMC8"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9iay5jaGltZWxvbmcuY29tL3poL29jZWFua2luZ2RvbS8",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9iay5jaGltZWxvbmcuY29tL3poL29jZWFua2luZ2RvbS8"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9GaXNoZXJfR2lybF9zdGF0dWVfZGxsdS5qcGc",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9GaXNoZXJfR2lybF9zdGF0dWVfZGxsdS5qcGc"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93aGx5LmdkLmdvdi5jbi9hdHRhY2htZW50LzAvNTUwLzU1MDg1NC80NDMzODQ4LnBkZg",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93aGx5LmdkLmdvdi5jbi9hdHRhY2htZW50LzAvNTUwLzU1MDg1NC80NDMzODQ4LnBkZg"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9ncmFuZF90aGVhdHJlX3NvdXRoX3ZpZXcuanBn",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly9jb21tb25zLndpa2ltZWRpYS5vcmcvd2lraS9GaWxlOlpodWhhaV9ncmFuZF90aGVhdHJlX3NvdXRoX3ZpZXcuanBn"
+    },
+    {
+      "id": "qinao.trip|cites|official.aHR0cHM6Ly93d3cubWN0Lmdvdi5jbi93bGJwaG9uZS93bGJ5ZGQveHhmYi9xZ2xiL2dkLzIwMjQwNC90MjAyNDA0MTBfOTUyMTg0Lmh0bWw",
+      "from": "qinao.trip",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cubWN0Lmdvdi5jbi93bGJwaG9uZS93bGJ5ZGQveHhmYi9xZ2xiL2dkLzIwMjQwNC90MjAyNDA0MTBfOTUyMTg0Lmh0bWw"
+    },
+    {
+      "id": "source.qinao|contains|qinao.service",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.service"
+    },
+    {
+      "id": "qinao.service|about|topic.5rG96LuK57at5L-u",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.5rG96LuK57at5L-u"
+    },
+    {
+      "id": "qinao.service|about|topic.57at5L-u5aCx5YO5",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.57at5L-u5aCx5YO5"
+    },
+    {
+      "id": "qinao.service|about|topic.6Zu25Lu2",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.6Zu25Lu2"
+    },
+    {
+      "id": "qinao.service|about|topic.5bel5pmC",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.5bel5pmC"
+    },
+    {
+      "id": "qinao.service|about|topic.5L-d5Zu6",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.5L-d5Zu6"
+    },
+    {
+      "id": "qinao.service|about|topic.5Lqk6LuK57SA6YyE",
+      "from": "qinao.service",
+      "type": "about",
+      "to": "topic.5Lqk6LuK57SA6YyE"
+    },
+    {
+      "id": "qinao.service|cites|official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s",
+      "from": "qinao.service",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s"
+    },
+    {
+      "id": "source.qinao|contains|qinao.check",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.check"
+    },
+    {
+      "id": "qinao.check|about|topic.5Ye655m85qqi5p-l",
+      "from": "qinao.check",
+      "type": "about",
+      "to": "topic.5Ye655m85qqi5p-l"
+    },
+    {
+      "id": "qinao.check|about|topic.6aeV6aeb6K2J",
+      "from": "qinao.check",
+      "type": "about",
+      "to": "topic.6aeV6aeb6K2J"
+    },
+    {
+      "id": "qinao.check|about|topic.5L-d6Zqq",
+      "from": "qinao.check",
+      "type": "about",
+      "to": "topic.5L-d6Zqq"
+    },
+    {
+      "id": "qinao.check|about|topic.6aCQ57SE",
+      "from": "qinao.check",
+      "type": "about",
+      "to": "topic.6aCQ57SE"
+    },
+    {
+      "id": "qinao.check|about|topic.6LuK6Lyb5a6J5YWo",
+      "from": "qinao.check",
+      "type": "about",
+      "to": "topic.6LuK6Lyb5a6J5YWo"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA"
+    },
+    {
+      "id": "qinao.check|cites|official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s",
+      "from": "qinao.check",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s"
+    },
+    {
+      "id": "source.qinao|contains|qinao.official",
+      "from": "source.qinao",
+      "type": "contains",
+      "to": "qinao.official"
+    },
+    {
+      "id": "qinao.official|about|topic.5a6Y5pa55YWl5Y-j",
+      "from": "qinao.official",
+      "type": "about",
+      "to": "topic.5a6Y5pa55YWl5Y-j"
+    },
+    {
+      "id": "qinao.official|about|topic.5r6z6ZaA5rW36Zec",
+      "from": "qinao.official",
+      "type": "about",
+      "to": "topic.5r6z6ZaA5rW36Zec"
+    },
+    {
+      "id": "qinao.official|about|topic.5Lqk6YCa5LqL5YuZ5bGA",
+      "from": "qinao.official",
+      "type": "about",
+      "to": "topic.5Lqk6YCa5LqL5YuZ5bGA"
+    },
+    {
+      "id": "qinao.official|about|topic.5qmr55C05a6Y5pa5",
+      "from": "qinao.official",
+      "type": "about",
+      "to": "topic.5qmr55C05a6Y5pa5"
+    },
+    {
+      "id": "qinao.official|about|topic.5rG96LuK57at5L-u6KaP5a6a",
+      "from": "qinao.official",
+      "type": "about",
+      "to": "topic.5rG96LuK57at5L-u6KaP5a6a"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly90Z3NxLmhlbmdxaW4uZ292LmNuLw"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuY3VzdG9tcy5nb3YubW8vY24vdmVoaWNsZV9jbGVhcmFuY2VfaXRlbTQuaHRtbA"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuZHNhdC5nb3YubW8vbWNhcnMtdG8tZ2Qv"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuYW1jbS5nb3YubW8vcHQvaW5zdXJhbmNlLXNlY3Rvci9jcm9zc2JvcmRlcnZlaGljbGUvY3Jvc3Nib3JkZXJ2ZWhpY2xlLWJhY2tncm91bmRpbmZv"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly93d3cuaGVuZ3Fpbi5nb3YuY24vbWFjYW9femhfaGFucy9oenFnbC9kdHl3L2R0eHgvY29udGVudC9wb3N0XzM3ODQ5OTcuaHRtbA"
+    },
+    {
+      "id": "qinao.official|cites|official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s",
+      "from": "qinao.official",
+      "type": "cites",
+      "to": "official.aHR0cHM6Ly94eGdrLm1vdC5nb3YuY24vamlnb3UvZmdzLzIwMjMxMi90MjAyMzEyMDRfMzk2MTkzMS5odG1s"
+    },
+    {
+      "id": "qinao.apply|related_to|qinao.check",
+      "from": "qinao.apply",
+      "type": "related_to",
+      "to": "qinao.check",
+      "label": "保險"
+    }
+  ]
+}

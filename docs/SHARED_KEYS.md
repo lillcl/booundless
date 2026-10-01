@@ -19,6 +19,11 @@ Canonical registry for shared names across frontend, backend, database, tests, e
 | Terms version | `termsVersion` | `users.terms_version` | `terms_version` (request body on `POST /api/auth/register`) | `termsVersion` | text(40) | Optional; persisted silently today. Frontend sends `'v1'`. |
 | Dealer status | `dealerStatus` | `dealers.status` | `dealer.status` / PATCH body `status` | n/a | enum (`draft`/`active`/`suspended`) | Status flip cascades to `users.is_active` for every member |
 | Dealer member role | `dealerMemberRole` | `dealer_members.role` | `dealer.role` / PATCH body `role` | `dealer.role` | enum (`owner`/`manager`/`staff`/`viewer`) | Removing the last `owner` returns 422 `last_owner` |
+| Assistant thread storage | `kc_assistant_thread` | `agent_threads.id` for signed-in users | `thread_id` | `localStorage.kc_assistant_thread` | UUID or null | Anonymous conversations do not create a DB thread. |
+| Assistant message storage | `kc_assistant_messages` | n/a | n/a | `localStorage.kc_assistant_messages` | JSON array | Last 30 user/assistant text messages; display continuity only. |
+| Assistant page context | `page_context` | n/a | POST `/api/agent` | derived from current path/hash/title | object | Server keeps only bounded `path`, `hash`, `route`, `section`, `title`, `locale`. |
+| Assistant route key | `route_key` | n/a | navigation tool result | `shared/assistant-routes.js` | allowlisted string | Client re-resolves the key and requires the exact registered href before rendering a button. |
+| Site knowledge verification date | `verified_at` | n/a | knowledge tool result | source card | ISO date | Required on generated 琴澳 knowledge documents; time-sensitive answers remind users to recheck official sources. |
 
 ## Enums
 ### `RequestStatus` (web, admin, 小程序)

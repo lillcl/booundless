@@ -3,7 +3,9 @@
     <view class="kc-chat__messages">
       <block wx:for="{{messages}}" wx:key="id">
         <view class="kc-chat__row {{item.role === 'user' ? 'kc-chat__row--user' : ''}}">
-          <view class="kc-chat__avatar" wx:if="{{item.role !== 'user'}}">🤖</view>
+          <view class="kc-chat__avatar kc-chat__avatar--assistant" wx:if="{{item.role !== 'user'}}">
+            <image class="kc-chat__mascot" src="/images/jiezai-assistant.png" mode="aspectFit"></image>
+          </view>
           <view class="kc-chat__bubble {{item.role === 'user' ? 'kc-chat__bubble--user' : 'kc-chat__bubble--bot'}}">
             <view wx:if="{{item.type === 'tool'}}" class="kc-chat__tool">
               ⚙️ {{item.toolName}}: {{item.toolStatus}}
@@ -14,7 +16,9 @@
         </view>
       </block>
       <view wx:if="{{loading}}" class="kc-chat__row">
-        <view class="kc-chat__avatar">🤖</view>
+        <view class="kc-chat__avatar kc-chat__avatar--assistant">
+          <image class="kc-chat__mascot" src="/images/jiezai-assistant.png" mode="aspectFit"></image>
+        </view>
         <view class="kc-chat__bubble kc-chat__bubble--bot">
           <view class="kc-chat__typing"><text class="kc-chat__dot"></text><text class="kc-chat__dot"></text><text class="kc-chat__dot"></text></view>
         </view>

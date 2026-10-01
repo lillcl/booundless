@@ -82,6 +82,16 @@ test('legal pages use root-relative assets and the canonical production host', (
     assert.match(source, /href="\/assets\/icons\/booundless-car\.png"/);
     assert.match(source, /src="\/assets\/icons\/booundless-car\.png"/);
     assert.match(source, new RegExp(`href="https://www\\.booundless\\.com/legal/${page}\\.html"`));
+    assert.match(source, /href="\/assets\/assistant\.css"/);
+    assert.match(source, /src="\/assets\/assistant\.js"/);
+  }
+});
+
+test('customer-facing HTML entry points load the shared mascot assistant', () => {
+  for (const page of ['../index.html', '../qinao-guide.html', '../404.html']) {
+    const source = readFileSync(new URL(page, import.meta.url), 'utf8');
+    assert.match(source, /assistant\.css/);
+    assert.match(source, /assistant\.js/);
   }
 });
 
