@@ -47,6 +47,12 @@ test('repair prompt changes output transport without weakening semantic policy',
   const prompt = policyPrompt(tools, { json: true });
   assert.match(prompt, /只輸出一個完整 JSON/);
   assert.match(prompt, /語意判斷，不是關鍵字/);
+  assert.match(prompt, /第一個來源是主要依據/);
+  assert.match(prompt, /開放式地點介紹時/);
+  assert.match(prompt, /必須緊扣用家問的主題/);
+  assert.match(prompt, /優先採用最貼近旅遊或行程意圖/);
+  assert.match(prompt, /絕不可在正文或結尾提及車輛牌證、通關口岸/);
+  assert.match(prompt, /不得把「介紹某地」推斷成「查詢自駕制度」/);
   assert.match(prompt, /伺服器會向用家顯示確認卡/);
   assert.equal(prompt.includes('每一次都必須呼叫 assistant_decision'), false);
 });

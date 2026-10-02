@@ -35,9 +35,17 @@ test('assistant navigation resolves only registered route keys', () => {
 
 test('琴澳 page content is searchable as first-party knowledge', async () => {
   _resetSiteKnowledgeCache();
+  const hengqinOverview = await searchSiteKnowledge('跟我介紹橫琴');
+  assert.equal(hengqinOverview[0]?.route_key, 'qinao.trip');
+  assert.deepEqual(hengqinOverview.map((source) => source.id), ['qinao.trip']);
+  assert.match(hengqinOverview[0]?.excerpt || '', /橫琴景點/);
+
   const comparison = await searchSiteKnowledge('橫琴單牌車和澳車北上有甚麼分別');
   assert.equal(comparison[0]?.route_key, 'qinao.compare');
   assert.ok(comparison[0]?.official_sources.length >= 2);
+
+  const application = await searchSiteKnowledge('澳車北上申請要準備哪些文件');
+  assert.ok(application.some((source) => source.route_key === 'qinao.apply'));
 
   const repair = await searchSiteKnowledge('北上維修報價、零件和工時要問甚麼');
   assert.equal(repair[0]?.route_key, 'qinao.service');
@@ -65,6 +73,14 @@ test('knowledge graph connects reviewed topics, documents, and official sources'
   assert.ok(result.documents.some((document) => document.id === 'qinao.check'));
   assert.ok(result.relations.some((relation) => relation.type === 'about'));
   assert.match(result.verified_at, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('knowledge graph returns relations in descending matched-document relevance', async () => {
+  _resetKnowledgeGraphCache();
+  const result = await queryKnowledgeGraph('跟我介紹橫琴', { limit: 5 });
+  assert.equal(result.matches[0]?.id, 'qinao.trip');
+  assert.equal(result.matches.some((node) => node.id === 'qinao.compare'), false);
+  assert.equal(result.relations.find((relation) => relation.from?.type === 'document')?.from?.id, 'qinao.trip');
 });
 
 test('website feature knowledge distinguishes Vehicle Passport from border documents', async () => {

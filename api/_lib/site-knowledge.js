@@ -60,18 +60,31 @@ function scoreDocument(document, queryTokens, pageContext = {}) {
   return score;
 }
 
+function matchingQueryTokens(document, queryTokens) {
+  const searchable = normalize(`${document.title} ${(document.topics || []).join(' ')} ${document.content}`);
+  return queryTokens.filter((token) => searchable.includes(token));
+}
+
 export async function searchSiteKnowledge(query, { limit = 4, pageContext = {} } = {}) {
   const queryTokens = tokens(query).slice(0, 80);
   if (!queryTokens.length) return [];
   const documents = await loadSiteKnowledge();
   const ranked = documents
-    .map((document) => ({ document, score: scoreDocument(document, queryTokens, pageContext) }))
+    .map((document) => ({ document, score: scoreDocument(document, queryTokens, pageContext), matchingTokens: matchingQueryTokens(document, queryTokens) }))
     .filter((entry) => entry.score > 0)
     .sort((left, right) => right.score - left.score || left.document.id.localeCompare(right.document.id));
   const relevanceFloor = Math.max(2, (ranked[0]?.score || 0) * 0.2);
-  return ranked
-    .filter((entry) => entry.score >= relevanceFloor)
-    .slice(0, Math.min(8, Math.max(1, Number(limit) || 4)))
+  const selected = [];
+  const coveredQueryTokens = new Set();
+  for (const entry of ranked) {
+    if (entry.score < relevanceFloor || selected.length >= Math.min(8, Math.max(1, Number(limit) || 4))) continue;
+    // Same-entity pages often score well on a place name alone. Keep a later
+    // page only when it adds query terms not already covered by a better match.
+    if (selected.length && !entry.matchingTokens.some((token) => !coveredQueryTokens.has(token))) continue;
+    selected.push(entry);
+    for (const token of entry.matchingTokens) coveredQueryTokens.add(token);
+  }
+  return selected
     .map(({ document, score }) => ({
       id: document.id,
       source: document.source,

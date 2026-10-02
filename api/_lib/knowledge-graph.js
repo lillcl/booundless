@@ -59,8 +59,15 @@ export async function queryKnowledgeGraph(query, { limit = 8, pageContext = {} }
     searchSiteKnowledge(query, { limit: Math.min(4, limit), pageContext }),
   ]);
   const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const selectedDocumentIds = new Set(documentMatches.map((document) => document.id));
+  const eligibleNodeIds = new Set(selectedDocumentIds);
+  for (const edge of graph.edges) {
+    if (selectedDocumentIds.has(edge.from)) eligibleNodeIds.add(edge.to);
+    if (selectedDocumentIds.has(edge.to)) eligibleNodeIds.add(edge.from);
+  }
   const scores = new Map();
   for (const node of graph.nodes) {
+    if (!eligibleNodeIds.has(node.id)) continue;
     const score = nodeScore(node, queryTokens);
     if (score > 0) scores.set(node.id, score);
   }
@@ -70,8 +77,15 @@ export async function queryKnowledgeGraph(query, { limit = 8, pageContext = {} }
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
     .slice(0, Math.min(12, Math.max(1, Number(limit) || 8)));
   const seedIds = new Set(seeds.map(([id]) => id));
-  const relations = graph.edges
-    .filter((edge) => seedIds.has(edge.from) || seedIds.has(edge.to))
+  const relationKeys = new Set();
+  const relations = seeds
+    .flatMap(([id]) => graph.edges.filter((edge) => eligibleNodeIds.has(edge.from) && eligibleNodeIds.has(edge.to) && (edge.from === id || edge.to === id)))
+    .filter((edge) => {
+      const key = `${edge.from}|${edge.type}|${edge.to}`;
+      if (relationKeys.has(key)) return false;
+      relationKeys.add(key);
+      return seedIds.has(edge.from) || seedIds.has(edge.to);
+    })
     .slice(0, 40)
     .map((edge) => ({
       type: edge.type,
